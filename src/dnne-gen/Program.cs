@@ -20,7 +20,7 @@
 using System;
 using System.IO;
 
-namespace dnne
+namespace DNNE
 {
     class Program
     {

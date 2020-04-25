@@ -28,7 +28,7 @@ using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Text;
 
-namespace dnne
+namespace DNNE
 {
     class GeneratorException : Exception
     {
