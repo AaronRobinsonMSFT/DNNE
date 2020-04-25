@@ -428,7 +428,7 @@ NE_API {export.ReturnType} NE_CALLTYPE {export.ExportName}({declsig})
 
             public string GetPointerType(string elementType)
             {
-                return $"/*{elementType}*/ void*";
+                return elementType + "*";
             }
 
             public string GetPrimitiveType(PrimitiveTypeCode typeCode)
