@@ -45,6 +45,13 @@ namespace ExportingAssembly
             return 27;
         }
 
+        public delegate void SingleVoidDelegate(float a);
+
+        [DNNE.Export]
+        public static void SingleVoid(float a)
+        {
+        }
+
         public delegate double DoubleDoubleDelegate(double a);
 
         [DNNE.Export]
@@ -67,6 +74,13 @@ namespace ExportingAssembly
         public static double VoidDouble()
         {
             return 27;
+        }
+
+        public delegate void DoubleVoidDelegate(double a);
+
+        [DNNE.Export]
+        public static void DoubleVoid(double a)
+        {
         }
     }
 }

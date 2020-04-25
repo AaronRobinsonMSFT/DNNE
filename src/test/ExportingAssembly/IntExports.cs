@@ -44,5 +44,12 @@ namespace ExportingAssembly
         {
             return 27;
         }
+
+        public delegate void IntVoidDelegate();
+
+        [DNNE.Export]
+        public static void IntVoid(int a)
+        {
+        }
     }
 }

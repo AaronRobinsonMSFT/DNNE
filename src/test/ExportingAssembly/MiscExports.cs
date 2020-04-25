@@ -27,20 +27,5 @@ namespace ExportingAssembly
         public static void DontExportName()
         {
         }
-
-        public delegate void IntVoidDelegate();
-
-        [DNNE.Export]
-        public static void IntVoid(int a)
-        {
-        }
-
-        public delegate void VoidIntDelegate();
-
-        [DNNE.Export]
-        public static int VoidInt()
-        {
-            return 27;
-        }
     }
 }
