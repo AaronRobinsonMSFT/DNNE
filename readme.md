@@ -15,12 +15,12 @@ This work is inspired by work in the [Xamarian][xamarin_embed_link] and [CoreRT]
 
 - The type exporting the function cannot be a nested type.
 
-- A `Delegate` of the appropriate type and name must be at the same scope as the export. The naming convention is `<EXPORTNAME>Delegate` For example:
+- A `Delegate` of the appropriate type and name must be at the same scope as the export. The naming convention is `<METHODNAME>Delegate` For example:
 
     ```CSharp
     public class Exports
     {
-        public delegate int FancyNameDelegate(int a);
+        public delegate int MyExportDelegate(int a);
 
         [DNNE.Export(EntryPoint = "FancyName")]
         public static int MyExport(int a)

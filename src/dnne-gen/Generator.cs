@@ -279,9 +279,17 @@ extern void* get_callable_managed_function(
                     callsig.AppendFormat("{0}{1}", delim, export.ArgumentNames[i]);
                 }
 
+                // Special casing for void signature.
                 if (declsig.Length == 0)
                 {
                     declsig.Append("void");
+                }
+
+                // Special casing for void return.
+                string returnStatementKeyword = "return ";
+                if (export.ReturnType.Equals("void"))
+                {
+                    returnStatementKeyword = string.Empty;
                 }
 
                 string classNameConstant = map[export.EnclosingTypeName];
@@ -294,11 +302,11 @@ NE_API {export.ReturnType} NE_CALLTYPE {export.ExportName}({declsig})
 {{
     if ({export.ExportName}_ptr == NULL)
     {{
-        const char_t* exportName = NE_STR(""{export.ExportName}"");
-        const char_t* delegateType = NE_STR(""{export.EnclosingTypeName}+{export.ExportName}Delegate, {assemblyName}"");
-        {export.ExportName}_ptr = get_callable_managed_function({classNameConstant}, exportName, delegateType);
+        const char_t* methodName = NE_STR(""{export.MethodName}"");
+        const char_t* delegateType = NE_STR(""{export.EnclosingTypeName}+{export.MethodName}Delegate, {assemblyName}"");
+        {export.ExportName}_ptr = get_callable_managed_function({classNameConstant}, methodName, delegateType);
     }}
-    return {export.ExportName}_ptr({callsig});
+    {returnStatementKeyword}{export.ExportName}_ptr({callsig});
 }}
 ");
             }
