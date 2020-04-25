@@ -131,6 +131,8 @@ typedef int (CORECLR_DELEGATE_CALLTYPE* component_entry_point_fn)(void* arg, int
 #define NE_MAX_PATH 512
 #define NE_ARRAY_SIZE(_array) (sizeof(_array) / sizeof(*_array))
 
+#define STRINGIFY(s) #s
+
 #ifdef NE_WINDOWS
 
 #define WIN32_LEAN_AND_MEAN
@@ -347,7 +349,7 @@ static void prepare_runtime()
 
     // Initialize and start the runtime.
     char_t buffer[NE_MAX_PATH];
-    const char_t config_filename[] = NE_STR(NEXPORT_ASSEMBLY_NAME) NE_STR(".runtimeconfig.json");
+    const char_t config_filename[] = NE_STR(STRINGIFY(NEXPORT_ASSEMBLY_NAME)) NE_STR(".runtimeconfig.json");
     const char_t* config_path = get_current_dir_filepath(NE_ARRAY_SIZE(buffer), buffer, NE_ARRAY_SIZE(config_filename), config_filename);
     init_dotnet(config_path);
 }
@@ -367,7 +369,7 @@ void* get_callable_managed_function(
     }
 
     char_t buffer[NE_MAX_PATH];
-    const char_t assembly_filename[] = NE_STR(NEXPORT_ASSEMBLY_NAME) NE_STR(".dll");
+    const char_t assembly_filename[] = NE_STR(STRINGIFY(NEXPORT_ASSEMBLY_NAME)) NE_STR(".dll");
     const char_t* assembly_path = get_current_dir_filepath(NE_ARRAY_SIZE(buffer), buffer, NE_ARRAY_SIZE(assembly_filename), assembly_filename);
 
     // Function pointer to managed function
