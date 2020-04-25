@@ -131,7 +131,8 @@ typedef int (CORECLR_DELEGATE_CALLTYPE* component_entry_point_fn)(void* arg, int
 #define NE_MAX_PATH 512
 #define NE_ARRAY_SIZE(_array) (sizeof(_array) / sizeof(*_array))
 
-#define STRINGIFY(s) #s
+#define STRINGIFY2(s) #s
+#define STRINGIFY(s) STRINGIFY2(s)
 
 #ifdef NE_WINDOWS
 
