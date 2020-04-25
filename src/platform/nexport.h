@@ -20,8 +20,6 @@
 #ifndef __NEXPORT_H__
 #define __NEXPORT_H__
 
-#define NEXPORT_ASSEMBLY_NAME "PPPP"
-
 // Must define the assembly name
 #ifndef NEXPORT_ASSEMBLY_NAME
     #error Target assembly name must be defined. Set 'NEXPORT_ASSEMBLY_NAME'.
