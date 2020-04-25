@@ -36,11 +36,13 @@ This work is inspired by work in the [Xamarian][xamarin_embed_link] and [CoreRT]
 
 ## Native API
 
-See [`src/platform/nexport.h`](./src/platform/nexport.h) for complete details.
+The native API is defined in [`src/platform/nexport.h`](./src/platform/nexport.h).
 
-The `NEXPORT_ASSEMBLY_NAME` must be set during compilation to indicate the name of the managed assembly to load. The assembly name should not include the extension. For example, if the binary on disk is called `ClassLib.dll`, the expected assembly name is `ClassLib`.
+The `NEXPORT_ASSEMBLY_NAME` must be set during compilation to indicate the name of the managed assembly to load. The assembly name should not include the extension. For example, if the managed assembly on disk is called `ClassLib.dll`, the expected assembly name is `ClassLib`.
 
-The `set_failure_callback()` function can be used prior to calling an export to set a callback in the event runtime load fails.
+The export source will need to be linked against the [`nethost`](https://docs.microsoft.com/dotnet/core/tutorials/netcore-hosting#create-a-host-using-nethosth-and-hostfxrh) library as either a static lib (`libnethost.[lib|a]`) or dynamic/shared library (`nethost.lib`). If the latter linking is performed, the `nethost.[dll|so]` will need to be deployed with the export binary or be on the path at run time.
+
+The `set_failure_callback()` function can be used prior to calling an export to set a callback in the event runtime load or export discovery fails.
 
 Failure to load the runtime or find an export results in the native library calling [`abort()`](https://en.cppreference.com/w/c/program/abort).
 
@@ -68,11 +70,11 @@ Failure to load the runtime or find an export results in the native library call
 
 1) Run the [dnne-gen](./src/dnne-gen) tool on the managed assembly.
 
-1) Take the generated source from `dnne-gen` and the dnne [platform](./src/platform) source to compile a native binary with the desired native exports. See the [Native API](#nativeapi) section for build details.
+1) Take the generated source from `dnne-gen` and the DNNE [platform](./src/platform) source to compile a native binary with the desired native exports. See the [Native API](#nativeapi) section for build details.
 
 1) Deploy the native binary, managed assembly and associated `*.json` files for consumption from a native process.
 
-# References
+# Additional References
 
 [dotnet repo](https://github.com/dotnet/runtime)
 
