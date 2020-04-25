@@ -20,6 +20,8 @@
 #ifndef __NEXPORT_H__
 #define __NEXPORT_H__
 
+#define NEXPORT_ASSEMBLY_NAME "PPPP"
+
 // Must define the assembly name
 #ifndef NEXPORT_ASSEMBLY_NAME
     #error Target assembly name must be defined. Set 'NEXPORT_ASSEMBLY_NAME'.
@@ -43,6 +45,7 @@
 #endif
 
 // Include the official nethost API
+#define NETHOST_USE_AS_STATIC
 #include <nethost.h>
 
 //
