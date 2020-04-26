@@ -17,12 +17,12 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#ifndef __NEXPORT_H__
-#define __NEXPORT_H__
+#ifndef __DNNE_H__
+#define __DNNE_H__
 
 // Must define the assembly name
-#ifndef NEXPORT_ASSEMBLY_NAME
-    #error Target assembly name must be defined. Set 'NEXPORT_ASSEMBLY_NAME'.
+#ifndef DNNE_ASSEMBLY_NAME
+    #error Target assembly name must be defined. Set 'DNNE_ASSEMBLY_NAME'.
 #endif
 
 // Check if we are on Windows
@@ -60,4 +60,4 @@ typedef void (NE_CALLTYPE* failure_fn)(enum failure_type type, int error_code);
 // The provided callback will be the last call prior to a rude-abort of the process.
 NE_API void NE_CALLTYPE set_failure_callback(failure_fn cb);
 
-#endif // __NEXPORT_H__
+#endif // __DNNE_H__

@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "nexport.h"
+#include "dnne.h"
 
 // Modified copy of official hostfxr.h
 #ifndef __HOSTFXR_H__
@@ -350,7 +350,7 @@ static void prepare_runtime()
 
     // Initialize and start the runtime.
     char_t buffer[NE_MAX_PATH];
-    const char_t config_filename[] = NE_STR(STRINGIFY(NEXPORT_ASSEMBLY_NAME)) NE_STR(".runtimeconfig.json");
+    const char_t config_filename[] = NE_STR(STRINGIFY(DNNE_ASSEMBLY_NAME)) NE_STR(".runtimeconfig.json");
     const char_t* config_path = get_current_dir_filepath(NE_ARRAY_SIZE(buffer), buffer, NE_ARRAY_SIZE(config_filename), config_filename);
     init_dotnet(config_path);
 }
@@ -370,7 +370,7 @@ void* get_callable_managed_function(
     }
 
     char_t buffer[NE_MAX_PATH];
-    const char_t assembly_filename[] = NE_STR(STRINGIFY(NEXPORT_ASSEMBLY_NAME)) NE_STR(".dll");
+    const char_t assembly_filename[] = NE_STR(STRINGIFY(DNNE_ASSEMBLY_NAME)) NE_STR(".dll");
     const char_t* assembly_path = get_current_dir_filepath(NE_ARRAY_SIZE(buffer), buffer, NE_ARRAY_SIZE(assembly_filename), assembly_filename);
 
     // Function pointer to managed function

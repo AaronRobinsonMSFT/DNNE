@@ -36,9 +36,9 @@ This work is inspired by work in the [Xamarian][xamarin_embed_link] and [CoreRT]
 
 ## Native API
 
-The native API is defined in [`src/platform/nexport.h`](./src/platform/nexport.h).
+The native API is defined in [`src/platform/dnne.h`](./src/platform/dnne.h).
 
-The `NEXPORT_ASSEMBLY_NAME` must be set during compilation to indicate the name of the managed assembly to load. The assembly name should not include the extension. For example, if the managed assembly on disk is called `ClassLib.dll`, the expected assembly name is `ClassLib`.
+The `DNNE_ASSEMBLY_NAME` must be set during compilation to indicate the name of the managed assembly to load. The assembly name should not include the extension. For example, if the managed assembly on disk is called `ClassLib.dll`, the expected assembly name is `ClassLib`.
 
 The export source will need to be linked against the [`nethost`](https://docs.microsoft.com/dotnet/core/tutorials/netcore-hosting#create-a-host-using-nethosth-and-hostfxrh) library as either a static lib (`libnethost.[lib|a]`) or dynamic/shared library (`nethost.lib`). If the latter linking is performed, the `nethost.[dll|so]` will need to be deployed with the export binary or be on the path at run time.
 

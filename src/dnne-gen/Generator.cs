@@ -224,7 +224,7 @@ namespace DNNE
 //
 
 #include <stdint.h>
-#include <nexport.h>
+#include <dnne.h>
 
 //
 // Forward declarations
