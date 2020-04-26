@@ -27,7 +27,10 @@ DNNE.props
     <DnneMSBuildLogging>low</DnneMSBuildLogging>
     <DnneGenerateExports>true</DnneGenerateExports>
     <DnneBuildExports>true</DnneBuildExports>
-    <!-- TODO On non-windows the suffix is either NE.so or NE.dylib -->
-    <DnneNativeBinarySuffix>NE.dll</DnneNativeBinarySuffix>
+
+    <!-- Define the suffix for the export binary. Use .so as the fallback. -->
+    <DnneNativeBinarySuffix Condition="$([MSBuild]::IsOsPlatform('Windows'))">NE.dll</DnneNativeBinarySuffix>
+    <DnneNativeBinarySuffix Condition="$([MSBuild]::IsOsPlatform('OSX'))">NE.dylib</DnneNativeBinarySuffix>
+    <DnneNativeBinarySuffix Condition="'$(DnneNativeBinarySuffix)' == '' OR $([MSBuild]::IsOsPlatform('Linux'))">NE.so</DnneNativeBinarySuffix>
   </PropertyGroup>
 </Project>

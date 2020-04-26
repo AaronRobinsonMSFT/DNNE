@@ -65,6 +65,27 @@ DNNE.targets
     <!-- Ensure the output directory exists -->
     <MakeDir Directories="$(DnneNativeExportsBinaryPath)" />
 
-    <!-- TODO Discover native compiler and all that -->
+    <PropertyGroup>
+        <DnneExportSource>&quot;@(DnneGeneratedSourceFile)&quot; &quot;$(DnnePlatformSourceFile)&quot;</DnneExportSource>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+        <DnneCompiler Condition="$(DnneCompiler) == ''">cl.exe</DnneCompiler>
+        <DnneCompilerArgs>/D DNNE_ASSEMBLY_NAME=$(TargetName) /I &quot;$(DnnePlatformSourcePath)&quot; /I &quot;$(DnneNetHostPath)&quot; /TC /O2 /Zi /MT /Fo&quot;$(DnneGeneratedOutputPath)&quot; /link /DLL &quot;$(DnneNetHostPath)nethost.lib&quot; /out:&quot;@(DnneNativeExportsBinaryFile)&quot;</DnneCompilerArgs>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="$([MSBuild]::IsOsPlatform('OSX'))">
+        <DnneCompiler Condition="$(DnneCompiler) == ''">gcc</DnneCompiler>
+        <DnneCompilerArgs></DnneCompilerArgs>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="$([MSBuild]::IsOsPlatform('Linux'))">
+        <DnneCompiler Condition="$(DnneCompiler) == ''">gcc</DnneCompiler>
+        <DnneCompilerArgs></DnneCompilerArgs>
+    </PropertyGroup>
+
+    <Exec Command="$(DnneCompiler) $(DnneExportSource) $(DnneCompilerArgs)"
+          ConsoleToMsBuild="true"
+          IgnoreExitCode="true" />
   </Target>
 </Project>
