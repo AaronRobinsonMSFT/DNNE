@@ -6,4 +6,21 @@
     <RootNamespace>DNNE</RootNamespace>
   </PropertyGroup>
 
+  <!-- NuGet properties and items -->
+
+  <PropertyGroup>
+    <PackageId>DNNE</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>AaronRobinsonMSFT</Authors>
+    <Owners>AaronRobinsonMSFT</Owners>
+    <Description>Package used to generated native exports for .NET assemblies.</Description>
+    <IsTool>True</IsTool>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../msbuild/DNNE.props" Pack="True" PackagePath="build/" />
+    <None Include="../msbuild/DNNE.targets" Pack="True" PackagePath="build/" />
+    <None Include="../platform/**" Pack="True" PackagePath="tools/platform/" />
+  </ItemGroup>
+
 </Project>
