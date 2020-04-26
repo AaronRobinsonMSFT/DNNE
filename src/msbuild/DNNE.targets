@@ -27,8 +27,11 @@ DNNE.targets
     <DnneGenExe>dotnet "$(MSBuildThisFileDirectory)../tools/dnne-gen.dll"</DnneGenExe>
     <DnneGeneratedOutputPath>$(IntermediateOutputPath)dnne_gen/</DnneGeneratedOutputPath>
     <DnneNativeExportsBinaryPath>$(TargetDir)</DnneNativeExportsBinaryPath>
-    <DnnePlatformSourceDir>$(MSBuildThisFileDirectory)../tools/platform</DnnePlatformSourceDir>
-    <DnnePlatformSourceFile>$(DnneNativeSrcDir)/platform.c</DnnePlatformSourceFile>
+    <DnnePlatformSourcePath>$(MSBuildThisFileDirectory)../tools/platform/</DnnePlatformSourcePath>
+    <DnnePlatformSourceFile>$(DnnePlatformSourcePath)platform.c</DnnePlatformSourceFile>
+
+    <!-- Define the nethost directory -->
+    <DnneNetHostPath>$(NetCoreTargetingPackRoot)/Microsoft.NETCore.App.Host.$(NETCoreSdkRuntimeIdentifier)/$(BundledNETCoreAppPackageVersion)/runtimes/$(NETCoreSdkRuntimeIdentifier)/native/</DnneNetHostPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -55,7 +58,8 @@ DNNE.targets
     Condition="'$(DnneBuildExports)' == 'true'"
     Inputs="@(DnneGeneratedSourceFile)"
     Outputs="@(DnneNativeExportsBinaryFile)"
-    AfterTargets="DnneGenerateNativeExports">
+    AfterTargets="DnneGenerateNativeExports"
+    DependsOnTargets="ResolvePackageAssets;ResolveFrameworkReferences">
     <Message Text="Building native exports binary from @(DnneGeneratedSourceFile) into @(DnneNativeExportsBinaryFile)" Importance="$(DnneMSBuildLogging)" />
 
     <!-- Ensure the output directory exists -->
