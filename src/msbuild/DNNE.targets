@@ -24,9 +24,14 @@ DNNE.targets
 -->
 <Project>
   <PropertyGroup>
-    <DnneGenExe>dotnet "$(MSBuildThisFileDirectory)../tools/dnne-gen.dll"</DnneGenExe>
-    <DnneGeneratedOutputPath>$(IntermediateOutputPath)dnne_gen/</DnneGeneratedOutputPath>
     <DnneNativeExportsBinaryPath>$(TargetDir)</DnneNativeExportsBinaryPath>
+    <DnneGeneratedOutputPath>$(IntermediateOutputPath)dnne_gen/</DnneGeneratedOutputPath>
+
+    <!-- If build was disabled, change the generated output directory to
+        where we would have put the compiled binary -->
+    <DnneGeneratedOutputPath Condition="'$(DnneBuildExports)' != 'true'">$(DnneNativeExportsBinaryPath)</DnneGeneratedOutputPath>
+
+    <DnneGenExe>dotnet "$(MSBuildThisFileDirectory)../tools/dnne-gen.dll"</DnneGenExe>
     <DnnePlatformSourcePath>$(MSBuildThisFileDirectory)../tools/platform/</DnnePlatformSourcePath>
     <DnnePlatformSourceFile>$(DnnePlatformSourcePath)platform.c</DnnePlatformSourceFile>
 
