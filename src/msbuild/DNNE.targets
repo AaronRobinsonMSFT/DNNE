@@ -81,6 +81,7 @@ DNNE.targets
     <PropertyGroup>
       <DnneAssemblyName>$(TargetName)</DnneAssemblyName>
       <DnneNetHostDir>$(NetCoreTargetingPackRoot)/Microsoft.NETCore.App.Host.$(NETCoreSdkRuntimeIdentifier)/$(BundledNETCoreAppPackageVersion)/runtimes/$(NETCoreSdkRuntimeIdentifier)/native</DnneNetHostDir>
+      <DnneCompiledToBinPath>$(DnneGeneratedBinPath)/$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt)</DnneCompiledToBinPath>
       <__DnneGeneratedSourceFile>@(DnneGeneratedSourceFile)</__DnneGeneratedSourceFile>
     </PropertyGroup>
 
@@ -99,13 +100,13 @@ DNNE.targets
 
     <Message Text="Building native export: &quot;$(CompilerCmd)&quot; $(CompilerArgs)" Importance="high" />
     <Exec Command="&quot;$(CompilerCmd)&quot; $(CompilerArgs)"
-        WorkingDirectory="$(DnnePlatformSourcePath)"
-        Outputs="@(DnneNativeExportsBinaryFile)"
+        WorkingDirectory="$(DnneGeneratedOutputPath)"
+        Outputs="$(DnneCompiledToBinPath)"
         ConsoleToMSBuild="true" />
 
     <!-- Copy the results to the project output directory -->
     <Copy
-        SourceFiles="$(DnneGeneratedBinPath)/$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt)"
+        SourceFiles="$(DnneCompiledToBinPath)"
         DestinationFiles="@(DnneNativeExportsBinaryFile)" />
   </Target>
 </Project>

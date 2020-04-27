@@ -18,7 +18,7 @@ This work is inspired by work in the [Xamarian][xamarin_embed_link] and [CoreRT]
 * Windows 10 SDK - Installed with Visual Studio.
 
 **Unix and OSX:**
-* Clang on path.
+* [Clang](https://clang.llvm.org/) on path.
 
 ## Exporting details
 
