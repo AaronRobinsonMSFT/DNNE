@@ -8,17 +8,14 @@ This work is inspired by work in the [Xamarian][xamarin_embed_link] and [CoreRT]
 
 ### Minimum
 
-* [.NET 5.0+](https://dotnet.microsoft.com/).
+* [.NET 5.0.100-preview.5.20221.6](https://github.com/dotnet/installer) or greater.
 * [C99](https://en.cppreference.com/w/c/language/history) compatible compiler.
 
-### DNNE NuPkg Requirements
+### DNNE NuPkg Requirements (Windows only)
 
 **Windows:**
 * [Visual Studio 2015](https://visualstudio.microsoft.com/) or greater.
 * Windows 10 SDK - Installed with Visual Studio.
-
-**Unix and OSX:**
-* [Clang](https://clang.llvm.org/) on path.
 
 ## Exporting details
 
@@ -72,18 +69,22 @@ Failure to load the runtime or find an export results in the native library call
     }
     ```
 
-2) Adorn the desired managed function with the `DNNE.ExportAttribute`.
+1) Adorn the desired managed function with the `DNNE.ExportAttribute`.
     - Optionally set the `DNNE.ExportAttribute.EntryPoint` property to indicate the name of the native export.
     - If the `EntryPoint` property is `null`, the name of the mananged function is used. This default name will not include the namespace or class containing the function.
     - User supplied values in `EntryPoint` will not be modified or validated in any manner. This string will be consume by a C compiler and should therefore adhere to the [C language's restrictions on function names](https://en.cppreference.com/w/c/language/functions).
 
-3) Set the `<EnableDynamicLoading>true</EnableDynamicLoading>` property in the managed project containing the methods to export. This will produce a `*.runtimeconfig.json` that is needed to activate the runtime during export dispatch.
+1) Set the `<EnableDynamicLoading>true</EnableDynamicLoading>` property in the managed project containing the methods to export. This will produce a `*.runtimeconfig.json` that is needed to activate the runtime during export dispatch.
 
-### Generate using NuGet package
+## Generating a native binary using the DNNE NuPkg
 
 **Note** Currently limited to Windows only
 
-4) Include the DNNE NuGet package in the managed project. The NuGet is currently not on a feed, so a local path must be set as a NuGet source after the package is built.
+1) The DNNE NuPkg can be built locally by running `pack` on [`dnne-gen.csproj`](./src/dnne-gen/dnne-gen.csproj).
+
+    `> dotnet pack dnne-gen.csproj`
+
+1) Add the NuPkg to the target managed project. Remember to update the projects `nuget.config` to point at the location of the recently built DNNE NuPkg.
 
     ```xml
     <ItemGroup>
@@ -91,21 +92,17 @@ Failure to load the runtime or find an export results in the native library call
     </ItemGroup>
     ```
 
-5) The DNNE NuGet package can be built locally by running `pack` on [`dnne-gen.csproj`](./src/dnne-gen/dnne-gen.csproj).
+1) Build the managed project to generate the native binary. The native binary will have a `NE` suffix and the system extension for dynamic/shared native libraries (i.e. `.dll`, `.so`, `.dylib`).
 
-    `> dotnet pack dnne-gen.csproj`
-
-6) Build the project from a Visual Studio Developer command prompt for the desired bitness. The generated native binary will be in the output directory with the managed binary. The native binary will a `NE` suffix and the system extension for dynamic/shared native libraries (i.e. `.dll`, `.so`, `.dylib`).
-
-7) Deploy the native binary, managed assembly and associated `*.json` files for consumption from a native process.
+1) Deploy the native binary, managed assembly and associated `*.json` files for consumption from a native process.
 
 ### Generate manually
 
-4) Run the [dnne-gen](./src/dnne-gen) tool on the managed assembly.
+1) Run the [dnne-gen](./src/dnne-gen) tool on the managed assembly.
 
-5) Take the generated source from `dnne-gen` and the DNNE [platform](./src/platform) source to compile a native binary with the desired native exports. See the [Native API](#nativeapi) section for build details.
+1) Take the generated source from `dnne-gen` and the DNNE [platform](./src/platform) source to compile a native binary with the desired native exports. See the [Native API](#nativeapi) section for build details.
 
-6) Deploy the native binary, managed assembly and associated `*.json` files for consumption from a native process.
+1) Deploy the native binary, managed assembly and associated `*.json` files for consumption from a native process.
 
 # Additional References
 

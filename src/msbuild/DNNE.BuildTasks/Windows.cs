@@ -67,7 +67,7 @@ namespace DNNE.BuildTasks
             SetConfigurationBasedFlags(isDebug, ref compilerFlags, ref linkerFlags);
 
             // Set compiler flags
-            compilerFlags.Append($"/TC /GS /Zi ");
+            compilerFlags.Append($"/TC /MT /GS /Zi ");
             compilerFlags.Append($"/D DNNE_ASSEMBLY_NAME={export.AssemblyName} ");
             compilerFlags.Append($"/I \"{vcIncDir}\" /I \"{export.PlatformPath}\" /I \"{export.NetHostPath}\" ");
             compilerFlags.Append($"/I \"{sharedIncDir}\" /I \"{umIncDir}\" /I \"{ucrtIncDir}\" ");
@@ -77,8 +77,8 @@ namespace DNNE.BuildTasks
             linkerFlags.Append($"/DLL ");
             linkerFlags.Append($"/LIBPATH:\"{libDir}\" ");
             linkerFlags.Append($"/LIBPATH:\"{umLibDir}\" /LIBPATH:\"{ucrtLibDir}\" ");
-            linkerFlags.Append($"\"{Path.Combine(export.NetHostPath, "nethost.lib")}\" ");
-            //linkerFlags.Append($"\"{Path.Combine(export.NetHostPath, "libnethost.lib")}\" ");
+            linkerFlags.Append($"\"{Path.Combine(export.NetHostPath, "libnethost.lib")}\" Advapi32.lib ");
+            linkerFlags.Append($"/IGNORE:4099 "); // libnethost.lib doesn't ship PDBs so linker warnings occur.
             linkerFlags.Append($"/out:\"{Path.Combine(export.OutputPath, export.OutputName)}\" ");
 
             command = Path.Combine(binDir, "cl.exe");
@@ -104,12 +104,12 @@ namespace DNNE.BuildTasks
         {
             if (isDebug)
             {
-                compiler.Append($"/Od /MTd /LDd ");
+                compiler.Append($"/Od /LDd ");
                 linker.Append($"");
             }
             else
             {
-                compiler.Append($"/O2 /MT /LD ");
+                compiler.Append($"/O2 /LD ");
                 linker.Append($"");
             }
         }
