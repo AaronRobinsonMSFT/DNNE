@@ -24,13 +24,19 @@ DNNE.props
 -->
 <Project>
   <PropertyGroup>
-    <DnneMSBuildLogging>low</DnneMSBuildLogging>
     <DnneGenerateExports>true</DnneGenerateExports>
+
+    <!-- If the build is disabled, the generated is considered the output
+        and emitted in the output directory as if it were a binary. -->
     <DnneBuildExports>true</DnneBuildExports>
 
-    <!-- Define the suffix for the export binary. Use .so as the fallback. -->
-    <DnneNativeBinarySuffix Condition="$([MSBuild]::IsOsPlatform('Windows'))">NE.dll</DnneNativeBinarySuffix>
-    <DnneNativeBinarySuffix Condition="$([MSBuild]::IsOsPlatform('OSX'))">NE.dylib</DnneNativeBinarySuffix>
-    <DnneNativeBinarySuffix Condition="'$(DnneNativeBinarySuffix)' == '' OR $([MSBuild]::IsOsPlatform('Linux'))">NE.so</DnneNativeBinarySuffix>
+    <!-- This suffix is needed to ensure the uniqueness of the generated
+        binary and the existing managed assembly. Technically, this is only
+        needed on Windows since native binaries on non-Windows platform
+        don't use '.dll'. -->
+    <DnneNativeBinarySuffix>NE</DnneNativeBinarySuffix>
+
+    <!-- Logging level passed to output from the DNNE build process. -->
+    <DnneMSBuildLogging>low</DnneMSBuildLogging>
   </PropertyGroup>
 </Project>

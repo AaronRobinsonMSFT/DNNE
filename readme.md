@@ -6,8 +6,19 @@ This work is inspired by work in the [Xamarian][xamarin_embed_link] and [CoreRT]
 
 ## Requirements
 
+### Minimum
+
 * [.NET 5.0+](https://dotnet.microsoft.com/).
 * [C99](https://en.cppreference.com/w/c/language/history) compatible compiler.
+
+### DNNE NuPkg Requirements
+
+**Windows:**
+* [Visual Studio 2015](https://visualstudio.microsoft.com/) or greater.
+* Windows 10 SDK - Installed with Visual Studio.
+
+**Unix and OSX:**
+* Clang on path.
 
 ## Exporting details
 

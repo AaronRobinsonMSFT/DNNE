@@ -24,24 +24,27 @@ DNNE.targets
 -->
 <Project>
   <PropertyGroup>
+    <DnneNativeExportsBinaryName>$(TargetName)$(DnneNativeBinarySuffix)</DnneNativeExportsBinaryName>
     <DnneNativeExportsBinaryPath>$(TargetDir)</DnneNativeExportsBinaryPath>
-    <DnneGeneratedOutputPath>$(IntermediateOutputPath)dnne_gen/</DnneGeneratedOutputPath>
+    <DnneGeneratedOutputPath>$(MSBuildProjectDirectory)/$(IntermediateOutputPath)dnne</DnneGeneratedOutputPath>
+    <DnneGeneratedBinPath>$(DnneGeneratedOutputPath)/bin</DnneGeneratedBinPath>
 
     <!-- If build was disabled, change the generated output directory to
         where we would have put the compiled binary -->
     <DnneGeneratedOutputPath Condition="'$(DnneBuildExports)' != 'true'">$(DnneNativeExportsBinaryPath)</DnneGeneratedOutputPath>
 
     <DnneGenExe>dotnet "$(MSBuildThisFileDirectory)../tools/dnne-gen.dll"</DnneGenExe>
-    <DnnePlatformSourcePath>$(MSBuildThisFileDirectory)../tools/platform/</DnnePlatformSourcePath>
-    <DnnePlatformSourceFile>$(DnnePlatformSourcePath)platform.c</DnnePlatformSourceFile>
+    <DnnePlatformSourcePath>$(MSBuildThisFileDirectory)../tools/platform</DnnePlatformSourcePath>
 
-    <!-- Define the nethost directory -->
-    <DnneNetHostPath>$(NetCoreTargetingPackRoot)/Microsoft.NETCore.App.Host.$(NETCoreSdkRuntimeIdentifier)/$(BundledNETCoreAppPackageVersion)/runtimes/$(NETCoreSdkRuntimeIdentifier)/native/</DnneNetHostPath>
+    <!-- Compute the extension for the export binary. -->
+    <DnneNativeBinaryExt Condition="$([MSBuild]::IsOsPlatform('Windows'))">.dll</DnneNativeBinaryExt>
+    <DnneNativeBinaryExt Condition="$([MSBuild]::IsOsPlatform('OSX'))">.dylib</DnneNativeBinaryExt>
+    <DnneNativeBinaryExt Condition="'$(DnneNativeBinaryExt)' == '' OR $([MSBuild]::IsOsPlatform('Linux'))">.so</DnneNativeBinaryExt>
   </PropertyGroup>
 
   <ItemGroup>
-    <DnneGeneratedSourceFile Include="$(DnneGeneratedOutputPath)$(TargetName).g.c" />
-    <DnneNativeExportsBinaryFile Include="$(DnneNativeExportsBinaryPath)$(TargetName)$(DnneNativeBinarySuffix)" />
+    <DnneGeneratedSourceFile Include="$(DnneGeneratedOutputPath)/$(TargetName).g.c" />
+    <DnneNativeExportsBinaryFile Include="$(DnneNativeExportsBinaryPath)$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt)" />
   </ItemGroup>
 
   <Target
@@ -58,6 +61,11 @@ DNNE.targets
     <Exec Command="$(DnneGenExe) @(IntermediateAssembly) -o @(DnneGeneratedSourceFile)" />
   </Target>
 
+  <UsingTask
+    TaskName="DNNE.BuildTasks.CreateCompileCommand"
+    AssemblyFile = "./DNNE.BuildTasks.dll"
+    Condition="'$(DnneBuildExports)' == 'true'" />
+
   <Target
     Name="DnneBuildNativeExports"
     Condition="'$(DnneBuildExports)' == 'true'"
@@ -68,29 +76,36 @@ DNNE.targets
     <Message Text="Building native exports binary from @(DnneGeneratedSourceFile) into @(DnneNativeExportsBinaryFile)" Importance="$(DnneMSBuildLogging)" />
 
     <!-- Ensure the output directory exists -->
-    <MakeDir Directories="$(DnneNativeExportsBinaryPath)" />
+    <MakeDir Directories="$(DnneGeneratedBinPath)" />
 
     <PropertyGroup>
-        <DnneExportSource>&quot;@(DnneGeneratedSourceFile)&quot; &quot;$(DnnePlatformSourceFile)&quot;</DnneExportSource>
+      <DnneAssemblyName>$(TargetName)</DnneAssemblyName>
+      <DnneNetHostDir>$(NetCoreTargetingPackRoot)/Microsoft.NETCore.App.Host.$(NETCoreSdkRuntimeIdentifier)/$(BundledNETCoreAppPackageVersion)/runtimes/$(NETCoreSdkRuntimeIdentifier)/native</DnneNetHostDir>
+      <__DnneGeneratedSourceFile>@(DnneGeneratedSourceFile)</__DnneGeneratedSourceFile>
     </PropertyGroup>
 
-    <PropertyGroup Condition="$([MSBuild]::IsOsPlatform('Windows'))">
-        <DnneCompiler Condition="$(DnneCompiler) == ''">cl.exe</DnneCompiler>
-        <DnneCompilerArgs>/D DNNE_ASSEMBLY_NAME=$(TargetName) /I &quot;$(DnnePlatformSourcePath)&quot; /I &quot;$(DnneNetHostPath)&quot; /TC /O2 /Zi /MT /Fo&quot;$(DnneGeneratedOutputPath)&quot; /link /DLL &quot;$(DnneNetHostPath)nethost.lib&quot; /out:&quot;@(DnneNativeExportsBinaryFile)&quot;</DnneCompilerArgs>
-    </PropertyGroup>
+    <CreateCompileCommand
+        AssemblyName="$(DnneAssemblyName)"
+        NetHostPath="$([MSBuild]::NormalizePath($(DnneNetHostDir)))"
+        PlatformPath="$([MSBuild]::NormalizePath($(DnnePlatformSourcePath)))"
+        Source="$([MSBuild]::NormalizePath($(__DnneGeneratedSourceFile)))"
+        OutputName="$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt)"
+        OutputPath="$([MSBuild]::NormalizePath($(DnneGeneratedBinPath)))"
+        Architecture="$(Platform)"
+        Configuration="$(Configuration)">
+      <Output TaskParameter="Command" PropertyName="CompilerCmd" />
+      <Output TaskParameter="CommandArguments" PropertyName="CompilerArgs" />
+    </CreateCompileCommand>
 
-    <PropertyGroup Condition="$([MSBuild]::IsOsPlatform('OSX'))">
-        <DnneCompiler Condition="$(DnneCompiler) == ''">gcc</DnneCompiler>
-        <DnneCompilerArgs></DnneCompilerArgs>
-    </PropertyGroup>
+    <Message Text="Building native export: &quot;$(CompilerCmd)&quot; $(CompilerArgs)" Importance="high" />
+    <Exec Command="&quot;$(CompilerCmd)&quot; $(CompilerArgs)"
+        WorkingDirectory="$(DnnePlatformSourcePath)"
+        Outputs="@(DnneNativeExportsBinaryFile)"
+        ConsoleToMSBuild="true" />
 
-    <PropertyGroup Condition="$([MSBuild]::IsOsPlatform('Linux'))">
-        <DnneCompiler Condition="$(DnneCompiler) == ''">gcc</DnneCompiler>
-        <DnneCompilerArgs></DnneCompilerArgs>
-    </PropertyGroup>
-
-    <Exec Command="$(DnneCompiler) $(DnneExportSource) $(DnneCompilerArgs)"
-          ConsoleToMsBuild="true"
-          IgnoreExitCode="true" />
+    <!-- Copy the results to the project output directory -->
+    <Copy
+        SourceFiles="$(DnneGeneratedBinPath)/$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt)"
+        DestinationFiles="@(DnneNativeExportsBinaryFile)" />
   </Target>
 </Project>
