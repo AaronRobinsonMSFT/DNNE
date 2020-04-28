@@ -29,8 +29,8 @@ namespace DNNE.BuildTasks
 {
     public class Windows
     {
-        private static Lazy<string> g_VsInstallPath = new Lazy<string>(GetLatestVSWithVCInstallPath, true);
-        private static Lazy<WinSDK> g_WinSdk = new Lazy<WinSDK>(GetLatestWinSDK, true);
+        private static readonly Lazy<string> g_VsInstallPath = new Lazy<string>(GetLatestVSWithVCInstallPath, true);
+        private static readonly Lazy<WinSDK> g_WinSdk = new Lazy<WinSDK>(GetLatestWinSDK, true);
 
         public static void ConstructCommandLine(CreateCompileCommand export, out string command, out string commandArguments)
         {
@@ -124,8 +124,7 @@ namespace DNNE.BuildTasks
             {
                 var verDir = Path.GetFileName(dirMaybe);
 
-                Version latestMaybe;
-                if (!Version.TryParse(verDir, out latestMaybe)
+                if (!Version.TryParse(verDir, out Version latestMaybe)
                     || latestMaybe < latestToolVersion)
                 {
                     continue;
@@ -148,9 +147,8 @@ namespace DNNE.BuildTasks
             // Find latest install with VC tools
             while (true)
             {
-                int ret;
                 var el = new ISetupInstance[1];
-                enumInst.Next(1, el, out ret);
+                enumInst.Next(1, el, out int ret);
                 if (ret != 1)
                 {
                     break;
@@ -199,8 +197,7 @@ namespace DNNE.BuildTasks
                 // Find the latest version
                 foreach (var verMaybe in kits.GetSubKeyNames())
                 {
-                    Version latestMaybe;
-                    if (!Version.TryParse(verMaybe, out latestMaybe)
+                    if (!Version.TryParse(verMaybe, out Version latestMaybe)
                         || latestMaybe < latestSdkVersion)
                     {
                         continue;

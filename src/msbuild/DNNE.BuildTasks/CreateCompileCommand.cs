@@ -76,8 +76,8 @@ Native Build:
     Configuration:  {Configuration}
     ");
 
-            string command = string.Empty;
-            string commandArguments = string.Empty;
+            string command;
+            string commandArguments;
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 Windows.ConstructCommandLine(this, out command, out commandArguments);
