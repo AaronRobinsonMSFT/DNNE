@@ -21,8 +21,7 @@ This work is inspired by work in the [Xamarian][xamarin_embed_link] and [CoreRT]
 * [clang](https://clang.llvm.org/) compiler on the path.
 
 **Linux:**
-
-* [Not implemented](https://github.com/AaronRobinsonMSFT/DNNE/issues/5).
+* [clang](https://clang.llvm.org/) compiler on the path.
 
 ## Exporting details
 

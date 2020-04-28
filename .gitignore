@@ -3,5 +3,4 @@
 **/bin/
 **/obj/
 **/*.user
-**/*.sln
 **/launchSettings.json
