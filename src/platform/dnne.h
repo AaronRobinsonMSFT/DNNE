@@ -22,22 +22,22 @@
 
 // Check if we are on Windows
 #ifdef _WIN32
-    #define NE_WINDOWS
+    #define DNNE_WINDOWS
 #endif
 
 // Define some platform macros
-#ifdef NE_WINDOWS
-    #define NE_API __declspec(dllexport)
-    #define NE_CALLTYPE __stdcall
-    #define _NE_STR(s1) L ## s1
-    #define NE_STR(s) _NE_STR(s)
+#ifdef DNNE_WINDOWS
+    #define DNNE_API __declspec(dllexport)
+    #define DNNE_CALLTYPE __stdcall
+    #define _DNNE_STR(s1) L ## s1
+    #define DNNE_STR(s) _DNNE_STR(s)
 #else
-    #define NE_API __attribute__((__visibility__("default")))
-    #define NE_CALLTYPE 
-    #define NE_STR(s) s
+    #define DNNE_API __attribute__((__visibility__("default")))
+    #define DNNE_CALLTYPE 
+    #define DNNE_STR(s) s
 #endif
 
-#ifndef NE_CONSUME_EXPORT_API
+#ifndef DNNE_CONSUME_EXPORT_API
     // Must define the assembly name
     #ifndef DNNE_ASSEMBLY_NAME
     #error Target assembly name must be defined. Set 'DNNE_ASSEMBLY_NAME'.
@@ -56,10 +56,10 @@ enum failure_type
     failure_load_runtime = 1,
     failure_load_export,
 };
-typedef void (NE_CALLTYPE* failure_fn)(enum failure_type type, int error_code);
+typedef void (DNNE_CALLTYPE* failure_fn)(enum failure_type type, int error_code);
 
 // Provide a callback for any catastrophic failures.
 // The provided callback will be the last call prior to a rude-abort of the process.
-NE_API void NE_CALLTYPE set_failure_callback(failure_fn cb);
+DNNE_API void DNNE_CALLTYPE set_failure_callback(failure_fn cb);
 
 #endif // __DNNE_H__

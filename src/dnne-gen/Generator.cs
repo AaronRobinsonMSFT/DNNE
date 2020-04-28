@@ -252,7 +252,7 @@ extern void* get_callable_managed_function(
                 }
 
                 string id = $"t{count++}_name";
-                outputStream.WriteLine($"static const char_t* {id} = NE_STR(\"{method.EnclosingTypeName}, {assemblyName}\");");
+                outputStream.WriteLine($"static const char_t* {id} = DNNE_STR(\"{method.EnclosingTypeName}, {assemblyName}\");");
                 map.Add(method.EnclosingTypeName, id);
             }
 
@@ -297,13 +297,13 @@ extern void* get_callable_managed_function(
 
                 outputStream.WriteLine(
 @$"// Computed from {export.EnclosingTypeName}{Type.Delimiter}{export.MethodName}
-static {export.ReturnType} (NE_CALLTYPE* {export.ExportName}_ptr)({declsig});
-NE_API {export.ReturnType} NE_CALLTYPE {export.ExportName}({declsig})
+static {export.ReturnType} (DNNE_CALLTYPE* {export.ExportName}_ptr)({declsig});
+DNNE_API {export.ReturnType} DNNE_CALLTYPE {export.ExportName}({declsig})
 {{
     if ({export.ExportName}_ptr == NULL)
     {{
-        const char_t* methodName = NE_STR(""{export.MethodName}"");
-        const char_t* delegateType = NE_STR(""{export.EnclosingTypeName}+{export.MethodName}Delegate, {assemblyName}"");
+        const char_t* methodName = DNNE_STR(""{export.MethodName}"");
+        const char_t* delegateType = DNNE_STR(""{export.EnclosingTypeName}+{export.MethodName}Delegate, {assemblyName}"");
         {export.ExportName}_ptr = get_callable_managed_function({classNameConstant}, methodName, delegateType);
     }}
     {returnStatementKeyword}{export.ExportName}_ptr({callsig});

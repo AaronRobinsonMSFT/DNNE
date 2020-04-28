@@ -28,7 +28,7 @@
 // Modified copy of official hostfxr.h
 #ifndef __HOSTFXR_H__
 
-#ifdef NE_WINDOWS
+#ifdef DNNE_WINDOWS
 #define HOSTFXR_CALLTYPE __cdecl
 #else
 #define HOSTFXR_CALLTYPE
@@ -99,7 +99,7 @@ typedef int32_t(HOSTFXR_CALLTYPE* hostfxr_close_fn)(const hostfxr_handle host_co
 // Modified copy of official coreclr_delegates.h
 #ifndef __CORECLR_DELEGATES_H__
 
-#if defined(NE_WINDOWS)
+#if defined(DNNE_WINDOWS)
 #define CORECLR_DELEGATE_CALLTYPE __stdcall
 #else
 #define CORECLR_DELEGATE_CALLTYPE
@@ -124,24 +124,24 @@ typedef int (CORECLR_DELEGATE_CALLTYPE* component_entry_point_fn)(void* arg, int
 //
 
 #ifndef NDEBUG
-#define NE_DEBUG
+#define DNNE_DEBUG
 #endif
 
-#define NE_SUCCESS 0
-#define NE_MAX_PATH 512
-#define NE_ARRAY_SIZE(_array) (sizeof(_array) / sizeof(*_array))
+#define DNNE_SUCCESS 0
+#define DNNE_MAX_PATH 512
+#define DNNE_ARRAY_SIZE(_array) (sizeof(_array) / sizeof(*_array))
 
-#define STRINGIFY2(s) #s
-#define STRINGIFY(s) STRINGIFY2(s)
+#define DNNE_TOSTRING2(s) #s
+#define DNNE_TOSTRING(s) DNNE_TOSTRING2(s)
 
-#ifdef NE_WINDOWS
+#ifdef DNNE_WINDOWS
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <Windows.h>
 
-#define NE_NORETURN __declspec(noreturn)
-#define NE_DIR_SEPARATOR L'\\'
+#define DNNE_NORETURN __declspec(noreturn)
+#define DNNE_DIR_SEPARATOR L'\\'
 
 static void* load_library(const char_t* path)
 {
@@ -182,7 +182,7 @@ static int get_this_image_path(int32_t len, char_t* buffer, int32_t* written)
     }
 
     *written = len_local;
-    return NE_SUCCESS;
+    return DNNE_SUCCESS;
 }
 
 #else
@@ -192,8 +192,8 @@ static int get_this_image_path(int32_t len, char_t* buffer, int32_t* written)
 #include <string.h>
 #include <sys/errno.h>
 
-#define NE_NORETURN __attribute__((__noreturn__))
-#define NE_DIR_SEPARATOR '/'
+#define DNNE_NORETURN __attribute__((__noreturn__))
+#define DNNE_DIR_SEPARATOR '/'
 
 static void* load_library(const char_t* path)
 {
@@ -229,19 +229,19 @@ static int get_this_image_path(int32_t len, char_t* buffer, int32_t* written)
     memcpy(buffer, info.dli_fname, len_local + 1);
 
     *written = (int32_t)len;
-    return NE_SUCCESS;
+    return DNNE_SUCCESS;
 }
 
-#endif // !NE_WINDOWS
+#endif // !DNNE_WINDOWS
 
 static failure_fn failure_fptr;
 
-NE_API void NE_CALLTYPE set_failure_callback(failure_fn cb)
+DNNE_API void DNNE_CALLTYPE set_failure_callback(failure_fn cb)
 {
     failure_fptr = cb;
 }
 
-NE_NORETURN static void noreturn_runtime_load_failure(int error_code)
+DNNE_NORETURN static void noreturn_runtime_load_failure(int error_code)
 {
     if (failure_fptr)
         failure_fptr(failure_load_runtime, error_code);
@@ -249,7 +249,7 @@ NE_NORETURN static void noreturn_runtime_load_failure(int error_code)
     // Nothing to do if the runtime failed to load.
     abort();
 }
-NE_NORETURN static void noreturn_export_load_failure(int error_code)
+DNNE_NORETURN static void noreturn_export_load_failure(int error_code)
 {
     if (failure_fptr)
         failure_fptr(failure_load_export, error_code);
@@ -260,7 +260,7 @@ NE_NORETURN static void noreturn_export_load_failure(int error_code)
 
 static bool is_failure(int ec)
 {
-    return (ec != NE_SUCCESS);
+    return (ec != DNNE_SUCCESS);
 }
 
 static const char_t* get_current_dir_filepath(int32_t len, char_t* buffer, int32_t filename_len, const char_t* filename)
@@ -275,7 +275,7 @@ static const char_t* get_current_dir_filepath(int32_t len, char_t* buffer, int32
     // Remove this image filename.
     while (filename_dest != buffer)
     {
-        if (*filename_dest == NE_DIR_SEPARATOR)
+        if (*filename_dest == DNNE_DIR_SEPARATOR)
         {
             ++filename_dest;
             break;
@@ -301,8 +301,8 @@ static hostfxr_close_fn close_fptr;
 static void load_hostfxr()
 {
     // Discover the path to hostfxr.
-    char_t buffer[NE_MAX_PATH];
-    size_t buffer_size = NE_ARRAY_SIZE(buffer);
+    char_t buffer[DNNE_MAX_PATH];
+    size_t buffer_size = DNNE_ARRAY_SIZE(buffer);
     int rc = get_hostfxr_path(buffer, &buffer_size, NULL);
     if (is_failure(rc))
         noreturn_runtime_load_failure(rc);
@@ -351,9 +351,9 @@ static void prepare_runtime()
     load_hostfxr();
 
     // Initialize and start the runtime.
-    char_t buffer[NE_MAX_PATH];
-    const char_t config_filename[] = NE_STR(STRINGIFY(DNNE_ASSEMBLY_NAME)) NE_STR(".runtimeconfig.json");
-    const char_t* config_path = get_current_dir_filepath(NE_ARRAY_SIZE(buffer), buffer, NE_ARRAY_SIZE(config_filename), config_filename);
+    char_t buffer[DNNE_MAX_PATH];
+    const char_t config_filename[] = DNNE_STR(DNNE_TOSTRING(DNNE_ASSEMBLY_NAME)) DNNE_STR(".runtimeconfig.json");
+    const char_t* config_path = get_current_dir_filepath(DNNE_ARRAY_SIZE(buffer), buffer, DNNE_ARRAY_SIZE(config_filename), config_filename);
     init_dotnet(config_path);
 }
 
@@ -371,9 +371,9 @@ void* get_callable_managed_function(
         assert(get_managed_export_fptr != NULL);
     }
 
-    char_t buffer[NE_MAX_PATH];
-    const char_t assembly_filename[] = NE_STR(STRINGIFY(DNNE_ASSEMBLY_NAME)) NE_STR(".dll");
-    const char_t* assembly_path = get_current_dir_filepath(NE_ARRAY_SIZE(buffer), buffer, NE_ARRAY_SIZE(assembly_filename), assembly_filename);
+    char_t buffer[DNNE_MAX_PATH];
+    const char_t assembly_filename[] = DNNE_STR(DNNE_TOSTRING(DNNE_ASSEMBLY_NAME)) DNNE_STR(".dll");
+    const char_t* assembly_path = get_current_dir_filepath(DNNE_ARRAY_SIZE(buffer), buffer, DNNE_ARRAY_SIZE(assembly_filename), assembly_filename);
 
     // Function pointer to managed function
     void* func = NULL;

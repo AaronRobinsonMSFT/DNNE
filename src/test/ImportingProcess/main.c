@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define NE_CONSUME_EXPORT_API
+#define DNNE_CONSUME_EXPORT_API
 #include <dnne.h>
 
 #ifdef _WIN32
@@ -51,9 +51,9 @@ static void* get_export(void* h, const char* name)
 #define RETURN_FAIL_IF_FALSE(exp, msg) { if (!(exp)) { printf(msg); return EXIT_FAILURE; } }
 
 typedef int(CALLCONV* IntIntInt_t)(int,int);
-typedef void (NE_CALLTYPE* set_failure_callback_t)(failure_fn cb);
+typedef void (DNNE_CALLTYPE* set_failure_callback_t)(failure_fn cb);
 
-static void NE_CALLTYPE on_failure(enum failure_type type, int error_code)
+static void DNNE_CALLTYPE on_failure(enum failure_type type, int error_code)
 {
     printf("FAILURE: Type: %d, Error code: %08x\n", type, error_code);
 }
