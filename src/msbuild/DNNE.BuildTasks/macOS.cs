@@ -30,7 +30,11 @@ namespace DNNE.BuildTasks
         public static void ConstructCommandLine(CreateCompileCommand export, out string command, out string commandArguments)
         {
             export.Report(MessageImportance.Low, $"Building for macOS");
+            ConstructClangCommandLine(export, out command, out commandArguments);
+        }
 
+        public static void ConstructClangCommandLine(CreateCompileCommand export, out string command, out string commandArguments)
+        {
             bool isDebug = IsDebug(export.Configuration);
             bool is64Bit = Is64BitTarget(export.Architecture);
 
@@ -51,7 +55,7 @@ namespace DNNE.BuildTasks
             commandArguments = compilerFlags.ToString();
         }
 
-        public static bool Is64BitTarget(string arch)
+        private static bool Is64BitTarget(string arch)
         {
             return arch switch
             {
@@ -60,12 +64,12 @@ namespace DNNE.BuildTasks
             };
         }
 
-        public static bool IsDebug(string config)
+        private static bool IsDebug(string config)
         {
             return "Debug".Equals(config);
         }
 
-        public static void SetConfigurationBasedFlags(bool isDebug, ref StringBuilder compiler)
+        private static void SetConfigurationBasedFlags(bool isDebug, ref StringBuilder compiler)
         {
             if (isDebug)
             {

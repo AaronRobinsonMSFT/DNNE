@@ -85,7 +85,7 @@ namespace DNNE.BuildTasks
             commandArguments = $"{compilerFlags} /link {linkerFlags}";
         }
 
-        public static bool Is64BitTarget(string arch)
+        private static bool Is64BitTarget(string arch)
         {
             return arch switch
             {
@@ -95,12 +95,12 @@ namespace DNNE.BuildTasks
             };
         }
 
-        public static bool IsDebug(string config)
+        private static bool IsDebug(string config)
         {
             return "Debug".Equals(config);
         }
 
-        public static void SetConfigurationBasedFlags(bool isDebug, ref StringBuilder compiler, ref StringBuilder linker)
+        private static void SetConfigurationBasedFlags(bool isDebug, ref StringBuilder compiler, ref StringBuilder linker)
         {
             if (isDebug)
             {

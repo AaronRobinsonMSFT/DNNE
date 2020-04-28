@@ -84,7 +84,7 @@ Native Build:
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
-                throw new NotImplementedException("Linux native build");
+                Linux.ConstructCommandLine(this, out command, out commandArguments);
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
