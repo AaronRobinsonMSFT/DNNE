@@ -189,6 +189,8 @@ static int get_this_image_path(int32_t len, char_t* buffer, int32_t* written)
 
 #include <dlfcn.h>
 #include <limits.h>
+#include <string.h>
+#include <sys/errno.h>
 
 #define NE_NORETURN __attribute__((__noreturn__))
 #define NE_DIR_SEPARATOR '/'

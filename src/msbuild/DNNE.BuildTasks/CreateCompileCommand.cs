@@ -88,7 +88,7 @@ Native Build:
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                throw new NotImplementedException("OSX native build");
+                macOS.ConstructCommandLine(this, out command, out commandArguments);
             }
             else
             {
