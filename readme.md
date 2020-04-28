@@ -11,11 +11,18 @@ This work is inspired by work in the [Xamarian][xamarin_embed_link] and [CoreRT]
 * [.NET 5.0.100-preview.5.20221.6](https://github.com/dotnet/installer) or greater.
 * [C99](https://en.cppreference.com/w/c/language/history) compatible compiler.
 
-### DNNE NuPkg Requirements (Windows only)
+### DNNE NuPkg Requirements
 
 **Windows:**
 * [Visual Studio 2015](https://visualstudio.microsoft.com/) or greater.
 * Windows 10 SDK - Installed with Visual Studio.
+
+**macOS:**
+* [clang](https://clang.llvm.org/) compiler on the path.
+
+**Linux:**
+
+* [Not implemented](https://github.com/AaronRobinsonMSFT/DNNE/issues/5).
 
 ## Exporting details
 
@@ -48,7 +55,7 @@ The native API is defined in [`src/platform/dnne.h`](./src/platform/dnne.h).
 
 The `DNNE_ASSEMBLY_NAME` must be set during compilation to indicate the name of the managed assembly to load. The assembly name should not include the extension. For example, if the managed assembly on disk is called `ClassLib.dll`, the expected assembly name is `ClassLib`.
 
-The export source will need to be linked against the [`nethost`](https://docs.microsoft.com/dotnet/core/tutorials/netcore-hosting#create-a-host-using-nethosth-and-hostfxrh) library as either a static lib (`libnethost.[lib|a]`) or dynamic/shared library (`nethost.lib`). If the latter linking is performed, the `nethost.[dll|so]` will need to be deployed with the export binary or be on the path at run time.
+The export source will need to be linked against the [`nethost`](https://docs.microsoft.com/dotnet/core/tutorials/netcore-hosting#create-a-host-using-nethosth-and-hostfxrh) library as either a static lib (`libnethost.[lib|a]`) or dynamic/shared library (`nethost.lib`). If the latter linking is performed, the `nethost.[dll|so|dylib]` will need to be deployed with the export binary or be on the path at run time.
 
 The `set_failure_callback()` function can be used prior to calling an export to set a callback in the event runtime load or export discovery fails.
 
@@ -77,8 +84,6 @@ Failure to load the runtime or find an export results in the native library call
 1) Set the `<EnableDynamicLoading>true</EnableDynamicLoading>` property in the managed project containing the methods to export. This will produce a `*.runtimeconfig.json` that is needed to activate the runtime during export dispatch.
 
 ## Generating a native binary using the DNNE NuPkg
-
-**Note** Currently limited to Windows only
 
 1) The DNNE NuPkg can be built locally by running `pack` on [`dnne-gen.csproj`](./src/dnne-gen/dnne-gen.csproj).
 
