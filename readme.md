@@ -1,6 +1,6 @@
-# .NET Native Exports
+# Native Exports for .NET
 
-Prototype supporting native exports for a .NET managed assembly.
+Prototype for a .NET managed assembly to expose a native export.
 
 This work is inspired by work in the [Xamarian][xamarin_embed_link] and [CoreRT][corert_feature_link] projects.
 
