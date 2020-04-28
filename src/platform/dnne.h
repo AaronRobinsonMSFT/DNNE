@@ -20,11 +20,6 @@
 #ifndef __DNNE_H__
 #define __DNNE_H__
 
-// Must define the assembly name
-#ifndef DNNE_ASSEMBLY_NAME
-    #error Target assembly name must be defined. Set 'DNNE_ASSEMBLY_NAME'.
-#endif
-
 // Check if we are on Windows
 #ifdef _WIN32
     #define NE_WINDOWS
@@ -42,9 +37,16 @@
     #define NE_STR(s) s
 #endif
 
-// Include the official nethost API
-#define NETHOST_USE_AS_STATIC
-#include <nethost.h>
+#ifndef NE_CONSUME_EXPORT_API
+    // Must define the assembly name
+    #ifndef DNNE_ASSEMBLY_NAME
+    #error Target assembly name must be defined. Set 'DNNE_ASSEMBLY_NAME'.
+    #endif
+
+    // Include the official nethost API
+    #define NETHOST_USE_AS_STATIC
+    #include <nethost.h>
+#endif
 
 //
 // Public exports
