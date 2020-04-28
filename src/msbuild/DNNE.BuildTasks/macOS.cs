@@ -42,10 +42,9 @@ namespace DNNE.BuildTasks
             compilerFlags.Append($"-shared -fpic ");
             compilerFlags.Append($"-D DNNE_ASSEMBLY_NAME={export.AssemblyName} ");
             compilerFlags.Append($"-I \"{export.PlatformPath}\" -I \"{export.NetHostPath}\" ");
-            compilerFlags.Append($"-L \"{export.NetHostPath}\" ");
-            compilerFlags.Append($"-lnethost ");
+            compilerFlags.Append($"-lstdc++ ");
             compilerFlags.Append($"-o \"{Path.Combine(export.OutputPath, export.OutputName)}\" ");
-            compilerFlags.Append($"-o \"{Path.Combine(export.OutputPath, export.OutputName)}\" ");
+            compilerFlags.Append($"\"{Path.Combine(export.NetHostPath, "libnethost.a")}\" ");
             compilerFlags.Append($"\"{export.Source}\" \"{Path.Combine(export.PlatformPath, "platform.c")}\" ");
 
             command = "clang";
@@ -70,11 +69,11 @@ namespace DNNE.BuildTasks
         {
             if (isDebug)
             {
-                compiler.Append($"-g ");
+                compiler.Append($"-g -O0 ");
             }
             else
             {
-                compiler.Append($"");
+                compiler.Append($"-O2 ");
             }
         }
     }

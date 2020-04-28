@@ -46,6 +46,17 @@ static void* get_export(void* h, const char* name)
 
 #define CALLCONV 
 
+static void* load_library(const char* path)
+{
+    void* h = dlopen(path, RTLD_LAZY | RTLD_LOCAL);
+    return h;
+}
+static void* get_export(void* h, const char* name)
+{
+    void* f = dlsym(h, name);
+    return f;
+}
+
 #endif
 
 #define RETURN_FAIL_IF_FALSE(exp, msg) { if (!(exp)) { printf(msg); return EXIT_FAILURE; } }
