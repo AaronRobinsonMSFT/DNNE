@@ -26,6 +26,8 @@ using System.IO;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 
 namespace DNNE
@@ -89,29 +91,47 @@ namespace DNNE
                     continue;
                 }
 
-                bool foundTargetAttr = false;
+                var callConv = CallingConvention.Winapi;
+                var attrType = ExportType.None;
                 string managedMethodName = this.mdReader.GetString(methodDef.Name);
                 string exportName = managedMethodName;
                 // Check for target attribute
                 foreach (var customAttrHandle in methodDef.GetCustomAttributes())
                 {
                     CustomAttribute customAttr = this.mdReader.GetCustomAttribute(customAttrHandle);
-                    foundTargetAttr = this.IsTargetAttribute(customAttr);
-                    if (!foundTargetAttr)
+                    attrType = this.GetExportAttributeType(customAttr);
+                    if (attrType == ExportType.None)
                     {
                         continue;
                     }
 
-                    CustomAttributeValue<KnownType> data = customAttr.DecodeValue(this.typeResolver);
-                    if (data.NamedArguments.Length == 1)
+                    if (attrType == ExportType.Export)
                     {
-                        exportName = (string)data.NamedArguments[0].Value;
+                        CustomAttributeValue<KnownType> data = customAttr.DecodeValue(this.typeResolver);
+                        if (data.NamedArguments.Length == 1)
+                        {
+                            exportName = (string)data.NamedArguments[0].Value;
+                        }
                     }
+                    else
+                    {
+                        Debug.Assert(attrType == ExportType.UnmanagedCallersOnly);
+                        CustomAttributeValue<KnownType> data = customAttr.DecodeValue(this.typeResolver);
+                        if (data.NamedArguments.Length >= 1)
+                        {
+                            callConv = (CallingConvention)data.NamedArguments[0].Value;
+                            if (data.NamedArguments.Length == 2)
+                            {
+                                exportName = (string)data.NamedArguments[1].Value;
+                            }
+                        }
+                    }
+
                     break;
                 }
 
                 // Didn't find target attribute. Move onto next method.
-                if (!foundTargetAttr)
+                if (attrType == ExportType.None)
                 {
                     continue;
                 }
@@ -129,9 +149,11 @@ namespace DNNE
                 var namespaceString = this.mdReader.GetString(typeDef.Namespace);
                 var method = new ExportedMethod()
                 {
+                    Type = attrType,
                     EnclosingTypeName = namespaceString + Type.Delimiter + classString,
                     MethodName = managedMethodName,
                     ExportName = exportName,
+                    CallingConvention = callConv,
                 };
 
                 // Process method signature.
@@ -182,9 +204,27 @@ namespace DNNE
             this.isDisposed = true;
         }
 
-        private bool IsTargetAttribute(CustomAttribute attribute)
+        private enum ExportType
         {
-            return IsAttributeType(this.mdReader, attribute, "DNNE", "ExportAttribute");
+            None,
+            Export,
+            UnmanagedCallersOnly,
+        }
+
+        private ExportType GetExportAttributeType(CustomAttribute attribute)
+        {
+            if (IsAttributeType(this.mdReader, attribute, "DNNE", "ExportAttribute"))
+            {
+                return ExportType.Export;
+            }
+            else if (IsAttributeType(this.mdReader, attribute, "System.Runtime.InteropServices", "NativeCallableAttribute"))
+            {
+                return ExportType.UnmanagedCallersOnly;
+            }
+            else
+            {
+                return ExportType.None;
+            }
         }
 
         private static bool IsAttributeType(MetadataReader reader, CustomAttribute attribute, string targetNamespace, string targetName)
@@ -233,7 +273,11 @@ namespace DNNE
 extern void* get_callable_managed_function(
     const char_t* dotnet_type,
     const char_t* dotnet_type_method,
-    const char_t* dotnet_delegate_type);");
+    const char_t* dotnet_delegate_type);
+
+extern void* get_fast_callable_managed_function(
+    const char_t* dotnet_type,
+    const char_t* dotnet_type_method);");
 
             // Emit string table
             outputStream.WriteLine(
@@ -292,31 +336,64 @@ extern void* get_callable_managed_function(
                     returnStatementKeyword = string.Empty;
                 }
 
+                string callConv = GetCallConv(export.CallingConvention);
+
                 string classNameConstant = map[export.EnclosingTypeName];
                 Debug.Assert(!string.IsNullOrEmpty(classNameConstant));
 
+                // Generate the acquire managed function based on the export type.
+                string acquireManagedFunction;
+                if (export.Type == ExportType.Export)
+                {
+                    acquireManagedFunction =
+$@"const char_t* methodName = DNNE_STR(""{export.MethodName}"");
+        const char_t* delegateType = DNNE_STR(""{export.EnclosingTypeName}+{export.MethodName}Delegate, {assemblyName}"");
+        {export.ExportName}_ptr = get_callable_managed_function({classNameConstant}, methodName, delegateType);";
+
+                }
+                else
+                {
+                    Debug.Assert(export.Type == ExportType.UnmanagedCallersOnly);
+                    acquireManagedFunction =
+$@"const char_t* methodName = DNNE_STR(""{export.MethodName}"");
+        {export.ExportName}_ptr = get_fast_callable_managed_function({classNameConstant}, methodName);";
+                }
+
                 outputStream.WriteLine(
 @$"// Computed from {export.EnclosingTypeName}{Type.Delimiter}{export.MethodName}
-static {export.ReturnType} (DNNE_CALLTYPE* {export.ExportName}_ptr)({declsig});
-DNNE_API {export.ReturnType} DNNE_CALLTYPE {export.ExportName}({declsig})
+static {export.ReturnType} ({callConv}* {export.ExportName}_ptr)({declsig});
+DNNE_API {export.ReturnType} {callConv} {export.ExportName}({declsig})
 {{
     if ({export.ExportName}_ptr == NULL)
     {{
-        const char_t* methodName = DNNE_STR(""{export.MethodName}"");
-        const char_t* delegateType = DNNE_STR(""{export.EnclosingTypeName}+{export.MethodName}Delegate, {assemblyName}"");
-        {export.ExportName}_ptr = get_callable_managed_function({classNameConstant}, methodName, delegateType);
+        {acquireManagedFunction}
     }}
     {returnStatementKeyword}{export.ExportName}_ptr({callsig});
 }}
 ");
             }
+
+            static string GetCallConv(CallingConvention callConv)
+            {
+                return callConv switch
+                {
+                    CallingConvention.Winapi => "DNNE_CALLTYPE",
+                    CallingConvention.Cdecl => "DNNE_CALLTYPE_CDECL",
+                    CallingConvention.StdCall => "DNNE_CALLTYPE_STDCALL",
+                    CallingConvention.ThisCall => "DNNE_CALLTYPE_THISCALL",
+                    CallingConvention.FastCall => "DNNE_CALLTYPE_FASTCALL",
+                    _ => throw new NotSupportedException($"Unknown CallingConvention: {callConv}"),
+                };
+            }
         }
 
         private class ExportedMethod
         {
+            public ExportType Type { get; set; }
             public string EnclosingTypeName { get; set; }
             public string MethodName { get; set; }
             public string ExportName { get; set; }
+            public CallingConvention CallingConvention { get; set; }
             public string ReturnType { get; set; }
             public List<string> ArgumentTypes { get; } = new List<string>();
             public List<string> ArgumentNames { get; } = new List<string>();
@@ -324,9 +401,11 @@ DNNE_API {export.ReturnType} DNNE_CALLTYPE {export.ExportName}({declsig})
 
         private enum KnownType
         {
+            Unknown,
+            I4,
+            CallingConvention,
             String,
-            SystemType,
-            Unknown
+            SystemType
         }
 
         private class TypeResolver : ICustomAttributeTypeProvider<KnownType>
@@ -335,6 +414,7 @@ DNNE_API {export.ReturnType} DNNE_CALLTYPE {export.ExportName}({declsig})
             {
                 return typeCode switch
                 {
+                    PrimitiveTypeCode.Int32 => KnownType.I4,
                     PrimitiveTypeCode.String => KnownType.String,
                     _ => KnownType.Unknown
                 };
@@ -362,11 +442,21 @@ DNNE_API {export.ReturnType} DNNE_CALLTYPE {export.ExportName}({declsig})
 
             public KnownType GetTypeFromSerializedName(string name)
             {
+                if (Type.GetType(name).Name.Equals(nameof(CallingConvention)))
+                {
+                    return KnownType.CallingConvention;
+                }
+
                 return KnownType.Unknown;
             }
 
             public PrimitiveTypeCode GetUnderlyingEnumType(KnownType type)
             {
+                if (type == KnownType.CallingConvention)
+                {
+                    return PrimitiveTypeCode.Int32;
+                }
+
                 throw new BadImageFormatException("Unexpectedly got an enum parameter for an attribute.");
             }
 

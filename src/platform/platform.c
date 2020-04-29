@@ -390,3 +390,10 @@ void* get_callable_managed_function(
 
     return func;
 }
+
+void* get_fast_callable_managed_function(
+    const char_t* dotnet_type,
+    const char_t* dotnet_type_method)
+{
+    return get_callable_managed_function(dotnet_type, dotnet_type_method, NULL);
+}

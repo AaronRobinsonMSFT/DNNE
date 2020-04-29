@@ -44,7 +44,7 @@ This work is inspired by work in the [Xamarian][xamarin_embed_link] and [CoreRT]
     }
     ```
 
-- The [`NativeCallableAttribute`](https://github.com/dotnet/runtime/issues/32462) is currently not supported. This is a limitation until [C# functions pointers][csharp_funcptr_link] are implemented. Once this attribute is supported, the above `Delegate` requirement can be lifted for functions marked with `NativeCallableAttribute`.
+- The [`UnmanagedCallersOnlyAttribute`](https://github.com/dotnet/runtime/pull/35592) is currently not supported. This is a limitation until [C# functions pointers][csharp_funcptr_link] are implemented. Once this attribute is supported, the above `Delegate` requirement can be lifted for functions marked with `UnmanagedCallersOnlyAttribute`.
 
 <a name="nativeapi"></a>
 
@@ -74,6 +74,8 @@ Failure to load the runtime or find an export results in the native library call
         }
     }
     ```
+
+    The calling convention of the export will be the default for the .NET runtime on that platform. See the description of [`CallingConvention.Winapi`](https://docs.microsoft.com/dotnet/api/system.runtime.interopservices.callingconvention).
 
 1) Adorn the desired managed function with the `DNNE.ExportAttribute`.
     - Optionally set the `DNNE.ExportAttribute.EntryPoint` property to indicate the name of the native export.

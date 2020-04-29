@@ -29,11 +29,19 @@
 #ifdef DNNE_WINDOWS
     #define DNNE_API __declspec(dllexport)
     #define DNNE_CALLTYPE __stdcall
+    #define DNNE_CALLTYPE_CDECL __cdecl
+    #define DNNE_CALLTYPE_STDCALL __stdcall
+    #define DNNE_CALLTYPE_THISCALL __thiscall
+    #define DNNE_CALLTYPE_FASTCALL __fastcall
     #define _DNNE_STR(s1) L ## s1
     #define DNNE_STR(s) _DNNE_STR(s)
 #else
     #define DNNE_API __attribute__((__visibility__("default")))
     #define DNNE_CALLTYPE 
+    #define DNNE_CALLTYPE_CDECL 
+    #define DNNE_CALLTYPE_STDCALL __attribute__((stdcall))
+    #define DNNE_CALLTYPE_THISCALL __attribute__((thiscall))
+    #define DNNE_CALLTYPE_FASTCALL __attribute__((fastcall))
     #define DNNE_STR(s) s
 #endif
 
