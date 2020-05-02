@@ -27,7 +27,6 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 
 namespace DNNE
@@ -117,12 +116,21 @@ namespace DNNE
                     {
                         Debug.Assert(attrType == ExportType.UnmanagedCallersOnly);
                         CustomAttributeValue<KnownType> data = customAttr.DecodeValue(this.typeResolver);
-                        if (data.NamedArguments.Length >= 1)
+                        foreach (var arg in data.NamedArguments)
                         {
-                            callConv = (CallingConvention)data.NamedArguments[0].Value;
-                            if (data.NamedArguments.Length == 2)
+                            switch (arg.Type)
                             {
-                                exportName = (string)data.NamedArguments[1].Value;
+                                case KnownType.I4:
+                                case KnownType.CallingConvention:
+                                    callConv = (CallingConvention)arg.Value;
+                                    break;
+
+                                case KnownType.String:
+                                    exportName = (string)arg.Value;
+                                    break;
+
+                                default:
+                                    throw new GeneratorException(this.assemblyPath, $"Method '{this.mdReader.GetString(methodDef.Name)}' has unknown Attribute value type.");
                             }
                         }
                     }
@@ -217,7 +225,7 @@ namespace DNNE
             {
                 return ExportType.Export;
             }
-            else if (IsAttributeType(this.mdReader, attribute, "System.Runtime.InteropServices", "NativeCallableAttribute"))
+            else if (IsAttributeType(this.mdReader, attribute, "System.Runtime.InteropServices", "UnmanagedCallersOnlyAttribute"))
             {
                 return ExportType.UnmanagedCallersOnly;
             }
