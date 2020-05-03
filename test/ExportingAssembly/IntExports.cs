@@ -17,6 +17,8 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+using System.Runtime.InteropServices;
+
 namespace ExportingAssembly
 {
     public class IntExports
@@ -29,12 +31,24 @@ namespace ExportingAssembly
             return a * 3;
         }
 
+        [UnmanagedCallersOnly]
+        public static int UnmanagedIntInt(int a, int b)
+        {
+            return IntInt(a);
+        }
+
         public delegate int IntIntIntDelegate(int a, int b);
 
         [DNNE.Export]
         public static int IntIntInt(int a, int b)
         {
             return a * b;
+        }
+
+        [UnmanagedCallersOnly]
+        public static int UnmanagedIntIntInt(int a, int b)
+        {
+            return IntIntInt(a, b);
         }
 
         public delegate int VoidIntDelegate();
@@ -45,11 +59,23 @@ namespace ExportingAssembly
             return 27;
         }
 
+        [UnmanagedCallersOnly]
+        public static int UnmanagedVoidInt()
+        {
+            return VoidInt();
+        }
+
         public delegate void IntVoidDelegate();
 
         [DNNE.Export]
         public static void IntVoid(int a)
         {
+        }
+
+        [UnmanagedCallersOnly]
+        public static void UnmanagedIntVoid(int a)
+        {
+            IntVoid(a);
         }
     }
 }

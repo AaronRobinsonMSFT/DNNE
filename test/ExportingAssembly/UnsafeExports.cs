@@ -17,6 +17,8 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+using System.Runtime.InteropServices;
+
 namespace ExportingAssembly
 {
     public unsafe class UnsafeExports
@@ -29,12 +31,24 @@ namespace ExportingAssembly
             return null;
         }
 
+        [UnmanagedCallersOnly]
+        public static void* UnmanagedVoidVoidPointer()
+        {
+            return VoidVoidPointer();
+        }
+
         public delegate int* VoidIntPointerDelegate();
 
         [DNNE.Export]
         public static int* VoidIntPointer()
         {
             return null;
+        }
+
+        [UnmanagedCallersOnly]
+        public static int* UnmanagedVoidIntPointer()
+        {
+            return VoidIntPointer();
         }
 
         public delegate System.IntPtr* VoidIntPtrPointerDelegate();
@@ -45,12 +59,24 @@ namespace ExportingAssembly
             return null;
         }
 
+        [UnmanagedCallersOnly]
+        public static System.IntPtr* UnmanagedVoidIntPtrPointer()
+        {
+            return VoidIntPtrPointer();
+        }
+
         public delegate System.UIntPtr* VoidUIntPtrPointerDelegate();
 
         [DNNE.Export]
         public static System.UIntPtr* VoidUIntPtrPointer()
         {
             return null;
+        }
+
+        [UnmanagedCallersOnly]
+        public static System.UIntPtr* UnmanagedVoidUIntPtrPointer()
+        {
+            return VoidUIntPtrPointer();
         }
 
         public delegate System.IntPtr VoidIntPtrDelegate();
@@ -61,12 +87,24 @@ namespace ExportingAssembly
             return System.IntPtr.Zero;
         }
 
+        [UnmanagedCallersOnly]
+        public static System.IntPtr UnmanagedVoidIntPtr()
+        {
+            return VoidIntPtr();
+        }
+
         public delegate System.UIntPtr VoidUIntPtrDelegate();
 
         [DNNE.Export]
         public static System.UIntPtr VoidUIntPtr()
         {
             return System.UIntPtr.Zero;
+        }
+
+        [UnmanagedCallersOnly]
+        public static System.UIntPtr UnmanagedVoidUIntPtr()
+        {
+            return VoidUIntPtr();
         }
     }
 }

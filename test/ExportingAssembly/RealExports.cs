@@ -17,6 +17,8 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+using System.Runtime.InteropServices;
+
 namespace ExportingAssembly
 {
     public class RealExports
@@ -29,12 +31,24 @@ namespace ExportingAssembly
             return a * 3;
         }
 
+        [UnmanagedCallersOnly]
+        public static float UnmanagedSingleSingle(float a)
+        {
+            return SingleSingle(a);
+        }
+
         public delegate float SingleSingleSingleDelegate(float a, float b);
 
         [DNNE.Export]
         public static float SingleSingleSingle(float a, float b)
         {
             return a * b;
+        }
+
+        [UnmanagedCallersOnly]
+        public static float UnmanagedSingleSingleSingle(float a, float b)
+        {
+            return SingleSingleSingle(a, b);
         }
 
         public delegate float VoidSingleDelegate();
@@ -45,11 +59,23 @@ namespace ExportingAssembly
             return 27;
         }
 
+        [UnmanagedCallersOnly]
+        public static float UnmanagedVoidSingle()
+        {
+            return VoidSingle();
+        }
+
         public delegate void SingleVoidDelegate(float a);
 
         [DNNE.Export]
         public static void SingleVoid(float a)
         {
+        }
+
+        [UnmanagedCallersOnly]
+        public static void UnmanagedSingleVoid(float a)
+        {
+            SingleVoid(a);
         }
 
         public delegate double DoubleDoubleDelegate(double a);
@@ -60,12 +86,24 @@ namespace ExportingAssembly
             return a * 3;
         }
 
+        [UnmanagedCallersOnly]
+        public static double UnmanagedDoubleDouble(double a)
+        {
+            return DoubleDouble(a);
+        }
+
         public delegate double DoubleDoubleDoubleDelegate(double a, double b);
 
         [DNNE.Export]
         public static double DoubleDoubleDouble(double a, double b)
         {
             return a * b;
+        }
+
+        [UnmanagedCallersOnly]
+        public static double UnmanagedDoubleDoubleDouble(double a, double b)
+        {
+            return DoubleDoubleDouble(a, b);
         }
 
         public delegate double VoidDoubleDelegate();
@@ -76,11 +114,23 @@ namespace ExportingAssembly
             return 27;
         }
 
+        [UnmanagedCallersOnly]
+        public static double UnmanagedVoidDouble()
+        {
+            return VoidDouble();
+        }
+
         public delegate void DoubleVoidDelegate(double a);
 
         [DNNE.Export]
         public static void DoubleVoid(double a)
         {
+        }
+
+        [UnmanagedCallersOnly]
+        public static void UnmanagedDoubleVoid(double a)
+        {
+            DoubleVoid(a);
         }
     }
 }
