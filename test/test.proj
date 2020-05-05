@@ -1,0 +1,20 @@
+<Project DefaultTargets="Build">
+
+  <PropertyGroup>
+    <NativeBuildDir>$(MSBuildThisFileDirectory)build</NativeBuildDir>
+    <ExportingAssemblyDir>$(MSBuildThisFileDirectory)ExportingAssembly</ExportingAssemblyDir>
+    <ImportingProcessDir>$(MSBuildThisFileDirectory)ImportingProcess</ImportingProcessDir>
+  </PropertyGroup>
+
+  <Target Name="Build">
+    <Message Text="Building ExportingAssembly" Importance="high" />
+    <Exec Command="dotnet build $([MSBuild]::NormalizePath($(ExportingAssemblyDir)))" />
+
+    <Message Text="Generating ImportingProcess" Importance="high" />
+    <Exec Command="cmake -S &quot;$([MSBuild]::NormalizePath($(ImportingProcessDir)))&quot; -B &quot;$([MSBuild]::NormalizePath($(NativeBuildDir)))&quot;" />
+
+    <Message Text="Building ImportingProcess" Importance="high" />
+    <Exec Command="cmake --build &quot;$([MSBuild]::NormalizePath($(NativeBuildDir)))&quot;" />
+  </Target>
+
+</Project>
