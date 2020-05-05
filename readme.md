@@ -16,12 +16,15 @@ This work is inspired by work in the [Xamarian][xamarin_embed_link] and [CoreRT]
 **Windows:**
 * [Visual Studio 2015](https://visualstudio.microsoft.com/) or greater.
 * Windows 10 SDK - Installed with Visual Studio.
+* 32 and 64 bit compilation supported.
 
 **macOS:**
 * [clang](https://clang.llvm.org/) compiler on the path.
+* 64 bit compilation supported.
 
 **Linux:**
 * [clang](https://clang.llvm.org/) compiler on the path.
+* 64 bit compilation supported.
 
 ## Exporting details
 

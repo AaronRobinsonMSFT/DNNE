@@ -368,7 +368,7 @@ $@"const char_t* methodName = DNNE_STR(""{export.MethodName}"");
                 }
 
                 outputStream.WriteLine(
-@$"// Computed from {export.EnclosingTypeName}{Type.Delimiter}{export.MethodName}
+$@"// Computed from {export.EnclosingTypeName}{Type.Delimiter}{export.MethodName}
 static {export.ReturnType} ({callConv}* {export.ExportName}_ptr)({declsig});
 DNNE_API {export.ReturnType} {callConv} {export.ExportName}({declsig})
 {{
