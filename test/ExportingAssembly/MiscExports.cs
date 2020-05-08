@@ -17,6 +17,8 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+using System.Runtime.InteropServices;
+
 namespace ExportingAssembly
 {
     public class MiscExports
@@ -25,6 +27,11 @@ namespace ExportingAssembly
 
         [DNNE.Export(EntryPoint = "SetViaEntryPointProperty")]
         public static void DontExportName()
+        {
+        }
+
+        [UnmanagedCallersOnly(EntryPoint = "UnmanagedSetViaEntryPointProperty")]
+        public static void UnmanagedDontExportName()
         {
         }
     }

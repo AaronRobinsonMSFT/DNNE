@@ -17,8 +17,8 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#ifndef __DNNE_H__
-#define __DNNE_H__
+#ifndef __SRC_PLATFORM_DNNE_H__
+#define __SRC_PLATFORM_DNNE_H__
 
 // Check if we are on Windows
 #ifdef _WIN32
@@ -29,21 +29,30 @@
 #ifdef DNNE_WINDOWS
     #define DNNE_API __declspec(dllexport)
     #define DNNE_CALLTYPE __stdcall
+    #define DNNE_CALLTYPE_CDECL __cdecl
+    #define DNNE_CALLTYPE_STDCALL __stdcall
+    #define DNNE_CALLTYPE_THISCALL __thiscall
+    #define DNNE_CALLTYPE_FASTCALL __fastcall
     #define _DNNE_STR(s1) L ## s1
     #define DNNE_STR(s) _DNNE_STR(s)
 #else
     #define DNNE_API __attribute__((__visibility__("default")))
     #define DNNE_CALLTYPE 
+    #define DNNE_CALLTYPE_CDECL 
+    #define DNNE_CALLTYPE_STDCALL __attribute__((stdcall))
+    #define DNNE_CALLTYPE_THISCALL __attribute__((thiscall))
+    #define DNNE_CALLTYPE_FASTCALL __attribute__((fastcall))
     #define DNNE_STR(s) s
 #endif
 
 #ifndef DNNE_CONSUME_EXPORT_API
     // Must define the assembly name
     #ifndef DNNE_ASSEMBLY_NAME
-    #error Target assembly name must be defined. Set 'DNNE_ASSEMBLY_NAME'.
+        #error Target assembly name must be defined. Set 'DNNE_ASSEMBLY_NAME'.
     #endif
 
-    // Include the official nethost API
+    // Include the official nethost API and indicate
+    // consumption should be as a static library.
     #define NETHOST_USE_AS_STATIC
     #include <nethost.h>
 #endif
@@ -62,4 +71,4 @@ typedef void (DNNE_CALLTYPE* failure_fn)(enum failure_type type, int error_code)
 // The provided callback will be the last call prior to a rude-abort of the process.
 DNNE_API void DNNE_CALLTYPE set_failure_callback(failure_fn cb);
 
-#endif // __DNNE_H__
+#endif // __SRC_PLATFORM_DNNE_H__

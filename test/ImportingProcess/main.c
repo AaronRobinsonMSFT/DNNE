@@ -78,13 +78,22 @@ int main(int ac, char** av)
     RETURN_FAIL_IF_FALSE(set_cb, "Failed to get set_failure_callback export\n");
     set_cb(on_failure);
 
-    IntIntInt_t fptr = (IntIntInt_t)get_export(mod, "IntIntInt");
-    RETURN_FAIL_IF_FALSE(fptr, "Failed to get IntIntInt export\n");
-
+    IntIntInt_t fptr = NULL;
     int a = 3;
     int b = 5;
-    int c = fptr(a, b);
+    int c = -1;
+
+    fptr = (IntIntInt_t)get_export(mod, "IntIntInt");
+    RETURN_FAIL_IF_FALSE(fptr, "Failed to get IntIntInt export\n");
+
+    c = fptr(a, b);
     printf("IntIntInt(%d, %d) = %d\n", a, b, c);
+
+    fptr = (IntIntInt_t)get_export(mod, "UnmanagedIntIntInt");
+    RETURN_FAIL_IF_FALSE(fptr, "Failed to get UnmanagedIntIntInt export\n");
+
+    c = fptr(a, b);
+    printf("UnmanagedIntIntInt(%d, %d) = %d\n", a, b, c);
 
     return EXIT_SUCCESS;
 }
