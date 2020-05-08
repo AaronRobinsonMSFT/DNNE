@@ -16,6 +16,11 @@
     <Authors>AaronRobinsonMSFT</Authors>
     <Owners>AaronRobinsonMSFT</Owners>
     <Description>Package used to generated native exports for .NET assemblies.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/AaronRobinsonMSFT/DNNE</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/AaronRobinsonMSFT/DNNE</RepositoryUrl>
+    <RepositoryType>Git</RepositoryType>
+    <PackageTags>pinvoke interop unmanagedcallersonly exports</PackageTags>
     <IsTool>True</IsTool>
   </PropertyGroup>
 
