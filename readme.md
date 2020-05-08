@@ -89,11 +89,15 @@ Failure to load the runtime or find an export results in the native library call
 
 ## Generating a native binary using the DNNE NuPkg
 
-1) The DNNE NuPkg can be built locally by running `pack` on [`dnne-gen.csproj`](./src/dnne-gen/dnne-gen.csproj).
+1) The DNNE NuPkg is published on [NuGet.org](https://www.nuget.org/packages/DNNE), but can also be built locally.
 
-    `> dotnet pack dnne-gen.csproj`
+    * Building the DNNE NuPkg locally is done by running `pack` on [`dnne-gen.csproj`](./src/dnne-gen/dnne-gen.csproj).
 
-1) Add the NuPkg to the target managed project. Remember to update the projects `nuget.config` to point at the location of the recently built DNNE NuPkg.
+        `> dotnet pack dnne-gen.csproj`
+
+1) Add the NuPkg to the target managed project.
+
+    * If NuPkg was built locally, remember to update the projects `nuget.config` to point at the local location of the recently built DNNE NuPkg.
 
     ```xml
     <ItemGroup>
