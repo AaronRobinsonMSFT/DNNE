@@ -22,6 +22,7 @@ using Microsoft.VisualStudio.Setup.Configuration;
 using Microsoft.Win32;
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
@@ -36,23 +37,15 @@ namespace DNNE.BuildTasks
         {
             export.Report(MessageImportance.Low, $"Building for Windows");
 
-            WinSDK winSdkDir = g_WinSdk.Value;
+            WinSDK winSdk = g_WinSdk.Value;
             string vsInstall = g_VsInstallPath.Value;
             string vcToolDir = GetVCToolsRootDir(vsInstall);
-            export.Report(CreateCompileCommand.DevImportance, $"VS Install: {vsInstall}\nVC Tools: {vcToolDir}");
+            export.Report(CreateCompileCommand.DevImportance, $"VS Install: {vsInstall}\nVC Tools: {vcToolDir}\nWinSDK Version: {winSdk.Version}");
 
             bool isDebug = IsDebug(export.Configuration);
             bool is64Bit = Is64BitTarget(export.Architecture);
 
             var archDir = is64Bit ? "x64" : "x86";
-
-            // WinSDK inc and lib paths
-            var winIncDir = Path.Combine(winSdkDir.Root, "Include", winSdkDir.Version);
-            var sharedIncDir = Path.Combine(winIncDir, "shared");
-            var umIncDir = Path.Combine(winIncDir, "um");
-            var ucrtIncDir = Path.Combine(winIncDir, "ucrt");
-            var umLibDir = Path.Combine(winSdkDir.Root, "Lib", winSdkDir.Version, "um", archDir);
-            var ucrtLibDir = Path.Combine(winSdkDir.Root, "Lib", winSdkDir.Version, "ucrt", archDir);
 
             // VC inc and lib paths
             var vcIncDir = Path.Combine(vcToolDir, "include");
@@ -70,13 +63,25 @@ namespace DNNE.BuildTasks
             compilerFlags.Append($"/TC /MT /GS /Zi ");
             compilerFlags.Append($"/D DNNE_ASSEMBLY_NAME={export.AssemblyName} ");
             compilerFlags.Append($"/I \"{vcIncDir}\" /I \"{export.PlatformPath}\" /I \"{export.NetHostPath}\" ");
-            compilerFlags.Append($"/I \"{sharedIncDir}\" /I \"{umIncDir}\" /I \"{ucrtIncDir}\" ");
+
+            // Add WinSDK inc paths
+            foreach (var incPath in winSdk.IncPaths)
+            {
+                compilerFlags.Append($"/I \"{incPath}\" ");
+            }
+
             compilerFlags.Append($"\"{export.Source}\" \"{Path.Combine(export.PlatformPath, "platform.c")}\" ");
 
             // Set linker flags
             linkerFlags.Append($"/DLL ");
             linkerFlags.Append($"/LIBPATH:\"{libDir}\" ");
-            linkerFlags.Append($"/LIBPATH:\"{umLibDir}\" /LIBPATH:\"{ucrtLibDir}\" ");
+
+            // Add WinSDK lib paths
+            foreach (var libPath in winSdk.LibPaths)
+            {
+                linkerFlags.Append($"/LIBPATH:\"{Path.Combine(libPath, archDir)}\" ");
+            }
+
             linkerFlags.Append($"\"{Path.Combine(export.NetHostPath, "libnethost.lib")}\" Advapi32.lib ");
             linkerFlags.Append($"/IGNORE:4099 "); // libnethost.lib doesn't ship PDBs so linker warnings occur.
             linkerFlags.Append($"/out:\"{Path.Combine(export.OutputPath, export.OutputName)}\" ");
@@ -181,39 +186,67 @@ namespace DNNE.BuildTasks
 
         private class WinSDK
         {
-            public string Root;
             public string Version;
+            public IEnumerable<string> IncPaths;
+            public IEnumerable<string> LibPaths;
+        }
+
+        private class VersionDescendingOrder : IComparer<Version>
+        {
+            public int Compare(Version x, Version y)
+            {
+                return y.CompareTo(x);
+            }
         }
 
         private static WinSDK GetLatestWinSDK()
         {
-            string win10sdkRoot;
-            string latestSdkVersionStr = null;
-            var latestSdkVersion = new Version();
             using (var kits = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows Kits\Installed Roots"))
             {
-                win10sdkRoot = (string)kits.GetValue("KitsRoot10");
+                string win10sdkRoot = (string)kits.GetValue("KitsRoot10");
 
-                // Find the latest version
+                // Sort the entries in descending order as
+                // to defer to the latest version.
+                var versions = new SortedList<Version, string>(new VersionDescendingOrder());
+
+                // Collect the possible SDK versions.
                 foreach (var verMaybe in kits.GetSubKeyNames())
                 {
-                    if (!Version.TryParse(verMaybe, out Version latestMaybe)
-                        || latestMaybe < latestSdkVersion)
+                    if (!Version.TryParse(verMaybe, out Version versionMaybe))
                     {
                         continue;
                     }
 
-                    latestSdkVersion = latestMaybe;
-                    latestSdkVersionStr = verMaybe;
+                    versions.Add(versionMaybe, verMaybe);
+                }
+
+                // Find the latest version of the SDK.
+                foreach (var tgtVerMaybe in versions)
+                {
+                    // WinSDK inc and lib paths
+                    var incDir = Path.Combine(win10sdkRoot, "Include", tgtVerMaybe.Value);
+                    var libDir = Path.Combine(win10sdkRoot, "Lib", tgtVerMaybe.Value);
+                    if (!Directory.Exists(incDir) || !Directory.Exists(libDir))
+                    {
+                        continue;
+                    }
+
+                    var sharedIncDir = Path.Combine(incDir, "shared");
+                    var umIncDir = Path.Combine(incDir, "um");
+                    var ucrtIncDir = Path.Combine(incDir, "ucrt");
+                    var umLibDir = Path.Combine(libDir, "um");
+                    var ucrtLibDir = Path.Combine(libDir, "ucrt");
+
+                    return new WinSDK()
+                    {
+                        Version = tgtVerMaybe.Value,
+                        IncPaths = new[] { sharedIncDir, umIncDir, ucrtIncDir },
+                        LibPaths = new[] { umLibDir, ucrtLibDir },
+                    };
                 }
             }
 
-            if (string.IsNullOrEmpty(latestSdkVersionStr) || string.IsNullOrEmpty(win10sdkRoot))
-            {
-                throw new Exception("Unknown Win10 SDK version found.");
-            }
-
-            return new WinSDK() { Root = win10sdkRoot, Version = latestSdkVersionStr };
+            throw new Exception("No Win10 SDK version found.");
         }
     }
 }
