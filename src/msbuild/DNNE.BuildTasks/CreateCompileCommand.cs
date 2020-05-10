@@ -27,7 +27,11 @@ namespace DNNE.BuildTasks
 {
     public class CreateCompileCommand : Task
     {
+#if DEBUG
+        public static MessageImportance DevImportance = MessageImportance.High;
+#else
         public static MessageImportance DevImportance = MessageImportance.Low;
+#endif
 
         [Required]
         public string AssemblyName { get; set; }
