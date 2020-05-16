@@ -101,7 +101,7 @@ Failure to load the runtime or find an export results in the native library call
 
     ```xml
     <ItemGroup>
-      <PackageReference Include="DNNE" Version="1.0.1" />
+      <PackageReference Include="DNNE" Version="1.0.2" />
     </ItemGroup>
     ```
 
