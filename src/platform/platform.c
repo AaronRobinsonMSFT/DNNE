@@ -232,7 +232,7 @@ static int get_this_image_path(int32_t buffer_len, char_t* buffer, int32_t* writ
     // Copy over the null as well.
     memcpy(buffer, info.dli_fname, len_local + 1);
 
-    *written = (int32_t)buffer_len;
+    *written = (int32_t)len_local;
     return DNNE_SUCCESS;
 }
 
