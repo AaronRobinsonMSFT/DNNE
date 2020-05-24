@@ -162,9 +162,9 @@ static void* get_export(void* h, const char* name)
     return f;
 }
 
-static int get_this_image_path(int32_t len, char_t* buffer, int32_t* written)
+static int get_this_image_path(int32_t buffer_len, char_t* buffer, int32_t* written)
 {
-    assert(0 < len && buffer != NULL && written != NULL);
+    assert(0 < buffer_len && buffer != NULL && written != NULL);
 
     HMODULE hmod;
     if (FALSE == GetModuleHandleExW(
@@ -175,12 +175,12 @@ static int get_this_image_path(int32_t len, char_t* buffer, int32_t* written)
         return (int)GetLastError();
     }
 
-    DWORD len_local = GetModuleFileNameW(hmod, buffer, (DWORD)len);
+    DWORD len_local = GetModuleFileNameW(hmod, buffer, (DWORD)buffer_len);
     if (len_local == 0)
     {
         return (int)GetLastError();
     }
-    else if (len_local == len)
+    else if (len_local == buffer_len)
     {
         return ERROR_INSUFFICIENT_BUFFER;
     }
@@ -214,9 +214,9 @@ static void* get_export(void* h, const char* name)
     return f;
 }
 
-static int get_this_image_path(int32_t len, char_t* buffer, int32_t* written)
+static int get_this_image_path(int32_t buffer_len, char_t* buffer, int32_t* written)
 {
-    assert(0 < len && buffer != NULL && written != NULL);
+    assert(0 < buffer_len && buffer != NULL && written != NULL);
 
     Dl_info info;
     if (dladdr((void *)&get_this_image_path, &info) == 0)
@@ -226,13 +226,13 @@ static int get_this_image_path(int32_t len, char_t* buffer, int32_t* written)
         return -2;
 
     size_t len_local = strlen(info.dli_fname);
-    if (len <= len_local)
+    if (buffer_len <= len_local)
         return ENOBUFS;
 
     // Copy over the null as well.
     memcpy(buffer, info.dli_fname, len_local + 1);
 
-    *written = (int32_t)len;
+    *written = (int32_t)len_local;
     return DNNE_SUCCESS;
 }
 
@@ -262,17 +262,19 @@ DNNE_NORETURN static void noreturn_export_load_failure(int error_code)
     abort();
 }
 
-static bool is_failure(int ec)
+static bool is_failure(int rc)
 {
-    return (ec != DNNE_SUCCESS);
+    return (rc != DNNE_SUCCESS);
 }
 
-static const char_t* get_current_dir_filepath(int32_t len, char_t* buffer, int32_t filename_len, const char_t* filename)
+static int get_current_dir_filepath(int32_t buffer_len, char_t* buffer, int32_t filename_len, const char_t* filename, const char_t** result)
 {
+    assert(buffer != NULL && filename != NULL && result != NULL);
+
     int32_t written = 0;
-    int ec = get_this_image_path(len, buffer, &written);
-    if (is_failure(ec))
-        noreturn_runtime_load_failure(ec);
+    int rc = get_this_image_path(buffer_len, buffer, &written);
+    if (is_failure(rc))
+        return rc;
 
     char_t* filename_dest = buffer + written;
 
@@ -288,13 +290,15 @@ static const char_t* get_current_dir_filepath(int32_t len, char_t* buffer, int32
         --filename_dest;
     }
 
-    int32_t remaining = (int32_t)(filename_dest - buffer);
+    int32_t remaining = buffer_len - (int32_t)(filename_dest - buffer);
     if (remaining < filename_len)
-        noreturn_runtime_load_failure(-1);
+        return (-1);
 
     // Append the new filename.
     (void)memcpy(filename_dest, filename, filename_len * sizeof(char_t));
-    return buffer;
+
+    *result = buffer;
+    return DNNE_SUCCESS;
 }
 
 // Globals to hold hostfxr exports
@@ -302,7 +306,7 @@ static hostfxr_initialize_for_runtime_config_fn init_fptr;
 static hostfxr_get_runtime_delegate_fn get_delegate_fptr;
 static hostfxr_close_fn close_fptr;
 
-static void load_hostfxr()
+static void load_hostfxr(void)
 {
     // Discover the path to hostfxr.
     char_t buffer[DNNE_MAX_PATH];
@@ -349,7 +353,7 @@ static void init_dotnet(const char_t* config_path)
     get_managed_export_fptr = (load_assembly_and_get_function_pointer_fn)load_assembly_and_get_function_pointer;
 }
 
-static void prepare_runtime()
+static void prepare_runtime(void)
 {
     // Load HostFxr and get exported hosting functions.
     load_hostfxr();
@@ -357,7 +361,11 @@ static void prepare_runtime()
     // Initialize and start the runtime.
     char_t buffer[DNNE_MAX_PATH];
     const char_t config_filename[] = DNNE_STR(DNNE_TOSTRING(DNNE_ASSEMBLY_NAME)) DNNE_STR(".runtimeconfig.json");
-    const char_t* config_path = get_current_dir_filepath(DNNE_ARRAY_SIZE(buffer), buffer, DNNE_ARRAY_SIZE(config_filename), config_filename);
+    const char_t* config_path = NULL;
+    int rc = get_current_dir_filepath(DNNE_ARRAY_SIZE(buffer), buffer, DNNE_ARRAY_SIZE(config_filename), config_filename, &config_path);
+    if (is_failure(rc))
+        noreturn_runtime_load_failure(rc);
+
     init_dotnet(config_path);
 }
 
@@ -377,11 +385,14 @@ void* get_callable_managed_function(
 
     char_t buffer[DNNE_MAX_PATH];
     const char_t assembly_filename[] = DNNE_STR(DNNE_TOSTRING(DNNE_ASSEMBLY_NAME)) DNNE_STR(".dll");
-    const char_t* assembly_path = get_current_dir_filepath(DNNE_ARRAY_SIZE(buffer), buffer, DNNE_ARRAY_SIZE(assembly_filename), assembly_filename);
+    const char_t* assembly_path = NULL;
+    int rc = get_current_dir_filepath(DNNE_ARRAY_SIZE(buffer), buffer, DNNE_ARRAY_SIZE(assembly_filename), assembly_filename, &assembly_path);
+    if (is_failure(rc))
+        noreturn_export_load_failure(rc);
 
     // Function pointer to managed function
     void* func = NULL;
-    int rc = get_managed_export_fptr(
+    rc = get_managed_export_fptr(
         assembly_path,
         dotnet_type,
         dotnet_type_method,
