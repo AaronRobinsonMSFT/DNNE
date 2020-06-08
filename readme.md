@@ -2,7 +2,7 @@
 
 Prototype for a .NET managed assembly to expose a native export.
 
-This work is inspired by work in the [Xamarian][xamarin_embed_link] and [CoreRT][corert_feature_link] projects.
+This work is inspired by work in the [Xamarian][xamarin_embed_link], [CoreRT][corert_feature_link], and [DllExport][dllexport_link] projects.
 
 ## Requirements
 
@@ -126,5 +126,6 @@ Failure to load the runtime or find an export results in the native library call
 <!-- Links -->
 [xamarin_embed_link]: https://docs.microsoft.com/xamarin/tools/dotnet-embedding/release-notes/preview/0.4
 [corert_feature_link]: https://github.com/dotnet/corert/tree/master/samples/NativeLibrary
+[dllexport_link]: https://github.com/3F/DllExport
 [csharp_funcptr_link]: https://github.com/dotnet/csharplang/blob/master/proposals/function-pointers.md
 [unmanagedcallersonly_link]: https://github.com/dotnet/runtime/pull/35592
