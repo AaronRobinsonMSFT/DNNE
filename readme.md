@@ -2,7 +2,7 @@
 
 Prototype for a .NET managed assembly to expose a native export.
 
-This work is inspired by work in the [Xamarian][xamarin_embed_link], [CoreRT][corert_feature_link], and [DllExport][dllexport_link] projects.
+This work is inspired by work in the [Xamarin][xamarin_embed_link], [CoreRT][corert_feature_link], and [DllExport][dllexport_link] projects.
 
 ## Requirements
 
