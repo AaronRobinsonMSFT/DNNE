@@ -17,13 +17,18 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+#include "dnne.h"
+
+// Needed for dladdr() in non-macOS scenarios
+#if !defined(DNNE_WINDOWS) && !defined(__APPLE__)
+    #define _GNU_SOURCE
+#endif
+
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <assert.h>
-
-#include "dnne.h"
 
 // Modified copy of official hostfxr.h
 #ifndef __HOSTFXR_H__
