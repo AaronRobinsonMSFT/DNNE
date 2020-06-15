@@ -4,6 +4,9 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
     <RootNamespace>DNNE</RootNamespace>
+
+    <!-- Specify the minimum version -->
+    <RuntimeFrameworkVersion>5.0.0-preview.5.20278.1</RuntimeFrameworkVersion>
   </PropertyGroup>
 
   <!--
@@ -12,7 +15,7 @@
 
   <PropertyGroup>
     <PackageId>DNNE</PackageId>
-    <Version>1.0.3</Version>
+    <Version>1.0.4</Version>
     <Authors>AaronRobinsonMSFT</Authors>
     <Owners>AaronRobinsonMSFT</Owners>
     <Description>Package used to generated native exports for .NET assemblies.</Description>
