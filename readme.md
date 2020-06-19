@@ -32,22 +32,18 @@ This work is inspired by work in the [Xamarin][xamarin_embed_link], [CoreRT][cor
 
 - The type exporting the function cannot be a nested type.
 
-- Using `DNNE.ExportAttribute` to export a method requires a `Delegate` of the appropriate type and name to be at the same scope as the export. The naming convention is `<METHODNAME>Delegate` For example:
+- Mark functions to export with [`UnmanagedCallersOnlyAttribute`][unmanagedcallersonly_link].
 
     ```CSharp
     public class Exports
     {
-        public delegate int MyExportDelegate(int a);
-
-        [DNNE.Export(EntryPoint = "FancyName")]
+        [UnmanagedCallersOnlyAttribute(EntryPoint = "FancyName")]
         public static int MyExport(int a)
         {
             return a;
         }
     }
     ```
-
-- Using [`UnmanagedCallersOnlyAttribute`][unmanagedcallersonly_link] to export a method has no `Delegate` requirement unlike when using `DNNE.ExportAttribute`.
 
 <a name="nativeapi"></a>
 
@@ -65,22 +61,7 @@ Failure to load the runtime or find an export results in the native library call
 
 ## Exporting a managed function
 
-1) Add the following attribute definition to the managed project or alternatively use the existing [`UnmanagedCallersOnlyAttribute`][unmanagedcallersonly_link]:
-
-    ``` CSharp
-    namespace DNNE
-    {
-        internal class ExportAttribute : Attribute
-        {
-            public ExportAttribute() { }
-            public string EntryPoint { get; set; }
-        }
-    }
-    ```
-
-    The calling convention of the export will be the default for the .NET runtime on that platform. See the description of [`CallingConvention.Winapi`](https://docs.microsoft.com/dotnet/api/system.runtime.interopservices.callingconvention). The calling convention can be set when using `UnmanagedCallersOnlyAttribute`.
-
-1) Adorn the desired managed function with `DNNE.ExportAttribute` or `UnmanagedCallersOnlyAttribute`.
+1) Adorn the desired managed function with `UnmanagedCallersOnlyAttribute`.
     - Optionally set the `EntryPoint` property to indicate the name of the native export. This property is available on both of the attributes.
     - If the `EntryPoint` property is `null`, the name of the mananged function is used. This default name will not include the namespace or class containing the function.
     - User supplied values in `EntryPoint` will not be modified or validated in any manner. This string will be consume by a C compiler and should therefore adhere to the [C language's restrictions on function names](https://en.cppreference.com/w/c/language/functions).
@@ -116,6 +97,38 @@ Failure to load the runtime or find an export results in the native library call
 1) Take the generated source from `dnne-gen` and the DNNE [platform](./src/platform) source to compile a native binary with the desired native exports. See the [Native API](#nativeapi) section for build details.
 
 1) Deploy the native binary, managed assembly and associated `*.json` files for consumption from a native process.
+
+### Experimental attribute
+
+There are scenarios where updating `UnmanagedCallersOnlyAttribute` may take time. In order to enable independent development and experimentation, the `DNNE.ExportAttribute` is also respected. This type can be modified to suit one's needs and `dnne-gen` updated to respect those changes at code gen time. The user should define the following in their assembly. They can then modify the attribute and `dnne-gen` as needed.
+
+``` CSharp
+namespace DNNE
+{
+    internal class ExportAttribute : Attribute
+    {
+        public ExportAttribute() { }
+        public string EntryPoint { get; set; }
+    }
+}
+```
+    
+The calling convention of the export will be the default for the .NET runtime on that platform. See the description of [`CallingConvention.Winapi`](https://docs.microsoft.com/dotnet/api/system.runtime.interopservices.callingconvention).
+
+Using `DNNE.ExportAttribute` to export a method requires a `Delegate` of the appropriate type and name to be at the same scope as the export. The naming convention is `<METHODNAME>Delegate`. For example:
+
+```CSharp
+public class Exports
+{
+    public delegate int MyExportDelegate(int a);
+
+    [DNNE.Export(EntryPoint = "FancyName")]
+    public static int MyExport(int a)
+    {
+        return a;
+    }
+}
+```
 
 # Additional References
 
