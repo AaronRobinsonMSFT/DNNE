@@ -71,4 +71,10 @@ typedef void (DNNE_CALLTYPE* failure_fn)(enum failure_type type, int error_code)
 // The provided callback will be the last call prior to a rude-abort of the process.
 DNNE_API void DNNE_CALLTYPE set_failure_callback(failure_fn cb);
 
+// Preload the runtime.
+// The runtime is lazily loaded whenever the first export is called. This function
+// preloads the runtime independent of calling any export and avoids the startup
+// cost associated with calling an export for the first time.
+DNNE_API void DNNE_CALLTYPE preload_runtime(void);
+
 #endif // __SRC_PLATFORM_DNNE_H__

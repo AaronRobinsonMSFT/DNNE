@@ -63,6 +63,7 @@ static void* get_export(void* h, const char* name)
 
 typedef int(CALLCONV* IntIntInt_t)(int,int);
 typedef void (DNNE_CALLTYPE* set_failure_callback_t)(failure_fn cb);
+typedef void (DNNE_CALLTYPE* preload_runtime_t)(void);
 
 static void DNNE_CALLTYPE on_failure(enum failure_type type, int error_code)
 {
@@ -77,6 +78,10 @@ int main(int ac, char** av)
     set_failure_callback_t set_cb = (set_failure_callback_t)get_export(mod, "set_failure_callback");
     RETURN_FAIL_IF_FALSE(set_cb, "Failed to get set_failure_callback export\n");
     set_cb(on_failure);
+
+    preload_runtime_t preload = (preload_runtime_t)get_export(mod, "preload_runtime");
+    RETURN_FAIL_IF_FALSE(set_cb, "Failed to get preload_runtime export\n");
+    preload();
 
     IntIntInt_t fptr = NULL;
     int a = 3;
