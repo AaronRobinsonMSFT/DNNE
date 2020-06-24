@@ -26,6 +26,7 @@ using System.IO;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -123,6 +124,31 @@ namespace DNNE
                                 case KnownType.I4:
                                 case KnownType.CallingConvention:
                                     callConv = (CallingConvention)arg.Value;
+                                    break;
+
+                                case KnownType.SystemTypeArray:
+                                    if (arg.Value != null)
+                                    {
+                                        foreach (var cct in (ImmutableArray<CustomAttributeTypedArgument<KnownType>>)arg.Value)
+                                        {
+                                            Debug.Assert(cct.Type == KnownType.SystemType);
+                                            switch ((KnownType)cct.Value)
+                                            {
+                                                case KnownType.CallConvCdecl:
+                                                    callConv = CallingConvention.Cdecl;
+                                                    break;
+                                                case KnownType.CallConvStdcall:
+                                                    callConv = CallingConvention.StdCall;
+                                                    break;
+                                                case KnownType.CallConvThiscall:
+                                                    callConv = CallingConvention.ThisCall;
+                                                    break;
+                                                case KnownType.CallConvFastcall:
+                                                    callConv = CallingConvention.FastCall;
+                                                    break;
+                                            }
+                                        }
+                                    }
                                     break;
 
                                 case KnownType.String:
@@ -225,7 +251,7 @@ namespace DNNE
             {
                 return ExportType.Export;
             }
-            else if (IsAttributeType(this.mdReader, attribute, "System.Runtime.InteropServices", "UnmanagedCallersOnlyAttribute"))
+            else if (IsAttributeType(this.mdReader, attribute, "System.Runtime.InteropServices", nameof(UnmanagedCallersOnlyAttribute)))
             {
                 return ExportType.UnmanagedCallersOnly;
             }
@@ -412,7 +438,12 @@ DNNE_API {export.ReturnType} {callConv} {export.ExportName}({declsig})
             Unknown,
             I4,
             CallingConvention,
+            CallConvCdecl,
+            CallConvStdcall,
+            CallConvThiscall,
+            CallConvFastcall,
             String,
+            SystemTypeArray,
             SystemType
         }
 
@@ -435,7 +466,12 @@ DNNE_API {export.ReturnType} {callConv} {export.ExportName}({declsig})
 
             public KnownType GetSZArrayType(KnownType elementType)
             {
-                return KnownType.Unknown;
+                if (elementType == KnownType.SystemType)
+                {
+                    return KnownType.SystemTypeArray;
+                }
+
+                throw new BadImageFormatException("Unexpectedly got an array of unsupported type.");
             }
 
             public KnownType GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
@@ -453,6 +489,22 @@ DNNE_API {export.ReturnType} {callConv} {export.ExportName}({declsig})
                 if (Type.GetType(name).Name.Equals(nameof(CallingConvention)))
                 {
                     return KnownType.CallingConvention;
+                }
+                else if (Type.GetType(name).Name.Equals(nameof(CallConvCdecl)))
+                {
+                    return KnownType.CallConvCdecl;
+                }
+                else if (Type.GetType(name).Name.Equals(nameof(CallConvStdcall)))
+                {
+                    return KnownType.CallConvStdcall;
+                }
+                else if (Type.GetType(name).Name.Equals(nameof(CallConvThiscall)))
+                {
+                    return KnownType.CallConvThiscall;
+                }
+                else if (Type.GetType(name).Name.Equals(nameof(CallConvFastcall)))
+                {
+                    return KnownType.CallConvFastcall;
                 }
 
                 return KnownType.Unknown;
