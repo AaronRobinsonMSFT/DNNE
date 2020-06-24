@@ -360,6 +360,10 @@ static void init_dotnet(const char_t* config_path)
 
 static void prepare_runtime(void)
 {
+    // Check if the needed export was already acquired.
+    if (get_managed_export_fptr)
+        return;
+
     // Load HostFxr and get exported hosting functions.
     load_hostfxr();
 
@@ -372,6 +376,12 @@ static void prepare_runtime(void)
         noreturn_runtime_load_failure(rc);
 
     init_dotnet(config_path);
+    assert(get_managed_export_fptr != NULL);
+}
+
+DNNE_API void DNNE_CALLTYPE preload_runtime(void)
+{
+    prepare_runtime();
 }
 
 void* get_callable_managed_function(
