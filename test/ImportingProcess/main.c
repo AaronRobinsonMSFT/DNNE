@@ -80,7 +80,7 @@ int main(int ac, char** av)
     set_cb(on_failure);
 
     preload_runtime_t preload = (preload_runtime_t)get_export(mod, "preload_runtime");
-    RETURN_FAIL_IF_FALSE(set_cb, "Failed to get preload_runtime export\n");
+    RETURN_FAIL_IF_FALSE(preload, "Failed to get preload_runtime export\n");
     preload();
 
     IntIntInt_t fptr = NULL;
