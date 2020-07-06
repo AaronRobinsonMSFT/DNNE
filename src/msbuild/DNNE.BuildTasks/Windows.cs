@@ -92,11 +92,12 @@ namespace DNNE.BuildTasks
 
         private static bool Is64BitTarget(string arch)
         {
-            return arch switch
+            return arch.ToLower() switch
             {
-                "AnyCPU" => IntPtr.Size == 8,
                 "x64" => true,
-                _ => false,
+                "amd64" => true,
+                "x86" => false,
+                _ => IntPtr.Size == 8,
             };
         }
 

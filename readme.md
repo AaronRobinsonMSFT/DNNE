@@ -89,6 +89,8 @@ The `preload_runtime()` function can be used to preload the runtime. This may be
     ```
 
 1) Build the managed project to generate the native binary. The native binary will have a `NE` suffix and the system extension for dynamic/shared native libraries (i.e. `.dll`, `.so`, `.dylib`).
+    * The [Runtime Identifier (RID)](https://docs.microsoft.com/dotnet/core/rid-catalog) is used to target a specific SDK.
+    * For example, on Windows the `--runtime` flag can be used to target `win-x86` or `win-x64`.
 
 1) Deploy the native binary, managed assembly and associated `*.json` files for consumption from a native process.
 
