@@ -10,4 +10,8 @@
     <PackageReference Include="DNNE" Version="1.*" />
   </ItemGroup>
 
+  <PropertyGroup Condition="'$(LocalNuPkg)'!=''">
+    <RestoreSources>$(LocalNuPkg)</RestoreSources>
+  </PropertyGroup>
+
 </Project>

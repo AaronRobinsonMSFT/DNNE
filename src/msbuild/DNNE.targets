@@ -80,7 +80,9 @@ DNNE.targets
 
     <PropertyGroup>
       <DnneAssemblyName>$(TargetName)</DnneAssemblyName>
-      <DnneNetHostDir>$(NetCoreTargetingPackRoot)/Microsoft.NETCore.App.Host.$(NETCoreSdkRuntimeIdentifier)/$(BundledNETCoreAppPackageVersion)/runtimes/$(NETCoreSdkRuntimeIdentifier)/native</DnneNetHostDir>
+      <DnneRuntimeIdentifier>$(RuntimeIdentifier)</DnneRuntimeIdentifier>
+      <DnneRuntimeIdentifier Condition="'$(DnneRuntimeIdentifier)'==''">$(NETCoreSdkRuntimeIdentifier)</DnneRuntimeIdentifier>
+      <DnneNetHostDir>$(NetCoreTargetingPackRoot)/Microsoft.NETCore.App.Host.$(DnneRuntimeIdentifier)/$(BundledNETCoreAppPackageVersion)/runtimes/$(DnneRuntimeIdentifier)/native</DnneNetHostDir>
       <DnneCompiledToBinPath>$(DnneGeneratedBinPath)/$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt)</DnneCompiledToBinPath>
       <__DnneGeneratedSourceFile>@(DnneGeneratedSourceFile)</__DnneGeneratedSourceFile>
     </PropertyGroup>
@@ -92,7 +94,7 @@ DNNE.targets
         Source="$([MSBuild]::NormalizePath($(__DnneGeneratedSourceFile)))"
         OutputName="$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt)"
         OutputPath="$([MSBuild]::NormalizePath($(DnneGeneratedBinPath)))"
-        Architecture="$(Platform)"
+        Architecture="$(TargetedSDKArchitecture)"
         Configuration="$(Configuration)">
       <Output TaskParameter="Command" PropertyName="CompilerCmd" />
       <Output TaskParameter="CommandArguments" PropertyName="CompilerArgs" />

@@ -57,9 +57,13 @@ namespace DNNE.BuildTasks
 
         private static bool Is64BitTarget(string arch)
         {
-            return arch switch
+            return arch.ToLower() switch
             {
                 "AnyCPU" => true,
+                "msil" => true,
+                "Neutral" => true,
+                "x64" => true,
+                "amd64" => true,
                 _ => throw new Exception("Unknown architecture. Only support 'AnyCPU'."),
             };
         }
