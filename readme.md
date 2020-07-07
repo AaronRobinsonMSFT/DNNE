@@ -8,7 +8,7 @@ This work is inspired by work in the [Xamarin][xamarin_embed_link], [CoreRT][cor
 
 ### Minimum
 
-* [.NET 5.0.0-preview.5.20278.1](https://github.com/dotnet/installer) or greater.
+* [.NET 5.0.100-preview.7.20357.1](https://github.com/dotnet/installer) or greater.
 * [C99](https://en.cppreference.com/w/c/language/history) compatible compiler.
 
 ### DNNE NuPkg Requirements
