@@ -61,7 +61,7 @@ namespace DNNE.BuildTasks
 
             // Set compiler flags
             compilerFlags.Append($"/TC /MT /GS /Zi ");
-            compilerFlags.Append($"/D DNNE_ASSEMBLY_NAME={export.AssemblyName} ");
+            compilerFlags.Append($"/D DNNE_ASSEMBLY_NAME={export.AssemblyName} /D DNNE_COMPILE_AS_SOURCE ");
             compilerFlags.Append($"/I \"{vcIncDir}\" /I \"{export.PlatformPath}\" /I \"{export.NetHostPath}\" ");
 
             // Add WinSDK inc paths
@@ -84,7 +84,11 @@ namespace DNNE.BuildTasks
 
             linkerFlags.Append($"\"{Path.Combine(export.NetHostPath, "libnethost.lib")}\" Advapi32.lib ");
             linkerFlags.Append($"/IGNORE:4099 "); // libnethost.lib doesn't ship PDBs so linker warnings occur.
-            linkerFlags.Append($"/out:\"{Path.Combine(export.OutputPath, export.OutputName)}\" ");
+
+            // Define artifact names
+            var outputPath = Path.Combine(export.OutputPath, export.OutputName);
+            var impLibPath = Path.ChangeExtension(outputPath, ".lib");
+            linkerFlags.Append($"/IMPLIB:\"{impLibPath}\" /OUT:\"{outputPath}\" ");
 
             command = Path.Combine(binDir, "cl.exe");
             commandArguments = $"{compilerFlags} /link {linkerFlags}";
