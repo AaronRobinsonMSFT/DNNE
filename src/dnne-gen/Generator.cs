@@ -306,6 +306,7 @@ $@"//
 #ifndef {generatedHeaderDefine}
 #define {generatedHeaderDefine}
 
+#include <stddef.h>
 #include <stdint.h>
 #include <dnne.h>
 ");
