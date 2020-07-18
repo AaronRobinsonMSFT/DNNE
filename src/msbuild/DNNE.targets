@@ -44,7 +44,10 @@ DNNE.targets
 
   <ItemGroup>
     <DnneGeneratedSourceFile Include="$(DnneGeneratedOutputPath)/$(TargetName).g.c" />
-    <DnneNativeExportsBinaryFile Include="$(DnneNativeExportsBinaryPath)$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt)" />
+    <DnneNativeExportsOutputs Include="$(DnneNativeExportsBinaryPath)$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt);$(DnneNativeExportsBinaryPath)$(DnneNativeExportsBinaryName).h;$(DnneNativeExportsBinaryPath)dnne.h" />
+
+    <!-- Add outputs and general glob to help with project cleanup -->
+    <Clean Include="@(DnneNativeExportsOutputs);$(DnneNativeExportsBinaryPath)$(DnneNativeExportsBinaryName).*"/>
   </ItemGroup>
 
   <Target
@@ -70,10 +73,10 @@ DNNE.targets
     Name="DnneBuildNativeExports"
     Condition="'$(DnneBuildExports)' == 'true'"
     Inputs="@(DnneGeneratedSourceFile)"
-    Outputs="@(DnneNativeExportsBinaryFile)"
+    Outputs="@(DnneNativeExportsOutputs)"
     AfterTargets="DnneGenerateNativeExports"
     DependsOnTargets="ResolvePackageAssets;ResolveFrameworkReferences">
-    <Message Text="Building native exports binary from @(DnneGeneratedSourceFile) into @(DnneNativeExportsBinaryFile)" Importance="$(DnneMSBuildLogging)" />
+    <Message Text="Building native exports binary from @(DnneGeneratedSourceFile)" Importance="$(DnneMSBuildLogging)" />
 
     <!-- Ensure the output directory exists -->
     <MakeDir Directories="$(DnneGeneratedBinPath)" />
@@ -106,9 +109,19 @@ DNNE.targets
         Outputs="$(DnneCompiledToBinPath)"
         ConsoleToMSBuild="true" />
 
-    <!-- Copy the results to the project output directory -->
+    <!--
+        Copy the binary to the project output directory.
+        The dnne-gen tool generates a C99 file that can act as both compilation unit and header.
+        Deploy the official 'dnne.h' header.
+    -->
     <Copy
-        SourceFiles="$(DnneCompiledToBinPath)"
-        DestinationFiles="@(DnneNativeExportsBinaryFile)" />
+        SourceFiles="$(DnneCompiledToBinPath);$(__DnneGeneratedSourceFile);$(DnnePlatformSourcePath)/dnne.h"
+        DestinationFiles="@(DnneNativeExportsOutputs)" />
+
+    <!-- Import libs exist only on the Windows platform -->
+    <Copy
+        Condition="$([MSBuild]::IsOsPlatform('Windows'))"
+        SourceFiles="$(DnneGeneratedBinPath)/$(DnneNativeExportsBinaryName).lib"
+        DestinationFolder="$(DnneNativeExportsBinaryPath)" />
   </Target>
 </Project>

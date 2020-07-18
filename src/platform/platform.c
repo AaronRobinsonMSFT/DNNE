@@ -19,6 +19,16 @@
 
 #include "dnne.h"
 
+// Must define the assembly name
+#ifndef DNNE_ASSEMBLY_NAME
+    #error Target assembly name must be defined. Set 'DNNE_ASSEMBLY_NAME'.
+#endif
+
+// Include the official nethost API and indicate
+// consumption should be as a static library.
+#define NETHOST_USE_AS_STATIC
+#include <nethost.h>
+
 // Needed for dladdr() in non-macOS scenarios
 #if !defined(DNNE_WINDOWS) && !defined(__APPLE__)
     #define _GNU_SOURCE

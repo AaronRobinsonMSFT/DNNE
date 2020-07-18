@@ -44,7 +44,7 @@ namespace DNNE.BuildTasks
 
             // Set compiler flags
             compilerFlags.Append($"-shared -fpic ");
-            compilerFlags.Append($"-D DNNE_ASSEMBLY_NAME={export.AssemblyName} ");
+            compilerFlags.Append($"-D DNNE_ASSEMBLY_NAME={export.AssemblyName} -D DNNE_COMPILE_AS_SOURCE ");
             compilerFlags.Append($"-I \"{export.PlatformPath}\" -I \"{export.NetHostPath}\" ");
             compilerFlags.Append($"-o \"{Path.Combine(export.OutputPath, export.OutputName)}\" ");
             compilerFlags.Append($"\"{export.Source}\" \"{Path.Combine(export.PlatformPath, "platform.c")}\" ");

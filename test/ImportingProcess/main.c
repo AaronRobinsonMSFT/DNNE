@@ -21,7 +21,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define DNNE_CONSUME_EXPORT_API
 #include <dnne.h>
 
 #ifdef _WIN32
