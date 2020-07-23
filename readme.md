@@ -74,9 +74,9 @@ The `preload_runtime()` function can be used to preload the runtime. This may be
 
 1) The DNNE NuPkg is published on [NuGet.org](https://www.nuget.org/packages/DNNE), but can also be built locally.
 
-    * Building the DNNE NuPkg locally is done by running `pack` on [`dnne-gen.csproj`](./src/dnne-gen/dnne-gen.csproj).
+    * Build the DNNE NuPkg locally by building [`create_package.proj`](./src/create_package.proj).
 
-        `> dotnet pack dnne-gen.csproj`
+        `> dotnet build create_package.proj`
 
 1) Add the NuPkg to the target managed project.
 

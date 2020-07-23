@@ -30,7 +30,8 @@
   <ItemGroup>
     <None Include="../msbuild/DNNE.props" Pack="True" PackagePath="build/" />
     <None Include="../msbuild/DNNE.targets" Pack="True" PackagePath="build/" />
-    <None Include="../msbuild/DNNE.BuildTasks/bin/$(Configuration)/netstandard2.1/*" Pack="True" PackagePath="build/" />
+    <None Include="../msbuild/DNNE.BuildTasks/bin/$(Configuration)/netstandard2.1/*" Pack="True" PackagePath="build/netstandard2.1" />
+    <None Include="../msbuild/DNNE.BuildTasks/bin/$(Configuration)/net472/*" Pack="True" PackagePath="build/net472" />
     <None Include="../platform/**" Pack="True" PackagePath="tools/platform/" />
   </ItemGroup>
 
