@@ -15,7 +15,7 @@
 
   <PropertyGroup>
     <PackageId>DNNE</PackageId>
-    <Version>1.0.6</Version>
+    <Version>1.0.7</Version>
     <Authors>AaronRobinsonMSFT</Authors>
     <Owners>AaronRobinsonMSFT</Owners>
     <Description>Package used to generated native exports for .NET assemblies.</Description>
@@ -25,6 +25,12 @@
     <RepositoryType>Git</RepositoryType>
     <PackageTags>pinvoke interop unmanagedcallersonly exports</PackageTags>
     <IsTool>True</IsTool>
+
+    <!--
+        NU5128 - Sub directories don't match in all first level directories.
+            This is okay because tooling binaries are executables.
+    -->
+    <NoWarn>NU5128</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
