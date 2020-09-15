@@ -36,7 +36,6 @@ namespace DNNE.BuildTasks
         public static void ConstructClangCommandLine(CreateCompileCommand export, out string command, out string commandArguments)
         {
             bool isDebug = IsDebug(export.Configuration);
-            bool is64Bit = Is64BitTarget(export.Architecture);
 
             // Create arguments
             var compilerFlags = new StringBuilder();
@@ -53,19 +52,6 @@ namespace DNNE.BuildTasks
 
             command = "clang";
             commandArguments = compilerFlags.ToString();
-        }
-
-        private static bool Is64BitTarget(string arch)
-        {
-            return arch.ToLower() switch
-            {
-                "AnyCPU" => true,
-                "msil" => true,
-                "Neutral" => true,
-                "x64" => true,
-                "amd64" => true,
-                _ => throw new Exception("Unknown architecture. Only support 'AnyCPU'."),
-            };
         }
 
         private static bool IsDebug(string config)
