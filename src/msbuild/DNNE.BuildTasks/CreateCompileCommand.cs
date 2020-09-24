@@ -52,6 +52,9 @@ namespace DNNE.BuildTasks
         public string OutputPath { get; set; }
 
         [Required]
+        public string RuntimeID { get; set; }
+
+        [Required]
         public string Architecture { get; set; }
 
         [Required]
@@ -76,6 +79,7 @@ DNNE Native Compilation:
     OutputPath:     {OutputPath}
 
 Native Build:
+    RuntimeID:      {RuntimeID}
     Architecture:   {Architecture}
     Configuration:  {Configuration}
     ");
