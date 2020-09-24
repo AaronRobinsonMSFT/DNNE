@@ -43,7 +43,7 @@ namespace DNNE.BuildTasks
             export.Report(CreateCompileCommand.DevImportance, $"VS Install: {vsInstall}\nVC Tools: {vcToolDir}\nWinSDK Version: {winSdk.Version}");
 
             bool isDebug = IsDebug(export.Configuration);
-            bool is64Bit = Is64BitTarget(export.Architecture);
+            bool is64Bit = Is64BitTarget(export.Architecture, export.RuntimeID);
 
             var archDir = is64Bit ? "x64" : "x86";
 
@@ -94,14 +94,15 @@ namespace DNNE.BuildTasks
             commandArguments = $"{compilerFlags} /link {linkerFlags}";
         }
 
-        private static bool Is64BitTarget(string arch)
+        private static bool Is64BitTarget(string arch, string rid)
         {
             return arch.ToLower() switch
             {
                 "x64" => true,
                 "amd64" => true,
                 "x86" => false,
-                _ => IntPtr.Size == 8,
+                "msil" => rid.Contains("x64"), // e.g. win-x86, win-x64, etc
+                _ => IntPtr.Size == 8, // Fallback is the process bitness
             };
         }
 

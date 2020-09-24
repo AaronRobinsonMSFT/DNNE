@@ -102,6 +102,7 @@ DNNE.targets
         Source="$([MSBuild]::NormalizePath($(__DnneGeneratedSourceFile)))"
         OutputName="$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt)"
         OutputPath="$([MSBuild]::NormalizePath($(DnneGeneratedBinPath)))"
+        RuntimeID="$(DnneRuntimeIdentifier)"
         Architecture="$(TargetedSDKArchitecture)"
         Configuration="$(Configuration)">
       <Output TaskParameter="Command" PropertyName="CompilerCmd" />
