@@ -65,13 +65,13 @@ DNNE.targets
   </Target>
 
   <PropertyGroup>
-    <DNNEBuildTasksTFM>netstandard2.1</DNNEBuildTasksTFM>
-    <DNNEBuildTasksTFM Condition="'$(MSBuildRuntimeType)' == 'Full'">net472</DNNEBuildTasksTFM>
+    <DnneBuildTasksTFM>netstandard2.1</DnneBuildTasksTFM>
+    <DnneBuildTasksTFM Condition="'$(MSBuildRuntimeType)' == 'Full'">net472</DnneBuildTasksTFM>
   </PropertyGroup>
 
   <UsingTask
     TaskName="DNNE.BuildTasks.CreateCompileCommand"
-    AssemblyFile = "./$(DNNEBuildTasksTFM)/DNNE.BuildTasks.dll"
+    AssemblyFile = "./$(DnneBuildTasksTFM)/DNNE.BuildTasks.dll"
     Condition="'$(DnneBuildExports)' == 'true'" />
 
   <Target
