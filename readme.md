@@ -97,6 +97,7 @@ The `preload_runtime()` function can be used to preload the runtime. This may be
 
 1) Deploy the native binary, managed assembly and associated `*.json` files for consumption from a native process.
     * Although not technically needed, the exports header and import library (Windows only) can be deployed with the native binary to make consumption easier.
+    * Set the `DnneAddGeneratedBinaryToProject` MSBuild property to `true` in the project if it is desired to have the generated native binary flow with project references. Recall that the generated binary is bitness specific.
 
 ### Generate manually
 

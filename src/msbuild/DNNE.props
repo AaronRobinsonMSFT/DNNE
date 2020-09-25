@@ -38,5 +38,8 @@ DNNE.props
 
     <!-- Logging level passed to output from the DNNE build process. -->
     <DnneMSBuildLogging>low</DnneMSBuildLogging>
+
+    <!-- Add the generated binary to the project contents -->
+    <DnneAddGeneratedBinaryToProject>false</DnneAddGeneratedBinaryToProject>
   </PropertyGroup>
 </Project>
