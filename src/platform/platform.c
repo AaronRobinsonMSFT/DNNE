@@ -279,7 +279,10 @@ DNNE_NORETURN static void noreturn_export_load_failure(int error_code)
 
 static bool is_failure(int rc)
 {
-    return (rc != DNNE_SUCCESS);
+    // The CLR hosting API uses the Win32 HRESULT scheme. This means
+    // the high order bit indicates an error and S_FALSE (1) can be returned
+    // and is _not_ a failure.
+    return (rc < DNNE_SUCCESS);
 }
 
 static int get_current_dir_filepath(int32_t buffer_len, char_t* buffer, int32_t filename_len, const char_t* filename, const char_t** result)
