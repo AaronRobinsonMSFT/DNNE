@@ -41,5 +41,8 @@ DNNE.props
 
     <!-- Add the generated binary to the project contents -->
     <DnneAddGeneratedBinaryToProject>false</DnneAddGeneratedBinaryToProject>
+
+    <!-- Enable a workaround for https://github.com/dotnet/sdk/issues/1675 -->
+    <DnneWorkAroundSdk1675>true</DnneWorkAroundSdk1675>
   </PropertyGroup>
 </Project>
