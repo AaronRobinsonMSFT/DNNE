@@ -91,7 +91,7 @@ namespace DNNE
                     continue;
                 }
 
-                var callConv = CallingConvention.Winapi;
+                var callConv = SignatureCallingConvention.Unmanaged;
                 var attrType = ExportType.None;
                 string managedMethodName = this.mdReader.GetString(methodDef.Name);
                 string exportName = managedMethodName;
@@ -123,7 +123,15 @@ namespace DNNE
                             {
                                 case KnownType.I4:
                                 case KnownType.CallingConvention:
-                                    callConv = (CallingConvention)arg.Value;
+                                    callConv = (CallingConvention)arg.Value switch
+                                    {
+                                        CallingConvention.Winapi => SignatureCallingConvention.Unmanaged,
+                                        CallingConvention.Cdecl => SignatureCallingConvention.CDecl,
+                                        CallingConvention.StdCall => SignatureCallingConvention.StdCall,
+                                        CallingConvention.ThisCall => SignatureCallingConvention.ThisCall,
+                                        CallingConvention.FastCall => SignatureCallingConvention.FastCall,
+                                        _ => throw new NotSupportedException($"Unknown CallingConvention: {arg.Value}")
+                                    };
                                     break;
 
                                 case KnownType.SystemTypeArray:
@@ -135,16 +143,16 @@ namespace DNNE
                                             switch ((KnownType)cct.Value)
                                             {
                                                 case KnownType.CallConvCdecl:
-                                                    callConv = CallingConvention.Cdecl;
+                                                    callConv = SignatureCallingConvention.CDecl;
                                                     break;
                                                 case KnownType.CallConvStdcall:
-                                                    callConv = CallingConvention.StdCall;
+                                                    callConv = SignatureCallingConvention.StdCall;
                                                     break;
                                                 case KnownType.CallConvThiscall:
-                                                    callConv = CallingConvention.ThisCall;
+                                                    callConv = SignatureCallingConvention.ThisCall;
                                                     break;
                                                 case KnownType.CallConvFastcall:
-                                                    callConv = CallingConvention.FastCall;
+                                                    callConv = SignatureCallingConvention.FastCall;
                                                     break;
                                             }
                                         }
@@ -379,12 +387,9 @@ extern void* get_fast_callable_managed_function(
                 var callsig = new StringBuilder();
                 for (int i = 0; i < export.ArgumentTypes.Count; ++i)
                 {
-                    if (i > 0)
-                    {
-                        delim = ", ";
-                    }
                     declsig.AppendFormat("{0}{1} {2}", delim, export.ArgumentTypes[i], export.ArgumentNames[i]);
                     callsig.AppendFormat("{0}{1}", delim, export.ArgumentNames[i]);
+                    delim = ", ";
                 }
 
                 // Special casing for void signature.
@@ -400,7 +405,7 @@ extern void* get_fast_callable_managed_function(
                     returnStatementKeyword = string.Empty;
                 }
 
-                string callConv = GetCallConv(export.CallingConvention);
+                string callConv = GetC99CallConv(export.CallingConvention);
 
                 string classNameConstant = map[export.EnclosingTypeName];
                 Debug.Assert(!string.IsNullOrEmpty(classNameConstant));
@@ -452,19 +457,19 @@ DNNE_API {export.ReturnType} {callConv} {export.ExportName}({declsig})
 $@"#endif // {generatedHeaderDefine}
 
 {implStream}");
+        }
 
-            static string GetCallConv(CallingConvention callConv)
+        private static string GetC99CallConv(SignatureCallingConvention callConv)
+        {
+            return callConv switch
             {
-                return callConv switch
-                {
-                    CallingConvention.Winapi => "DNNE_CALLTYPE",
-                    CallingConvention.Cdecl => "DNNE_CALLTYPE_CDECL",
-                    CallingConvention.StdCall => "DNNE_CALLTYPE_STDCALL",
-                    CallingConvention.ThisCall => "DNNE_CALLTYPE_THISCALL",
-                    CallingConvention.FastCall => "DNNE_CALLTYPE_FASTCALL",
-                    _ => throw new NotSupportedException($"Unknown CallingConvention: {callConv}"),
-                };
-            }
+                SignatureCallingConvention.CDecl => "DNNE_CALLTYPE_CDECL",
+                SignatureCallingConvention.StdCall => "DNNE_CALLTYPE_STDCALL",
+                SignatureCallingConvention.ThisCall => "DNNE_CALLTYPE_THISCALL",
+                SignatureCallingConvention.FastCall => "DNNE_CALLTYPE_FASTCALL",
+                SignatureCallingConvention.Unmanaged => "DNNE_CALLTYPE",
+                _ => throw new NotSupportedException($"Unknown CallingConvention: {callConv}"),
+            };
         }
 
         private class ExportedMethod
@@ -473,7 +478,7 @@ $@"#endif // {generatedHeaderDefine}
             public string EnclosingTypeName { get; set; }
             public string MethodName { get; set; }
             public string ExportName { get; set; }
-            public CallingConvention CallingConvention { get; set; }
+            public SignatureCallingConvention CallingConvention { get; set; }
             public string ReturnType { get; set; }
             public List<string> ArgumentTypes { get; } = new List<string>();
             public List<string> ArgumentNames { get; } = new List<string>();
@@ -594,7 +599,25 @@ $@"#endif // {generatedHeaderDefine}
 
             public string GetFunctionPointerType(MethodSignature<string> signature)
             {
-                throw new NotImplementedException();
+                // Define the native function pointer type in a comment.
+                string args = this.GetPrimitiveType(PrimitiveTypeCode.Void);
+                if (signature.ParameterTypes.Length != 0)
+                {
+                    var argsBuffer = new StringBuilder();
+                    var delim = "";
+                    foreach (var type in signature.ParameterTypes)
+                    {
+                        argsBuffer.Append(delim);
+                        argsBuffer.Append(type);
+                        delim = ", ";
+                    }
+
+                    args = argsBuffer.ToString();
+                }
+
+                var callingConvention = GetC99CallConv(signature.Header.CallingConvention);
+                var typeComment = $"/* {signature.ReturnType}({callingConvention} *)({args}) */ ";
+                return typeComment + this.GetPrimitiveType(PrimitiveTypeCode.IntPtr);
             }
 
             public string GetGenericInstantiation(string genericType, ImmutableArray<string> typeArguments)

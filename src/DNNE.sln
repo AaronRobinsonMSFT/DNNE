@@ -7,6 +7,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dnne-gen", "dnne-gen\dnne-g
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DNNE.BuildTasks", "msbuild\DNNE.BuildTasks\DNNE.BuildTasks.csproj", "{D11450BB-39A0-4C34-A2CE-F3571E26FF8A}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExportingAssembly", "..\test\ExportingAssembly\ExportingAssembly.csproj", "{98803C54-1198-4428-9C73-7E39BD68325B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{1BA6857D-6E53-4697-83CD-D468A2CD2E8B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ExportingAssembly", "ExportingAssembly", "{1911023E-E86C-4456-A0E3-29468BC851E6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,9 +27,17 @@ Global
 		{D11450BB-39A0-4C34-A2CE-F3571E26FF8A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D11450BB-39A0-4C34-A2CE-F3571E26FF8A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D11450BB-39A0-4C34-A2CE-F3571E26FF8A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{98803C54-1198-4428-9C73-7E39BD68325B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{98803C54-1198-4428-9C73-7E39BD68325B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{98803C54-1198-4428-9C73-7E39BD68325B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{98803C54-1198-4428-9C73-7E39BD68325B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{98803C54-1198-4428-9C73-7E39BD68325B} = {1911023E-E86C-4456-A0E3-29468BC851E6}
+		{1911023E-E86C-4456-A0E3-29468BC851E6} = {1BA6857D-6E53-4697-83CD-D468A2CD2E8B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {82B52092-C471-4045-9DC0-0038C7FD6AF8}
