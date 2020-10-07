@@ -71,17 +71,17 @@ DNNE.targets
     <DnneBuildTasksTFM Condition="'$(MSBuildRuntimeType)' == 'Full'">net472</DnneBuildTasksTFM>
   </PropertyGroup>
 
-    <!--
-        Include the compiled binary in the project's None Items so
-        it will flow through project references.
-    -->
-    <ItemGroup Condition="'$(DnneBuildExports)' == 'true' AND '$(DnneAddGeneratedBinaryToProject)' == 'true'">
-      <None Include="$(DnneCompiledToBinPath)">
-        <Link>$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt)</Link>
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        <Visible>false</Visible>
-      </None>
-    </ItemGroup>
+  <!--
+      Include the compiled binary in the project's None Items so
+      it will flow through project references.
+  -->
+  <ItemGroup Condition="'$(DnneBuildExports)' == 'true' AND '$(DnneAddGeneratedBinaryToProject)' == 'true'">
+    <None Include="$(DnneCompiledToBinPath)">
+      <Link>$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Visible>false</Visible>
+    </None>
+  </ItemGroup>
 
   <UsingTask
     TaskName="DNNE.BuildTasks.CreateCompileCommand"
@@ -142,5 +142,27 @@ DNNE.targets
         Condition="$([MSBuild]::IsOsPlatform('Windows'))"
         SourceFiles="$(DnneGeneratedBinPath)/$(DnneNativeExportsBinaryName).lib"
         DestinationFolder="$(DnneNativeExportsBinaryPath)" />
+  </Target>
+
+  <!--
+    The Target below is used to mitigate a limitation when referencing
+    application projects. The work to improve this is tracked with:
+        https://github.com/dotnet/sdk/issues/1675
+    See https://github.com/dotnet/sdk/issues/1675#issuecomment-658779827
+  -->
+  <Target Name="DnneAddRuntimeDependenciesToContent"
+        BeforeTargets="GetCopyToOutputDirectoryItems"
+        DependsOnTargets="GenerateBuildDependencyFile;GenerateBuildRuntimeConfigurationFiles"
+        Condition="'$(DnneBuildExports)' == 'true' AND '$(DnneAddGeneratedBinaryToProject)' == 'true' AND '$(DnneWorkAroundSdk1675)' == 'true'">
+    <ItemGroup>
+      <ContentWithTargetPath Include="$(ProjectDepsFilePath)"
+                            Condition="'$(GenerateDependencyFile)' == 'true'"
+                            CopyToOutputDirectory="PreserveNewest"
+                            TargetPath="$(ProjectDepsFileName)" />
+      <ContentWithTargetPath Include="$(ProjectRuntimeConfigFilePath)"
+                            Condition="'$(GenerateRuntimeConfigurationFiles)' == 'true'"
+                            CopyToOutputDirectory="PreserveNewest"
+                            TargetPath="$(ProjectRuntimeConfigFileName)" />
+    </ItemGroup>
   </Target>
 </Project>
