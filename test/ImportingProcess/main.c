@@ -26,8 +26,6 @@
 #ifdef _WIN32
 #include <Windows.h>
 
-#define CALLCONV __stdcall
-
 static void* load_library(const char* path)
 {
     HMODULE h = LoadLibraryA(path);
@@ -42,8 +40,6 @@ static void* get_export(void* h, const char* name)
 #else
 #include <dlfcn.h>
 #include <limits.h>
-
-#define CALLCONV 
 
 static void* load_library(const char* path)
 {
@@ -60,7 +56,12 @@ static void* get_export(void* h, const char* name)
 
 #define RETURN_FAIL_IF_FALSE(exp, msg) { if (!(exp)) { printf(msg); return EXIT_FAILURE; } }
 
-typedef int(CALLCONV* IntIntInt_t)(int,int);
+typedef int(DNNE_CALLTYPE* IntIntInt_t)(int,int);
+
+struct T { int a; int b; int c; };
+typedef int (DNNE_CALLTYPE* ReturnDataCMember_t)(struct T);
+typedef int (DNNE_CALLTYPE* ReturnRefDataCMember_t)(struct T*);
+
 typedef void (DNNE_CALLTYPE* set_failure_callback_t)(failure_fn cb);
 typedef void (DNNE_CALLTYPE* preload_runtime_t)(void);
 
@@ -82,22 +83,48 @@ int main(int ac, char** av)
     RETURN_FAIL_IF_FALSE(preload, "Failed to get preload_runtime export\n");
     preload();
 
-    IntIntInt_t fptr = NULL;
-    int a = 3;
-    int b = 5;
-    int c = -1;
+    {
+        IntIntInt_t fptr = NULL;
+        int a = 3;
+        int b = 5;
+        int c = -1;
 
-    fptr = (IntIntInt_t)get_export(mod, "IntIntInt");
-    RETURN_FAIL_IF_FALSE(fptr, "Failed to get IntIntInt export\n");
+        fptr = (IntIntInt_t)get_export(mod, "IntIntInt");
+        RETURN_FAIL_IF_FALSE(fptr, "Failed to get IntIntInt export\n");
 
-    c = fptr(a, b);
-    printf("IntIntInt(%d, %d) = %d\n", a, b, c);
+        c = fptr(a, b);
+        printf("IntIntInt(%d, %d) = %d\n", a, b, c);
 
-    fptr = (IntIntInt_t)get_export(mod, "UnmanagedIntIntInt");
-    RETURN_FAIL_IF_FALSE(fptr, "Failed to get UnmanagedIntIntInt export\n");
+        fptr = (IntIntInt_t)get_export(mod, "UnmanagedIntIntInt");
+        RETURN_FAIL_IF_FALSE(fptr, "Failed to get UnmanagedIntIntInt export\n");
 
-    c = fptr(a, b);
-    printf("UnmanagedIntIntInt(%d, %d) = %d\n", a, b, c);
+        c = fptr(a, b);
+        printf("UnmanagedIntIntInt(%d, %d) = %d\n", a, b, c);
+    }
+
+    int expected = 12345;
+    struct T t;
+    {
+        t.a = -1;
+        t.b = -1;
+        t.c = expected;
+        ReturnDataCMember_t fptr = (ReturnDataCMember_t)get_export(mod, "ReturnDataCMember");
+        RETURN_FAIL_IF_FALSE(fptr, "Failed to get ReturnDataCMember export\n");
+
+        int c = fptr(t);
+        printf("ReturnDataCMember(struct T{ %d }) = %d\n", expected, c);
+    }
+
+    {
+        t.a = -1;
+        t.b = -1;
+        t.c = expected;
+        ReturnRefDataCMember_t fptr = (ReturnRefDataCMember_t)get_export(mod, "ReturnRefDataCMember");
+        RETURN_FAIL_IF_FALSE(fptr, "Failed to get ReturnRefDataCMember export\n");
+
+        int c = fptr(&t);
+        printf("ReturnRefDataCMember(struct T*{ %d }) = %d\n", expected, c);
+    }
 
     return EXIT_SUCCESS;
 }
