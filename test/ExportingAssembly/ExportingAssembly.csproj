@@ -10,8 +10,8 @@
     <PackageReference Include="DNNE" Version="1.*" />
   </ItemGroup>
 
-  <PropertyGroup Condition="'$(LocalNuPkg)'!=''">
-    <RestoreSources>$(LocalNuPkg)</RestoreSources>
+  <PropertyGroup Condition="'$(RefLocalBuild)'=='true'">
+    <RestoreSources>$(MSBuildThisFileDirectory)../../src/dnne-gen/bin/$(Configuration)</RestoreSources>
   </PropertyGroup>
 
 </Project>

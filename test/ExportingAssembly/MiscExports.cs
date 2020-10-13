@@ -34,5 +34,25 @@ namespace ExportingAssembly
         public static void UnmanagedDontExportName()
         {
         }
+
+        public struct Data
+        {
+            public int a;
+            public int b;
+            public int c;
+        }
+
+        [UnmanagedCallersOnly]
+        [DNNE.C99DeclCode("struct T{int a; int b; int c;};")]
+        public static int ReturnDataCMember([DNNE.C99Type("struct T")] Data d)
+        {
+            return d.c;
+        }
+
+        [UnmanagedCallersOnly]
+        public unsafe static int ReturnRefDataCMember([DNNE.C99Type("struct T*")] Data* d)
+        {
+            return d->c;
+        }
     }
 }

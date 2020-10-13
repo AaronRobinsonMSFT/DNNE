@@ -23,6 +23,7 @@ using System.Collections.Immutable;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
@@ -80,6 +81,7 @@ namespace DNNE
 
         public void Emit(TextWriter outputStream)
         {
+            var additionalCodeStatements = new List<string>();
             var exportedMethods = new List<ExportedMethod>();
             foreach (var methodDefHandle in this.mdReader.MethodDefinitions)
             {
@@ -92,20 +94,27 @@ namespace DNNE
                 }
 
                 var callConv = SignatureCallingConvention.Unmanaged;
-                var attrType = ExportType.None;
+                var exportAttrType = ExportType.None;
                 string managedMethodName = this.mdReader.GetString(methodDef.Name);
                 string exportName = managedMethodName;
                 // Check for target attribute
                 foreach (var customAttrHandle in methodDef.GetCustomAttributes())
                 {
                     CustomAttribute customAttr = this.mdReader.GetCustomAttribute(customAttrHandle);
-                    attrType = this.GetExportAttributeType(customAttr);
-                    if (attrType == ExportType.None)
+                    var currAttrType = this.GetExportAttributeType(customAttr);
+                    if (currAttrType == ExportType.None)
                     {
+                        // Check if method has "additional code" attributes.
+                        if (TryGetC99DeclCodeAttributeValue(customAttr, out string c99Decl))
+                        {
+                            additionalCodeStatements.Add(c99Decl);
+                        }
+
                         continue;
                     }
 
-                    if (attrType == ExportType.Export)
+                    exportAttrType = currAttrType;
+                    if (exportAttrType == ExportType.Export)
                     {
                         CustomAttributeValue<KnownType> data = customAttr.DecodeValue(this.typeResolver);
                         if (data.NamedArguments.Length == 1)
@@ -115,7 +124,7 @@ namespace DNNE
                     }
                     else
                     {
-                        Debug.Assert(attrType == ExportType.UnmanagedCallersOnly);
+                        Debug.Assert(exportAttrType == ExportType.UnmanagedCallersOnly);
                         CustomAttributeValue<KnownType> data = customAttr.DecodeValue(this.typeResolver);
                         foreach (var arg in data.NamedArguments)
                         {
@@ -168,12 +177,10 @@ namespace DNNE
                             }
                         }
                     }
-
-                    break;
                 }
 
                 // Didn't find target attribute. Move onto next method.
-                if (attrType == ExportType.None)
+                if (exportAttrType == ExportType.None)
                 {
                     continue;
                 }
@@ -188,16 +195,6 @@ namespace DNNE
                     throw new GeneratorException(this.assemblyPath, $"Method '{this.mdReader.GetString(methodDef.Name)}' is being exported by nested type {classString}.");
                 }
 
-                var namespaceString = this.mdReader.GetString(typeDef.Namespace);
-                var method = new ExportedMethod()
-                {
-                    Type = attrType,
-                    EnclosingTypeName = namespaceString + Type.Delimiter + classString,
-                    MethodName = managedMethodName,
-                    ExportName = exportName,
-                    CallingConvention = callConv,
-                };
-
                 // Process method signature.
                 MethodSignature<string> signature;
                 try
@@ -209,20 +206,63 @@ namespace DNNE
                     throw new GeneratorException(this.assemblyPath, $"Method '{this.mdReader.GetString(methodDef.Name)}' has non-exportable type '{nste.Type}'");
                 }
 
-                // Add method types.
-                method.ArgumentTypes.AddRange(signature.ParameterTypes);
+                var returnType = signature.ReturnType;
+                var argumentTypes = signature.ParameterTypes.ToArray();
+                var argumentNames = new string[signature.ParameterTypes.Length];
 
-                // Process each method argument name.
+                // Process each parameter.
                 foreach (ParameterHandle paramHandle in methodDef.GetParameters())
                 {
                     Parameter param = this.mdReader.GetParameter(paramHandle);
-                    method.ArgumentNames.Add(this.mdReader.GetString(param.Name));
+
+                    // Sequence number starts from 1 for arguments.
+                    // Number of 0 indicates return value.
+                    // Update arg index to be from [0..n-1]
+                    // Return index is -1.
+                    const int ReturnIndex = -1;
+                    var argIndex = param.SequenceNumber - 1;
+                    if (argIndex != ReturnIndex)
+                    {
+                        Debug.Assert(argIndex >= 0);
+                        argumentNames[argIndex] = this.mdReader.GetString(param.Name);
+                    }
+
+                    // Check custom attributes for additional code.
+                    foreach (var attr in param.GetCustomAttributes())
+                    {
+                        CustomAttribute custAttr = this.mdReader.GetCustomAttribute(attr);
+                        if (TryGetC99TypeAttributeValue(custAttr, out string c99Type))
+                        {
+                            // Overridden type defined.
+                            if (argIndex == ReturnIndex)
+                            {
+                                returnType = c99Type;
+                            }
+                            else
+                            {
+                                Debug.Assert(argIndex >= 0);
+                                argumentTypes[argIndex] = c99Type;
+                            }
+                        }
+                        else if (TryGetC99DeclCodeAttributeValue(custAttr, out string c99Decl))
+                        {
+                            additionalCodeStatements.Add(c99Decl);
+                        }
+                    }
                 }
 
-                // Set the return type
-                method.ReturnType = signature.ReturnType;
-
-                exportedMethods.Add(method);
+                var namespaceString = this.mdReader.GetString(typeDef.Namespace);
+                exportedMethods.Add(new ExportedMethod()
+                {
+                    Type = exportAttrType,
+                    EnclosingTypeName = namespaceString + Type.Delimiter + classString,
+                    MethodName = managedMethodName,
+                    ExportName = exportName,
+                    CallingConvention = callConv,
+                    ReturnType = returnType,
+                    ArgumentTypes = ImmutableArray.Create(argumentTypes),
+                    ArgumentNames = ImmutableArray.Create(argumentNames),
+                });
             }
 
             if (exportedMethods.Count == 0)
@@ -231,7 +271,7 @@ namespace DNNE
             }
 
             string assemblyName = this.mdReader.GetString(this.mdReader.GetAssemblyDefinition().Name);
-            EmitC99(outputStream, assemblyName, exportedMethods);
+            EmitC99(outputStream, assemblyName, exportedMethods, additionalCodeStatements);
         }
 
         public void Dispose()
@@ -269,6 +309,33 @@ namespace DNNE
             }
         }
 
+        private bool TryGetC99TypeAttributeValue(CustomAttribute attribute, out string c99Type)
+        {
+            c99Type = IsAttributeType(this.mdReader, attribute, "DNNE", "C99TypeAttribute")
+                ? GetFirstFixedArgAsStringValue(this.typeResolver, attribute)
+                : null;
+            return !string.IsNullOrEmpty(c99Type);
+        }
+
+        private bool TryGetC99DeclCodeAttributeValue(CustomAttribute attribute, out string c99Decl)
+        {
+            c99Decl = IsAttributeType(this.mdReader, attribute, "DNNE", "C99DeclCodeAttribute")
+                ? GetFirstFixedArgAsStringValue(this.typeResolver, attribute)
+                : null;
+            return !string.IsNullOrEmpty(c99Decl);
+        }
+
+        private static string GetFirstFixedArgAsStringValue(ICustomAttributeTypeProvider<KnownType> typeResolver, CustomAttribute attribute)
+        {
+            CustomAttributeValue<KnownType> data = attribute.DecodeValue(typeResolver);
+            if (data.FixedArguments.Length == 1)
+            {
+                return (string)data.FixedArguments[0].Value;
+            }
+
+            return null;
+        }
+
         private static bool IsAttributeType(MetadataReader reader, CustomAttribute attribute, string targetNamespace, string targetName)
         {
             StringHandle namespaceMaybe;
@@ -297,7 +364,7 @@ namespace DNNE
             return reader.StringComparer.Equals(namespaceMaybe, targetNamespace) && reader.StringComparer.Equals(nameMaybe, targetName);
         }
 
-        private static void EmitC99(TextWriter outputStream, string assemblyName, IEnumerable<ExportedMethod> exports)
+        private static void EmitC99(TextWriter outputStream, string assemblyName, IEnumerable<ExportedMethod> exports, IEnumerable<string> additionalCodeStatements)
         {
             var generatedHeaderDefine = $"__DNNE_GENERATED_HEADER_{assemblyName.Replace('.', '_').ToUpperInvariant()}__";
             var compileAsSourceDefine = "DNNE_COMPILE_AS_SOURCE";
@@ -318,6 +385,21 @@ $@"//
 #include <stdint.h>
 #include <dnne.h>
 ");
+
+            // Emit additional code statements
+            if (additionalCodeStatements.Any())
+            {
+                outputStream.WriteLine(
+$@"//
+// Additional code provided by user
+//");
+                foreach (var stmt in additionalCodeStatements)
+                {
+                    outputStream.WriteLine(stmt);
+                }
+
+                outputStream.WriteLine();
+            }
 
             var implStream = new StringWriter();
 
@@ -385,10 +467,11 @@ extern void* get_fast_callable_managed_function(
                 string delim = "";
                 var declsig = new StringBuilder();
                 var callsig = new StringBuilder();
-                for (int i = 0; i < export.ArgumentTypes.Count; ++i)
+                for (int i = 0; i < export.ArgumentTypes.Length; ++i)
                 {
-                    declsig.AppendFormat("{0}{1} {2}", delim, export.ArgumentTypes[i], export.ArgumentNames[i]);
-                    callsig.AppendFormat("{0}{1}", delim, export.ArgumentNames[i]);
+                    var argName = export.ArgumentNames[i] ?? $"arg{i}";
+                    declsig.AppendFormat("{0}{1} {2}", delim, export.ArgumentTypes[i], argName);
+                    callsig.AppendFormat("{0}{1}", delim, argName);
                     delim = ", ";
                 }
 
@@ -474,14 +557,14 @@ $@"#endif // {generatedHeaderDefine}
 
         private class ExportedMethod
         {
-            public ExportType Type { get; set; }
-            public string EnclosingTypeName { get; set; }
-            public string MethodName { get; set; }
-            public string ExportName { get; set; }
-            public SignatureCallingConvention CallingConvention { get; set; }
-            public string ReturnType { get; set; }
-            public List<string> ArgumentTypes { get; } = new List<string>();
-            public List<string> ArgumentNames { get; } = new List<string>();
+            public ExportType Type { get; init; }
+            public string EnclosingTypeName { get; init; }
+            public string MethodName { get; init; }
+            public string ExportName { get; init; }
+            public SignatureCallingConvention CallingConvention { get; init; }
+            public string ReturnType { get; init; }
+            public ImmutableArray<string> ArgumentTypes { get; init; }
+            public ImmutableArray<string> ArgumentNames { get; init; }
         }
 
         private enum KnownType
@@ -678,16 +761,28 @@ $@"#endif // {generatedHeaderDefine}
 
             public string GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
             {
-                throw new NotSupportedTypeException("Non-primitive");
+                return SupportNonPrimitiveTypes(rawTypeKind);
             }
 
             public string GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
             {
-                throw new NotSupportedTypeException("Non-primitive");
+                return SupportNonPrimitiveTypes(rawTypeKind);
             }
 
             public string GetTypeFromSpecification(MetadataReader reader, UnusedGenericContext genericContext, TypeSpecificationHandle handle, byte rawTypeKind)
             {
+                return SupportNonPrimitiveTypes(rawTypeKind);
+            }
+
+            private static string SupportNonPrimitiveTypes(byte rawTypeKind)
+            {
+                // See https://docs.microsoft.com/dotnet/framework/unmanaged-api/metadata/corelementtype-enumeration
+                const byte ELEMENT_TYPE_VALUETYPE = 0x11;
+                if (rawTypeKind == ELEMENT_TYPE_VALUETYPE)
+                {
+                    return "/* SUPPLY TYPE */";
+                }
+
                 throw new NotSupportedTypeException("Non-primitive");
             }
         }

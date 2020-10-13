@@ -70,6 +70,79 @@ The `preload_runtime()` function can be used to preload the runtime. This may be
 
 1) Set the `<EnableDynamicLoading>true</EnableDynamicLoading>` property in the managed project containing the methods to export. This will produce a `*.runtimeconfig.json` that is needed to activate the runtime during export dispatch.
 
+### Native code customization
+
+The mapping of .NET types to their native representation is addressed by the concept of [blittability](https://docs.microsoft.com/dotnet/framework/interop/blittable-and-non-blittable-types). This approach however limits what can be expressed by the managed type signature when being called from an unmanaged context. For example, there is no way for DNNE to know how it should describe the following C struct in C# without being enriched with knowledge of how to construct marshallable types.
+
+```C
+struct some_data
+{
+    char* str;
+    union
+    {
+        short s;
+        double d;
+    } data;
+};
+```
+
+The following attributes can be used to enable the above scenario. They should be defined by the project in order to be used. Refer to [`ExportingAssembly`](./test/ExportingAssembly/Dnne.Attributes.cs) for an example.
+
+```CSharp
+    /// <summary>
+    /// Provide C code to be defined early in the generated C header file.
+    /// </summary>
+    /// <remarks>
+    /// This attribute is respected on an exported method declaration or on a parameter for the method.
+    /// The following header files will be included prior to the code being defined.
+    ///   stddef.h
+    ///   stdint.h
+    ///   dnne.h
+    /// </remarks>
+    internal class C99DeclCodeAttribute : System.Attribute
+    {
+        public C99DeclCodeAttribute(string code) { }
+    }
+
+    /// <summary>
+    /// Define the C type to be used.
+    /// </summary>
+    /// <remarks>
+    /// The level of indirection should be included in the supplied string.
+    /// </remarks>
+    internal class C99TypeAttribute : System.Attribute
+    {
+        public C99TypeAttribute(string code) { }
+    }
+```
+
+The above attributes can be used to manually define the native type mapping to be used in the export definition. For example:
+
+```CSharp
+public unsafe static class NativeExports
+{
+    public struct Data
+    {
+        public int a;
+        public int b;
+        public int c;
+    }
+
+    [UnmanagedCallersOnly]
+    [DNNE.C99DeclCode("struct T{int a;};")]
+    public static int ReturnDataCMember([DNNE.C99Type("struct T")] Data d)
+    {
+        return d.c;
+    }
+
+    [UnmanagedCallersOnly]
+    public static int ReturnRefDataCMember([DNNE.C99Type("struct T*")] Data* d)
+    {
+        return d->c;
+    }
+}
+```
+
 ## Generating a native binary using the DNNE NuPkg
 
 1) The DNNE NuPkg is published on [NuGet.org](https://www.nuget.org/packages/DNNE), but can also be built locally.

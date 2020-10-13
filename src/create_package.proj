@@ -1,14 +1,18 @@
 <Project DefaultTargets="CreateNuPkg">
 
+  <PropertyGroup>
+    <Configuration Condition="'$(Configuration)'==''">Release</Configuration>
+  </PropertyGroup>
+
   <Target Name="CreateNuPkg">
     <MSBuild
         Projects="$(MSBuildThisFileDirectory)msbuild/DNNE.BuildTasks/DNNE.BuildTasks.csproj"
-        Properties="Configuration=Release"
+        Properties="Configuration=$(Configuration)"
         Targets="Restore;Rebuild" />
 
     <MSBuild
         Projects="$(MSBuildThisFileDirectory)dnne-gen/dnne-gen.csproj"
-        Properties="Configuration=Release"
+        Properties="Configuration=$(Configuration)"
         Targets="Restore;Rebuild;pack" />
   </Target>
 
