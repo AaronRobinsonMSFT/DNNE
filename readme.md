@@ -129,7 +129,7 @@ public unsafe static class NativeExports
     }
 
     [UnmanagedCallersOnly]
-    [DNNE.C99DeclCode("struct T{int a;};")]
+    [DNNE.C99DeclCode("struct T{int a; int b; int c;};")]
     public static int ReturnDataCMember([DNNE.C99Type("struct T")] Data d)
     {
         return d.c;
