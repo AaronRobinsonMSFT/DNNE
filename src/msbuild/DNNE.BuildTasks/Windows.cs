@@ -70,6 +70,13 @@ namespace DNNE.BuildTasks
                 compilerFlags.Append($"/I \"{incPath}\" ");
             }
 
+            // Add user defined inc paths last - these will be searched last on MSVC.
+            // https://docs.microsoft.com/cpp/build/reference/i-additional-include-directories#remarks
+            foreach (var incPath in export.SafeAdditionalIncludeDirectories)
+            {
+                compilerFlags.Append($"/I \"{incPath}\" ");
+            }
+
             compilerFlags.Append($"\"{export.Source}\" \"{Path.Combine(export.PlatformPath, "platform.c")}\" ");
 
             // Set linker flags

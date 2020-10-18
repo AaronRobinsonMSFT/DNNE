@@ -45,6 +45,14 @@ namespace DNNE.BuildTasks
             compilerFlags.Append($"-shared -fpic ");
             compilerFlags.Append($"-D DNNE_ASSEMBLY_NAME={export.AssemblyName} -D DNNE_COMPILE_AS_SOURCE ");
             compilerFlags.Append($"-I \"{export.PlatformPath}\" -I \"{export.NetHostPath}\" ");
+
+            // Add user defined inc paths last - these will be searched last on clang.
+            // https://clang.llvm.org/docs/ClangCommandLineReference.html#include-path-management
+            foreach (var incPath in export.SafeAdditionalIncludeDirectories)
+            {
+                compilerFlags.Append($"-I \"{incPath}\" ");
+            }
+
             compilerFlags.Append($"-o \"{Path.Combine(export.OutputPath, export.OutputName)}\" ");
             compilerFlags.Append($"\"{export.Source}\" \"{Path.Combine(export.PlatformPath, "platform.c")}\" ");
             compilerFlags.Append($"-lstdc++ ");

@@ -26,7 +26,7 @@ DNNE.props
   <PropertyGroup>
     <DnneGenerateExports>true</DnneGenerateExports>
 
-    <!-- If the build is disabled, the generated is considered the output
+    <!-- If the build is disabled, the generated source is considered the output
         and emitted in the output directory as if it were a binary. -->
     <DnneBuildExports>true</DnneBuildExports>
 
@@ -44,5 +44,16 @@ DNNE.props
 
     <!-- Enable a workaround for https://github.com/dotnet/sdk/issues/1675 -->
     <DnneWorkAroundSdk1675>true</DnneWorkAroundSdk1675>
+
+    <!-- Set to override the computed native compiler command.
+        This value will be placed in double quotes (e.g. "command") and passed
+        the computed compiler arguments. -->
+    <DnneCompilerCommand></DnneCompilerCommand>
+
+    <!-- Set to add additional include paths to use during the native build.
+        The directories should be semicolon (e.g. C:\Foo;D:\Bar) delimited.
+        These additional directories are appended to the end of the compiler
+        search paths. -->
+    <DnneAdditionalIncludeDirectories></DnneAdditionalIncludeDirectories>
   </PropertyGroup>
 </Project>
