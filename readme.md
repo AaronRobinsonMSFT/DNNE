@@ -95,9 +95,9 @@ The following attributes can be used to enable the above scenario. They should b
     /// <remarks>
     /// This attribute is respected on an exported method declaration or on a parameter for the method.
     /// The following header files will be included prior to the code being defined.
-    ///   stddef.h
-    ///   stdint.h
-    ///   dnne.h
+    ///   - stddef.h
+    ///   - stdint.h
+    ///   - dnne.h
     /// </remarks>
     internal class C99DeclCodeAttribute : System.Attribute
     {
@@ -143,6 +143,12 @@ public unsafe static class NativeExports
 }
 ```
 
+In addition to providing declaration code directly, users can also supply `#include` directives for application specific headers. The [`DnneAdditionalIncludeDirectories`](./src/msbuild/DNNE.props) MSBuild property can be used to supply search paths in these cases. Consider the following use of the `DNNE.C99DeclCode` attribute.
+
+```CSharp
+[DNNE.C99DeclCode("#include <fancyapp.h>")]
+```
+
 ## Generating a native binary using the DNNE NuPkg
 
 1) The DNNE NuPkg is published on [NuGet.org](https://www.nuget.org/packages/DNNE), but can also be built locally.
@@ -152,6 +158,8 @@ public unsafe static class NativeExports
         `> dotnet build create_package.proj`
 
 1) Add the NuPkg to the target managed project.
+
+    * See [`DNNE.props`](./src/msbuild/DNNE.props) for the MSBuild properties used to configure the build process.
 
     * If NuPkg was built locally, remember to update the projects `nuget.config` to point at the local location of the recently built DNNE NuPkg.
 

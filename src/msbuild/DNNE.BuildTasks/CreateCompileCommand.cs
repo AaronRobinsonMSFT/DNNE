@@ -21,6 +21,8 @@ using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace DNNE.BuildTasks
@@ -59,6 +61,18 @@ namespace DNNE.BuildTasks
 
         [Required]
         public string Configuration { get; set; }
+
+        // Optional
+        public string CommandOverride { get; set; }
+
+        // Optional
+        public ITaskItem[] AdditionalIncludeDirectories { get; set; }
+
+        // Used to avoid null cases
+        internal IEnumerable<ITaskItem> SafeAdditionalIncludeDirectories
+        {
+            get => AdditionalIncludeDirectories ?? Enumerable.Empty<ITaskItem>();
+        }
 
         [Output]
         public string Command { get; set; }
@@ -103,7 +117,7 @@ Native Build:
                 throw new NotSupportedException("Unknown native build environment");
             }
 
-            this.Command = command;
+            this.Command = string.IsNullOrEmpty(this.CommandOverride) ? command : this.CommandOverride;
             this.CommandArguments = commandArguments;
 
             return true;

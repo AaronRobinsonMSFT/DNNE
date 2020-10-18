@@ -108,6 +108,10 @@ DNNE.targets
       <__DnneGeneratedSourceFile>@(DnneGeneratedSourceFile)</__DnneGeneratedSourceFile>
     </PropertyGroup>
 
+    <ItemGroup>
+      <__DnneAdditionalIncludeDirectories Include="$(DnneAdditionalIncludeDirectories)" />
+    </ItemGroup>
+
     <CreateCompileCommand
         AssemblyName="$(DnneAssemblyName)"
         NetHostPath="$([MSBuild]::NormalizePath($(DnneNetHostDir)))"
@@ -117,7 +121,9 @@ DNNE.targets
         OutputPath="$([MSBuild]::NormalizePath($(DnneGeneratedBinPath)))"
         RuntimeID="$(DnneRuntimeIdentifier)"
         Architecture="$(TargetedSDKArchitecture)"
-        Configuration="$(Configuration)">
+        Configuration="$(Configuration)"
+        CommandOverride="$(DnneCompilerCommand)"
+        AdditionalIncludeDirectories="@(__DnneAdditionalIncludeDirectories)">
       <Output TaskParameter="Command" PropertyName="CompilerCmd" />
       <Output TaskParameter="CommandArguments" PropertyName="CompilerArgs" />
     </CreateCompileCommand>
