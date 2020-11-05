@@ -26,7 +26,7 @@ DNNE.targets
   <PropertyGroup>
     <DnneNativeExportsBinaryName>$(TargetName)$(DnneNativeBinarySuffix)</DnneNativeExportsBinaryName>
     <DnneNativeExportsBinaryPath>$(TargetDir)</DnneNativeExportsBinaryPath>
-    <DnneGeneratedOutputPath>$(MSBuildProjectDirectory)/$(IntermediateOutputPath)dnne</DnneGeneratedOutputPath>
+    <DnneGeneratedOutputPath>$(IntermediateOutputPath)dnne</DnneGeneratedOutputPath>
     <DnneGeneratedBinPath>$(DnneGeneratedOutputPath)/bin</DnneGeneratedBinPath>
 
     <!-- If build was disabled, change the generated output directory to
