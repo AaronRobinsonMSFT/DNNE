@@ -91,7 +91,7 @@ namespace DNNE
                 }
 
                 // Set the assembly
-                if (arg[0] != '/' && arg[0] != '-')
+                if (arg[0] != '-')
                 {
                     if (parsed.AssemblyPath != null)
                     {
