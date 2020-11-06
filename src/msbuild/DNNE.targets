@@ -33,7 +33,7 @@ DNNE.targets
         where we would have put the compiled binary -->
     <DnneGeneratedOutputPath Condition="'$(DnneBuildExports)' != 'true'">$(DnneNativeExportsBinaryPath)</DnneGeneratedOutputPath>
 
-    <DnneGenExe>dotnet "$(MSBuildThisFileDirectory)../tools/dnne-gen.dll"</DnneGenExe>
+    <DnneGenExe>dotnet --roll-forward $(DnneGenRollForward) "$(MSBuildThisFileDirectory)../tools/dnne-gen.dll"</DnneGenExe>
     <DnnePlatformSourcePath>$(MSBuildThisFileDirectory)../tools/platform</DnnePlatformSourcePath>
 
     <!-- Compute the extension for the export binary. -->

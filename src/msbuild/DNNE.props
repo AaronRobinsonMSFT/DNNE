@@ -55,5 +55,8 @@ DNNE.props
         These additional directories are appended to the end of the compiler
         search paths. -->
     <DnneAdditionalIncludeDirectories></DnneAdditionalIncludeDirectories>
+
+    <!-- Indicate the dnne-gen tool's roll forward policy. -->
+    <DnneGenRollForward>Minor</DnneGenRollForward>
   </PropertyGroup>
 </Project>
