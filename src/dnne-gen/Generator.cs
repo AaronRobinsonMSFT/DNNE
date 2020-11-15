@@ -366,7 +366,7 @@ namespace DNNE
 
         private static void EmitC99(TextWriter outputStream, string assemblyName, IEnumerable<ExportedMethod> exports, IEnumerable<string> additionalCodeStatements)
         {
-            var generatedHeaderDefine = $"__DNNE_GENERATED_HEADER_{assemblyName.Replace('.', '_').ToUpperInvariant()}__";
+            var generatedHeaderDefine = $"__DNNE_GENERATED_HEADER_{assemblyName.Replace('.', '_').Replace('-', '_').ToUpperInvariant()}__";
             var compileAsSourceDefine = "DNNE_COMPILE_AS_SOURCE";
 
             // Emit declaration preamble
