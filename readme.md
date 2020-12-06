@@ -64,9 +64,13 @@ The `preload_runtime()` function can be used to preload the runtime. This may be
 ## Exporting a managed function
 
 1) Adorn the desired managed function with `UnmanagedCallersOnlyAttribute`.
-    - Optionally set the `EntryPoint` property to indicate the name of the native export. This property is available on both of the attributes.
+    - Optionally set the `EntryPoint` property to indicate the name of the native export. See below for discussion of influence by calling convention.
     - If the `EntryPoint` property is `null`, the name of the mananged function is used. This default name will not include the namespace or class containing the function.
     - User supplied values in `EntryPoint` will not be modified or validated in any manner. This string will be consume by a C compiler and should therefore adhere to the [C language's restrictions on function names](https://en.cppreference.com/w/c/language/functions).
+    - On the x86 platform only, multiple calling conventions exist and these often influence exported symbols. For example, see MSVC [C export decoration documentation](https://docs.microsoft.com/cpp/build/reference/decorated-names#FormatC). DNNE does not attempt to mitigate symbol decoration - even through `EntryPoint`. If the consuming application requires a specific export symbol _and_ calling convention that is decorated in a customized way, it is recommended to manually compile the generated source - see [`DnneBuildExports`](./src/msbuild/DNNE.props). Typically, setting the calling convention to `cdecl` for the export will address issues on any x86 platform.
+        ```CSharp
+        [UnmanagedCallersOnly(CallConvs = new []{typeof(System.Runtime.CompilerServices.CallConvCdecl)})]
+        ```
 
 1) Set the `<EnableDynamicLoading>true</EnableDynamicLoading>` property in the managed project containing the methods to export. This will produce a `*.runtimeconfig.json` that is needed to activate the runtime during export dispatch.
 
@@ -86,34 +90,34 @@ struct some_data
 };
 ```
 
-The following attributes can be used to enable the above scenario. They should be defined by the project in order to be used. Refer to [`ExportingAssembly`](./test/ExportingAssembly/Dnne.Attributes.cs) for an example.
+The following attributes can be used to enable the above scenario. They must be defined by the project in order to be used - DNNE provides no assembly to reference. Refer to [`ExportingAssembly`](./test/ExportingAssembly/Dnne.Attributes.cs) for an example.
 
 ```CSharp
-    /// <summary>
-    /// Provide C code to be defined early in the generated C header file.
-    /// </summary>
-    /// <remarks>
-    /// This attribute is respected on an exported method declaration or on a parameter for the method.
-    /// The following header files will be included prior to the code being defined.
-    ///   - stddef.h
-    ///   - stdint.h
-    ///   - dnne.h
-    /// </remarks>
-    internal class C99DeclCodeAttribute : System.Attribute
-    {
-        public C99DeclCodeAttribute(string code) { }
-    }
+/// <summary>
+/// Provide C code to be defined early in the generated C header file.
+/// </summary>
+/// <remarks>
+/// This attribute is respected on an exported method declaration or on a parameter for the method.
+/// The following header files will be included prior to the code being defined.
+///   - stddef.h
+///   - stdint.h
+///   - dnne.h
+/// </remarks>
+internal class C99DeclCodeAttribute : System.Attribute
+{
+    public C99DeclCodeAttribute(string code) { }
+}
 
-    /// <summary>
-    /// Define the C type to be used.
-    /// </summary>
-    /// <remarks>
-    /// The level of indirection should be included in the supplied string.
-    /// </remarks>
-    internal class C99TypeAttribute : System.Attribute
-    {
-        public C99TypeAttribute(string code) { }
-    }
+/// <summary>
+/// Define the C type to be used.
+/// </summary>
+/// <remarks>
+/// The level of indirection should be included in the supplied string.
+/// </remarks>
+internal class C99TypeAttribute : System.Attribute
+{
+    public C99TypeAttribute(string code) { }
+}
 ```
 
 The above attributes can be used to manually define the native type mapping to be used in the export definition. For example:
