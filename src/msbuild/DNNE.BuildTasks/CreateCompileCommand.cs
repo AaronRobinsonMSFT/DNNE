@@ -45,7 +45,7 @@ namespace DNNE.BuildTasks
         public string PlatformPath { get; set; }
 
         [Required]
-        public ITaskItem Source { get; set; }
+        public string Source { get; set; }
 
         [Required]
         public string OutputName { get; set; }
@@ -69,6 +69,10 @@ namespace DNNE.BuildTasks
         public ITaskItem[] AdditionalIncludeDirectories { get; set; }
 
         // Used to avoid null cases
+        // N.B. The ToString() method on an ITaskItem returns the escaped
+        // item spec. This is typically not what is desired if being passed
+        // to a command line tool. In order to get the unescaped item spec use
+        // the ITaskItem.ItemSpec property.
         internal IEnumerable<ITaskItem> SafeAdditionalIncludeDirectories
         {
             get => AdditionalIncludeDirectories ?? Enumerable.Empty<ITaskItem>();
