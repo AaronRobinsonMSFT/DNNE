@@ -74,7 +74,7 @@ namespace DNNE.BuildTasks
             // https://docs.microsoft.com/cpp/build/reference/i-additional-include-directories#remarks
             foreach (var incPath in export.SafeAdditionalIncludeDirectories)
             {
-                compilerFlags.Append($"/I \"{incPath}\" ");
+                compilerFlags.Append($"/I \"{incPath.ItemSpec}\" ");
             }
 
             compilerFlags.Append($"\"{export.Source}\" \"{Path.Combine(export.PlatformPath, "platform.c")}\" ");

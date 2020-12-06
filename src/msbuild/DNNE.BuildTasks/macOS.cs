@@ -50,7 +50,7 @@ namespace DNNE.BuildTasks
             // https://clang.llvm.org/docs/ClangCommandLineReference.html#include-path-management
             foreach (var incPath in export.SafeAdditionalIncludeDirectories)
             {
-                compilerFlags.Append($"-I \"{incPath}\" ");
+                compilerFlags.Append($"-I \"{incPath.ItemSpec}\" ");
             }
 
             compilerFlags.Append($"-o \"{Path.Combine(export.OutputPath, export.OutputName)}\" ");
