@@ -173,10 +173,10 @@ In addition to providing declaration code directly, users can also supply `#incl
     </ItemGroup>
     ```
 
-1) Build the managed project to generate the native binary. The native binary will have a `NE` suffix and the system extension for dynamic/shared native libraries (i.e. `.dll`, `.so`, `.dylib`).
+1) Build the managed project to generate the native binary. The native binary will have a `NE` suffix and the system extension for dynamic/shared native libraries (i.e., `.dll`, `.so`, `.dylib`).
     * The [Runtime Identifier (RID)](https://docs.microsoft.com/dotnet/core/rid-catalog) is used to target a specific SDK.
     * For example, on Windows the `--runtime` flag can be used to target `win-x86` or `win-x64`.
-    * The `NE` suffix can be changed by setting the MSBuild property `DnneNativeBinarySuffix`.
+    * The name of the native binary can be supplied by setting the MSBuild property `DnneNativeBinaryName`. It is incumbent on the setter of this property that it doesn't collide with the name of the managed assembly. Practially, this only impacts the Windows platform because managed and native binaries share the same extension (i.e., `.dll`).
     * A header file containing the exports will be placed in the output directory. The [`dnne.h`](./src/platform/dnne.h) will also be placed in the output directory.
     * On Windows an [import library (`.lib`)](https://docs.microsoft.com/windows/win32/dlls/dynamic-link-library-creation#using-an-import-library) will be placed in the output directory.
 

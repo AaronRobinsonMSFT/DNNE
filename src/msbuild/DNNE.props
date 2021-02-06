@@ -30,11 +30,14 @@ DNNE.props
         and emitted in the output directory as if it were a binary. -->
     <DnneBuildExports>true</DnneBuildExports>
 
-    <!-- This suffix is needed to ensure the uniqueness of the generated
-        binary and the existing managed assembly. Technically, this is only
-        needed on Windows since native binaries on non-Windows platform
-        don't use '.dll'. -->
-    <DnneNativeBinarySuffix>NE</DnneNativeBinarySuffix>
+    <!-- The name of the resulting native binary. This should be the name of the binary
+        without an extension (e.g. 'MyName'). The extension will be computed based on the
+        current platform. If overridden, uniqueness of this name with extension is required
+        as the generated binary and the existing managed assembly will collide on Windows
+        since managed and native binaries share the same extension (i.e. '.dll').
+        If this property is left blank, the previous behavior of using '$(TargetName)NE'
+        will occur on all platforms. -->
+    <DnneNativeBinaryName></DnneNativeBinaryName>
 
     <!-- Logging level passed to output from the DNNE build process. -->
     <DnneMSBuildLogging>low</DnneMSBuildLogging>
