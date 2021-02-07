@@ -24,7 +24,12 @@ DNNE.targets
 -->
 <Project>
   <PropertyGroup>
-    <DnneNativeExportsBinaryName>$(TargetName)$(DnneNativeBinarySuffix)</DnneNativeExportsBinaryName>
+    <!-- Let the user define the name of the native binary -->
+    <DnneNativeExportsBinaryName>$(DnneNativeBinaryName)</DnneNativeExportsBinaryName>
+
+    <!-- If the user didn't define the name compute one using the legacy mechanism -->
+    <DnneNativeBinarySuffix Condition="'$(DnneNativeBinarySuffix)'==''">NE</DnneNativeBinarySuffix>
+    <DnneNativeExportsBinaryName Condition="'$(DnneNativeExportsBinaryName)'==''">$(TargetName)$(DnneNativeBinarySuffix)</DnneNativeExportsBinaryName>
     <DnneNativeExportsBinaryPath>$(TargetDir)</DnneNativeExportsBinaryPath>
     <DnneGeneratedOutputPath>$(IntermediateOutputPath)dnne</DnneGeneratedOutputPath>
     <DnneGeneratedBinPath>$(DnneGeneratedOutputPath)/bin</DnneGeneratedBinPath>

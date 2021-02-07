@@ -8,13 +8,15 @@ This work is inspired by work in the [Xamarin][xamarin_embed_link], [CoreRT][cor
 
 ### Minimum
 
-* [.NET 5.0.100-preview.7.20357.1](https://github.com/dotnet/installer) or greater.
+* [.NET 5.0](https://dotnet.microsoft.com/download/dotnet/5.0) or greater.
 * [C99](https://en.cppreference.com/w/c/language/history) compatible compiler.
 
 ### DNNE NuPkg Requirements
 
 **Windows:**
 * [Visual Studio 2015](https://visualstudio.microsoft.com/) or greater.
+    - The x86_64 version of the .NET runtime is the default install.
+    - In order to target x86, the x86 .NET runtime must be explicitly installed.
 * Windows 10 SDK - Installed with Visual Studio.
 * x86 and x86_64 compilation supported.
 
@@ -173,10 +175,10 @@ In addition to providing declaration code directly, users can also supply `#incl
     </ItemGroup>
     ```
 
-1) Build the managed project to generate the native binary. The native binary will have a `NE` suffix and the system extension for dynamic/shared native libraries (i.e. `.dll`, `.so`, `.dylib`).
+1) Build the managed project to generate the native binary. The native binary will have a `NE` suffix and the system extension for dynamic/shared native libraries (i.e., `.dll`, `.so`, `.dylib`).
     * The [Runtime Identifier (RID)](https://docs.microsoft.com/dotnet/core/rid-catalog) is used to target a specific SDK.
     * For example, on Windows the `--runtime` flag can be used to target `win-x86` or `win-x64`.
-    * The `NE` suffix can be changed by setting the MSBuild property `DnneNativeBinarySuffix`.
+    * The name of the native binary can be supplied by setting the MSBuild property `DnneNativeBinaryName`. It is incumbent on the setter of this property that it doesn't collide with the name of the managed assembly. Practially, this only impacts the Windows platform because managed and native binaries share the same extension (i.e., `.dll`).
     * A header file containing the exports will be placed in the output directory. The [`dnne.h`](./src/platform/dnne.h) will also be placed in the output directory.
     * On Windows an [import library (`.lib`)](https://docs.microsoft.com/windows/win32/dlls/dynamic-link-library-creation#using-an-import-library) will be placed in the output directory.
 
@@ -235,4 +237,4 @@ public class Exports
 [corert_feature_link]: https://github.com/dotnet/corert/tree/master/samples/NativeLibrary
 [dllexport_link]: https://github.com/3F/DllExport
 [csharp_funcptr_link]: https://github.com/dotnet/csharplang/blob/master/proposals/function-pointers.md
-[unmanagedcallersonly_link]: https://github.com/dotnet/runtime/pull/35592
+[unmanagedcallersonly_link]: https://docs.microsoft.com/dotnet/api/system.runtime.interopservices.unmanagedcallersonlyattribute
