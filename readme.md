@@ -8,13 +8,15 @@ This work is inspired by work in the [Xamarin][xamarin_embed_link], [CoreRT][cor
 
 ### Minimum
 
-* [.NET 5.0.100-preview.7.20357.1](https://github.com/dotnet/installer) or greater.
+* [.NET 5.0](https://dotnet.microsoft.com/download/dotnet/5.0) or greater.
 * [C99](https://en.cppreference.com/w/c/language/history) compatible compiler.
 
 ### DNNE NuPkg Requirements
 
 **Windows:**
 * [Visual Studio 2015](https://visualstudio.microsoft.com/) or greater.
+    - The x86_64 version of the .NET runtime is the default install.
+    - In order to target x86, the x86 .NET runtime must be explicitly installed.
 * Windows 10 SDK - Installed with Visual Studio.
 * x86 and x86_64 compilation supported.
 
@@ -235,4 +237,4 @@ public class Exports
 [corert_feature_link]: https://github.com/dotnet/corert/tree/master/samples/NativeLibrary
 [dllexport_link]: https://github.com/3F/DllExport
 [csharp_funcptr_link]: https://github.com/dotnet/csharplang/blob/master/proposals/function-pointers.md
-[unmanagedcallersonly_link]: https://github.com/dotnet/runtime/pull/35592
+[unmanagedcallersonly_link]: https://docs.microsoft.com/dotnet/api/system.runtime.interopservices.unmanagedcallersonlyattribute
