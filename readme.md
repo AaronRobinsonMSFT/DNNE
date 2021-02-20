@@ -18,7 +18,8 @@ This work is inspired by work in the [Xamarin][xamarin_embed_link], [CoreRT][cor
     - The x86_64 version of the .NET runtime is the default install.
     - In order to target x86, the x86 .NET runtime must be explicitly installed.
 * Windows 10 SDK - Installed with Visual Studio.
-* x86 and x86_64 compilation supported.
+* x86, x86_64, ARM64 compilation supported.
+    - The Visual Studio package containing the desired compiler architecture must have been installed.
 
 **macOS:**
 * [clang](https://clang.llvm.org/) compiler on the path.
@@ -95,30 +96,33 @@ struct some_data
 The following attributes can be used to enable the above scenario. They must be defined by the project in order to be used - DNNE provides no assembly to reference. Refer to [`ExportingAssembly`](./test/ExportingAssembly/Dnne.Attributes.cs) for an example.
 
 ```CSharp
-/// <summary>
-/// Provide C code to be defined early in the generated C header file.
-/// </summary>
-/// <remarks>
-/// This attribute is respected on an exported method declaration or on a parameter for the method.
-/// The following header files will be included prior to the code being defined.
-///   - stddef.h
-///   - stdint.h
-///   - dnne.h
-/// </remarks>
-internal class C99DeclCodeAttribute : System.Attribute
+namespace DNNE
 {
-    public C99DeclCodeAttribute(string code) { }
-}
+    /// <summary>
+    /// Provide C code to be defined early in the generated C header file.
+    /// </summary>
+    /// <remarks>
+    /// This attribute is respected on an exported method declaration or on a parameter for the method.
+    /// The following header files will be included prior to the code being defined.
+    ///   - stddef.h
+    ///   - stdint.h
+    ///   - dnne.h
+    /// </remarks>
+    internal class C99DeclCodeAttribute : System.Attribute
+    {
+        public C99DeclCodeAttribute(string code) { }
+    }
 
-/// <summary>
-/// Define the C type to be used.
-/// </summary>
-/// <remarks>
-/// The level of indirection should be included in the supplied string.
-/// </remarks>
-internal class C99TypeAttribute : System.Attribute
-{
-    public C99TypeAttribute(string code) { }
+    /// <summary>
+    /// Define the C type to be used.
+    /// </summary>
+    /// <remarks>
+    /// The level of indirection should be included in the supplied string.
+    /// </remarks>
+    internal class C99TypeAttribute : System.Attribute
+    {
+        public C99TypeAttribute(string code) { }
+    }
 }
 ```
 
@@ -167,7 +171,7 @@ In addition to providing declaration code directly, users can also supply `#incl
 
     * See [`DNNE.props`](./src/msbuild/DNNE.props) for the MSBuild properties used to configure the build process.
 
-    * If NuPkg was built locally, remember to update the projects `nuget.config` to point at the local location of the recently built DNNE NuPkg.
+    * If NuPkg was built locally, remember to update the project's `nuget.config` to point at the local location of the recently built DNNE NuPkg.
 
     ```xml
     <ItemGroup>
@@ -208,7 +212,7 @@ namespace DNNE
     }
 }
 ```
-    
+
 The calling convention of the export will be the default for the .NET runtime on that platform. See the description of [`CallingConvention.Winapi`](https://docs.microsoft.com/dotnet/api/system.runtime.interopservices.callingconvention).
 
 Using `DNNE.ExportAttribute` to export a method requires a `Delegate` of the appropriate type and name to be at the same scope as the export. The naming convention is `<METHODNAME>Delegate`. For example:
