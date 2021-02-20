@@ -24,6 +24,7 @@ using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace DNNE.BuildTasks
@@ -43,9 +44,8 @@ namespace DNNE.BuildTasks
             export.Report(CreateCompileCommand.DevImportance, $"VS Install: {vsInstall}\nVC Tools: {vcToolDir}\nWinSDK Version: {winSdk.Version}");
 
             bool isDebug = IsDebug(export.Configuration);
-            bool is64Bit = Is64BitTarget(export.Architecture, export.RuntimeID);
 
-            var archDir = is64Bit ? "x64" : "x86";
+            string archDir = ConvertToVCArchSubDir(export.Architecture, export.RuntimeID);
 
             // VC inc and lib paths
             var vcIncDir = Path.Combine(vcToolDir, "include");
@@ -80,7 +80,7 @@ namespace DNNE.BuildTasks
             compilerFlags.Append($"\"{export.Source}\" \"{Path.Combine(export.PlatformPath, "platform.c")}\" ");
 
             // Set linker flags
-            linkerFlags.Append($"/DLL ");
+            linkerFlags.Append($"/DLL /LTCG ");
             linkerFlags.Append($"/LIBPATH:\"{libDir}\" ");
 
             // Add WinSDK lib paths
@@ -101,15 +101,25 @@ namespace DNNE.BuildTasks
             commandArguments = $"{compilerFlags} /link {linkerFlags}";
         }
 
-        private static bool Is64BitTarget(string arch, string rid)
+        private static string ConvertToVCArchSubDir(string arch, string rid)
         {
             return arch.ToLower() switch
             {
-                "x64" => true,
-                "amd64" => true,
-                "x86" => false,
-                "msil" => rid.Contains("x64"), // e.g. win-x86, win-x64, etc
-                _ => IntPtr.Size == 8, // Fallback is the process bitness
+                "x64" or "amd64" => "x64",
+                "x86" => "x86",
+                "arm64" => "arm64",
+                "msil" => rid.Contains("x64") // e.g. win-x86, win-x64, win-arm64 etc
+                            ? "x64"
+                            : rid.Contains("arm64")
+                                ? "arm64"
+                                : "x86",
+                _ => RuntimeInformation.ProcessArchitecture switch // Fallback is the process
+                {
+                    Architecture.X64 => "x64",
+                    Architecture.X86 => "x86",
+                    Architecture.Arm64 => "arm64",
+                    _ => throw new Exception("Unsupported target architecture")
+                }
             };
         }
 
@@ -173,11 +183,14 @@ namespace DNNE.BuildTasks
                 }
 
                 var vsInst = (ISetupInstance2)el[0];
+                var ver = new Version(vsInst.GetInstallationVersion());
+
                 ISetupPackageReference[] pkgs = vsInst.GetPackages();
                 foreach (var n in pkgs)
                 {
-                    var ver = new Version(vsInst.GetInstallationVersion());
-                    if (n.GetId().Equals("Microsoft.VisualStudio.Component.VC.Tools.x86.x64"))
+                    var pkgId = n.GetId();
+                    if (pkgId.Equals("Microsoft.VisualStudio.Component.VC.Tools.x86.x64")
+                        || pkgId.Equals("Microsoft.VisualStudio.Component.VC.Tools.ARM64"))
                     {
                         if (latestVersion < ver)
                         {
@@ -191,7 +204,7 @@ namespace DNNE.BuildTasks
 
             if (latestVsInstance is null)
             {
-                throw new Exception("Visual Studio with VC Tools package must be installed.");
+                throw new Exception("Visual Studio with VC Tools package (x86, x64, or ARM64) must be installed.");
             }
 
             return latestVsInstance.GetInstallationPath();
