@@ -62,6 +62,15 @@ namespace DNNE.BuildTasks
             // Set compiler flags
             compilerFlags.Append($"/TC /MT /GS /Zi ");
             compilerFlags.Append($"/D DNNE_ASSEMBLY_NAME={export.AssemblyName} /D DNNE_COMPILE_AS_SOURCE ");
+
+            // Check if user supplied a def file.
+            string exportsDefFile = export.AbsoluteExportsDefFilePath;
+            if (!string.IsNullOrEmpty(exportsDefFile))
+            {
+                // The macro needs to be empty, not just defined.
+                compilerFlags.Append($"/D DNNE_API_OVERRIDE= ");
+            }
+
             compilerFlags.Append($"/I \"{vcIncDir}\" /I \"{export.PlatformPath}\" /I \"{export.NetHostPath}\" ");
 
             // Add WinSDK inc paths
@@ -81,6 +90,12 @@ namespace DNNE.BuildTasks
 
             // Set linker flags
             linkerFlags.Append($"/DLL /LTCG ");
+
+            if (!string.IsNullOrEmpty(exportsDefFile))
+            {
+                linkerFlags.Append($"/DEF:\"{exportsDefFile}\" ");
+            }
+
             linkerFlags.Append($"/LIBPATH:\"{libDir}\" ");
 
             // Add WinSDK lib paths

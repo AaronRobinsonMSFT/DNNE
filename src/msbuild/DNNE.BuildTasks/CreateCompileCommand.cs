@@ -22,6 +22,7 @@ using Microsoft.Build.Utilities;
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 
@@ -66,6 +67,24 @@ namespace DNNE.BuildTasks
         public string CommandOverride { get; set; }
 
         // Optional
+        public string ExportsDefFile { get; set; }
+
+        // Used to ensure the supplied path is absolute and
+        // can be supplied as-is in a command line scenario.
+        internal string AbsoluteExportsDefFilePath
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(ExportsDefFile))
+                {
+                    return null;
+                }
+
+                return Path.GetFullPath(ExportsDefFile);
+            }
+        }
+
+        // Optional
         public ITaskItem[] AdditionalIncludeDirectories { get; set; }
 
         // Used to avoid null cases
@@ -93,6 +112,7 @@ DNNE Native Compilation:
     NetHostPath:    {NetHostPath}
     PlatformPath:   {PlatformPath}
     Source:         {Source}
+    ExportsDefFile: {ExportsDefFile}
     OutputName:     {OutputName}
     OutputPath:     {OutputPath}
 
