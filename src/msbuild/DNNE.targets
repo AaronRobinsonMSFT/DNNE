@@ -128,6 +128,7 @@ DNNE.targets
         Architecture="$(TargetedSDKArchitecture)"
         Configuration="$(Configuration)"
         CommandOverride="$(DnneCompilerCommand)"
+        ExportsDefFile="$(DnneWindowsExportsDef)"
         AdditionalIncludeDirectories="@(__DnneAdditionalIncludeDirectories)">
       <Output TaskParameter="Command" PropertyName="CompilerCmd" />
       <Output TaskParameter="CommandArguments" PropertyName="CompilerArgs" />

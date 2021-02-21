@@ -53,6 +53,12 @@ DNNE.props
         the computed compiler arguments. -->
     <DnneCompilerCommand></DnneCompilerCommand>
 
+    <!-- Provide a .def file to pass to the Windows Linker for controlling
+        how exports are handled. This is only passed to the linker on
+        the Windows platform.
+        See https://docs.microsoft.com/cpp/build/exporting-from-a-dll-using-def-files -->
+    <DnneWindowsExportsDef></DnneWindowsExportsDef>
+
     <!-- Set to add additional include paths to use during the native build.
         The directories should be semicolon (e.g. C:\Foo;D:\Bar) delimited.
         These additional directories are appended to the end of the compiler

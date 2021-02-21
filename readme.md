@@ -48,6 +48,8 @@ This work is inspired by work in the [Xamarin][xamarin_embed_link], [CoreRT][cor
     }
     ```
 
+- The manner in which native exports are exposed is largely a function of the compiler being used. On the Windows platform an option exists to provide a [`.def`](https://docs.microsoft.com/cpp/build/reference/exports) file that permits customization of native exports. Users can provide a path to a `.def` file using the [`DnneWindowsExportsDef`](./src/msbuild/DNNE.props) MSBuild property. Note that if a `.def` file is provided no user functions will be exported by default.
+
 <a name="nativeapi"></a>
 
 ## Native API
@@ -70,7 +72,7 @@ The `preload_runtime()` function can be used to preload the runtime. This may be
     - Optionally set the `EntryPoint` property to indicate the name of the native export. See below for discussion of influence by calling convention.
     - If the `EntryPoint` property is `null`, the name of the mananged function is used. This default name will not include the namespace or class containing the function.
     - User supplied values in `EntryPoint` will not be modified or validated in any manner. This string will be consume by a C compiler and should therefore adhere to the [C language's restrictions on function names](https://en.cppreference.com/w/c/language/functions).
-    - On the x86 platform only, multiple calling conventions exist and these often influence exported symbols. For example, see MSVC [C export decoration documentation](https://docs.microsoft.com/cpp/build/reference/decorated-names#FormatC). DNNE does not attempt to mitigate symbol decoration - even through `EntryPoint`. If the consuming application requires a specific export symbol _and_ calling convention that is decorated in a customized way, it is recommended to manually compile the generated source - see [`DnneBuildExports`](./src/msbuild/DNNE.props). Typically, setting the calling convention to `cdecl` for the export will address issues on any x86 platform.
+    - On the x86 platform only, multiple calling conventions exist and these often influence exported symbols. For example, see MSVC [C export decoration documentation](https://docs.microsoft.com/cpp/build/reference/decorated-names#FormatC). DNNE does not attempt to mitigate symbol decoration - even through `EntryPoint`. If the consuming application requires a specific export symbol _and_ calling convention that is decorated in a customized way, it is recommended to manually compile the generated source - see [`DnneBuildExports`](./src/msbuild/DNNE.props) - or if on Windows supply a `.def` file - see [`DnneWindowsExportsDef`](./src/msbuild/DNNE.props). Typically, setting the calling convention to `cdecl` for the export will address issues on any x86 platform.
         ```CSharp
         [UnmanagedCallersOnly(CallConvs = new []{typeof(System.Runtime.CompilerServices.CallConvCdecl)})]
         ```

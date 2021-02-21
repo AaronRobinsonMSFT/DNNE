@@ -45,6 +45,13 @@
     #define DNNE_STR(s) s
 #endif
 
+// Override the DNNE_API macro.
+// This is typically used to dictate the export semantics of functions.
+#ifdef DNNE_API_OVERRIDE
+    #undef DNNE_API
+    #define DNNE_API DNNE_API_OVERRIDE
+#endif
+
 //
 // Public exports
 //
