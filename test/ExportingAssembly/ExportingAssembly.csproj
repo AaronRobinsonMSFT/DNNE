@@ -3,6 +3,12 @@
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!--
+        Defining RID(s) in the project enable specifying the bitness of the native binary.
+        See repository readme.md for more details.
+    -->
+    <!-- <RuntimeIdentifier>win-x64</RuntimeIdentifier> -->
+    <!-- <RuntimeIdentifiers>win-x64;win-x86</RuntimeIdentifiers> -->
     <EnableDynamicLoading>true</EnableDynamicLoading>
   </PropertyGroup>
 
