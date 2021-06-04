@@ -361,8 +361,7 @@ static void init_dotnet(const char_t* assembly_path)
     // Self-contained scenario support is experimental and relies upon the application scenario
     // entry-point. The logic here is to trick the hosting API into initializing as an application
     // but call the "load assembly and get delegate" instead of "run main". This has impact
-    // on the TPA make-up and hence the default ALC but does technically enable a self-contained
-    // component scenario.
+    // on the TPA make-up and hence assembly loading in general since the TPA populates the default ALC.
     config_path = assembly_path;
 #else
     char_t buffer[DNNE_MAX_PATH];
