@@ -44,6 +44,12 @@ namespace DNNE.BuildTasks
             // Set compiler flags
             compilerFlags.Append($"-shared -fpic ");
             compilerFlags.Append($"-D DNNE_ASSEMBLY_NAME={export.AssemblyName} -D DNNE_COMPILE_AS_SOURCE ");
+
+            if (export.IsSelfContained)
+            {
+                compilerFlags.Append($"-D DNNE_SELF_CONTAINED_RUNTIME ");
+            }
+
             compilerFlags.Append($"-I \"{export.PlatformPath}\" -I \"{export.NetHostPath}\" ");
 
             // Add user defined inc paths last - these will be searched last on clang.

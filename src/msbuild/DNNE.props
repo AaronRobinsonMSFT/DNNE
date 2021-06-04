@@ -67,5 +67,13 @@ DNNE.props
 
     <!-- Indicate the dnne-gen tool's roll forward policy. -->
     <DnneGenRollForward>Minor</DnneGenRollForward>
+
+    <!-- EXPERIMENTAL: The native hosting should assume it is in a self-contained scenario.
+        When setting this flag to true, the only change in output will be the generated hosting
+        layer will call an API that will permit self-contained runtime activation. In order for this
+        option to work as desired the user must have manually configured the assembly's runtimeconfig.json
+        file and deps.json file. The user must also copy the appropriate runtime binaries to create a
+        valid self-contained install environment. -->
+    <DnneSelfContained_Experimental>false</DnneSelfContained_Experimental>
   </PropertyGroup>
 </Project>

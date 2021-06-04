@@ -129,6 +129,7 @@ DNNE.targets
         Configuration="$(Configuration)"
         CommandOverride="$(DnneCompilerCommand)"
         ExportsDefFile="$(DnneWindowsExportsDef)"
+        IsSelfContained="$(DnneSelfContained_Experimental)"
         AdditionalIncludeDirectories="@(__DnneAdditionalIncludeDirectories)">
       <Output TaskParameter="Command" PropertyName="CompilerCmd" />
       <Output TaskParameter="CommandArguments" PropertyName="CompilerArgs" />
