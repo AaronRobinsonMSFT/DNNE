@@ -71,6 +71,11 @@ namespace DNNE.BuildTasks
                 compilerFlags.Append($"/D DNNE_API_OVERRIDE= ");
             }
 
+            if (export.IsSelfContained)
+            {
+                compilerFlags.Append($"/D DNNE_SELF_CONTAINED_RUNTIME ");
+            }
+
             compilerFlags.Append($"/I \"{vcIncDir}\" /I \"{export.PlatformPath}\" /I \"{export.NetHostPath}\" ");
 
             // Add WinSDK inc paths

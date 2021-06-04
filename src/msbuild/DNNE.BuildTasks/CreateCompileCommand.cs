@@ -69,6 +69,9 @@ namespace DNNE.BuildTasks
         // Optional
         public string ExportsDefFile { get; set; }
 
+        // Optional
+        public bool IsSelfContained { get; set; } = false;
+
         // Used to ensure the supplied path is absolute and
         // can be supplied as-is in a command line scenario.
         internal string AbsoluteExportsDefFilePath

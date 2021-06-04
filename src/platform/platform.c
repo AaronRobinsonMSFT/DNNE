@@ -320,37 +320,65 @@ static int get_current_dir_filepath(int32_t buffer_len, char_t* buffer, int32_t 
 }
 
 // Globals to hold hostfxr exports
+
+static hostfxr_initialize_for_dotnet_command_line_fn init_self_contained_fptr;
 static hostfxr_initialize_for_runtime_config_fn init_fptr;
 static hostfxr_get_runtime_delegate_fn get_delegate_fptr;
 static hostfxr_close_fn close_fptr;
 
-static void load_hostfxr(void)
+static void load_hostfxr(const char_t* assembly_path)
 {
     // Discover the path to hostfxr.
     char_t buffer[DNNE_MAX_PATH];
     size_t buffer_size = DNNE_ARRAY_SIZE(buffer);
-    int rc = get_hostfxr_path(buffer, &buffer_size, NULL);
+    struct get_hostfxr_parameters params;
+    params.size = sizeof(params);
+    params.assembly_path = assembly_path;
+    params.dotnet_root = NULL;
+    int rc = get_hostfxr_path(buffer, &buffer_size, &params);
     if (is_failure(rc))
         noreturn_runtime_load_failure(rc);
 
     // Load hostfxr and get desired exports.
     void* lib = load_library(buffer);
+    init_self_contained_fptr = (hostfxr_initialize_for_dotnet_command_line_fn)get_export(lib, "hostfxr_initialize_for_dotnet_command_line");
     init_fptr = (hostfxr_initialize_for_runtime_config_fn)get_export(lib, "hostfxr_initialize_for_runtime_config");
     get_delegate_fptr = (hostfxr_get_runtime_delegate_fn)get_export(lib, "hostfxr_get_runtime_delegate");
     close_fptr = (hostfxr_close_fn)get_export(lib, "hostfxr_close");
 
-    assert(init_fptr && get_delegate_fptr && close_fptr);
+    assert(init_self_contained_fptr && init_fptr && get_delegate_fptr && close_fptr);
 }
 
 // Globals to hold runtime exports
 static load_assembly_and_get_function_pointer_fn get_managed_export_fptr;
 
-static void init_dotnet(const char_t* config_path)
+static void init_dotnet(const char_t* assembly_path)
 {
+    const char_t* config_path = NULL;
+    int rc;
+
+#ifdef DNNE_SELF_CONTAINED_RUNTIME
+    // Self-contained scenario support is experimental and relies upon the application scenario
+    // entry-point. The logic here is to trick the hosting API into initializing as an application
+    // but call the "load assembly and get delegate" instead of "run main". This has impact
+    // on the TPA make-up and hence assembly loading in general since the TPA populates the default ALC.
+    config_path = assembly_path;
+#else
+    char_t buffer[DNNE_MAX_PATH];
+    const char_t config_filename[] = DNNE_STR(DNNE_TOSTRING(DNNE_ASSEMBLY_NAME)) DNNE_STR(".runtimeconfig.json");
+    rc = get_current_dir_filepath(DNNE_ARRAY_SIZE(buffer), buffer, DNNE_ARRAY_SIZE(config_filename), config_filename, &config_path);
+    if (is_failure(rc))
+        noreturn_runtime_load_failure(rc);
+#endif
+
     // Load .NET runtime
     void* load_assembly_and_get_function_pointer = NULL;
     hostfxr_handle cxt = NULL;
-    int rc = init_fptr(config_path, NULL, &cxt);
+#ifdef DNNE_SELF_CONTAINED_RUNTIME
+    rc = init_self_contained_fptr(1, &config_path, NULL, &cxt);
+#else
+    rc = init_fptr(config_path, NULL, &cxt);
+#endif
     if (is_failure(rc) || cxt == NULL)
     {
         close_fptr(cxt);
@@ -377,18 +405,18 @@ static void prepare_runtime(void)
     if (get_managed_export_fptr)
         return;
 
-    // Load HostFxr and get exported hosting functions.
-    load_hostfxr();
-
-    // Initialize and start the runtime.
     char_t buffer[DNNE_MAX_PATH];
-    const char_t config_filename[] = DNNE_STR(DNNE_TOSTRING(DNNE_ASSEMBLY_NAME)) DNNE_STR(".runtimeconfig.json");
-    const char_t* config_path = NULL;
-    int rc = get_current_dir_filepath(DNNE_ARRAY_SIZE(buffer), buffer, DNNE_ARRAY_SIZE(config_filename), config_filename, &config_path);
+    const char_t assembly_filename[] = DNNE_STR(DNNE_TOSTRING(DNNE_ASSEMBLY_NAME)) DNNE_STR(".dll");
+    const char_t* assembly_path = NULL;
+    int rc = get_current_dir_filepath(DNNE_ARRAY_SIZE(buffer), buffer, DNNE_ARRAY_SIZE(assembly_filename), assembly_filename, &assembly_path);
     if (is_failure(rc))
         noreturn_runtime_load_failure(rc);
 
-    init_dotnet(config_path);
+    // Load HostFxr and get exported hosting functions.
+    load_hostfxr(assembly_path);
+
+    // Initialize and start the runtime.
+    init_dotnet(assembly_path);
     assert(get_managed_export_fptr != NULL);
 }
 
