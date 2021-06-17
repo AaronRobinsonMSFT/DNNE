@@ -625,28 +625,25 @@ $@"#endif // {generatedHeaderDefine}
 
             public KnownType GetTypeFromSerializedName(string name)
             {
-                if (Type.GetType(name).Name.Equals(nameof(CallingConvention)))
+                int typeAssemblySeparator = name.IndexOf(',');
+                string typeName = name[..typeAssemblySeparator];
+                string assemblyName = name[(typeAssemblySeparator + 1)..];
+                string assemblySimpleName = assemblyName;
+                int simpleNameEnd = assemblySimpleName.IndexOf(',');
+                if (simpleNameEnd != -1)
                 {
-                    return KnownType.CallingConvention;
-                }
-                else if (Type.GetType(name).Name.Equals(nameof(CallConvCdecl)))
-                {
-                    return KnownType.CallConvCdecl;
-                }
-                else if (Type.GetType(name).Name.Equals(nameof(CallConvStdcall)))
-                {
-                    return KnownType.CallConvStdcall;
-                }
-                else if (Type.GetType(name).Name.Equals(nameof(CallConvThiscall)))
-                {
-                    return KnownType.CallConvThiscall;
-                }
-                else if (Type.GetType(name).Name.Equals(nameof(CallConvFastcall)))
-                {
-                    return KnownType.CallConvFastcall;
+                    assemblySimpleName = assemblySimpleName[..simpleNameEnd];
                 }
 
-                return KnownType.Unknown;
+                return (typeName, assemblySimpleName.TrimStart()) switch
+                {
+                    ("System.Runtime.InteropServices.CallingConvention", "System.Runtime.InteropServices") => KnownType.CallingConvention,
+                    ("System.Runtime.CompilerServices.CallConvCdecl", "System.Runtime") => KnownType.CallConvCdecl,
+                    ("System.Runtime.CompilerServices.CallConvStdcall", "System.Runtime") => KnownType.CallConvStdcall,
+                    ("System.Runtime.CompilerServices.CallConvThiscall", "System.Runtime") => KnownType.CallConvThiscall,
+                    ("System.Runtime.CompilerServices.CallConvFastcall", "System.Runtime") => KnownType.CallConvFastcall,
+                    _ => KnownType.Unknown
+                };
             }
 
             public PrimitiveTypeCode GetUnderlyingEnumType(KnownType type)

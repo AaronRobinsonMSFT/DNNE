@@ -17,6 +17,7 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace ExportingAssembly
@@ -74,6 +75,12 @@ namespace ExportingAssembly
 
         [UnmanagedCallersOnly]
         public static void UnmanagedIntVoid(int a)
+        {
+            IntVoid(a);
+        }
+
+        [UnmanagedCallersOnly(CallConvs = new [] { typeof(CallConvCdecl) })]
+        public static void UnmanagedIntVoidCdecl(int a)
         {
             IntVoid(a);
         }
