@@ -634,7 +634,8 @@ $@"#endif // {generatedHeaderDefine}
                 {
                     assemblySimpleName = assemblySimpleName[..simpleNameEnd];
                 }
-                return (typeName, assemblySimpleName) switch
+
+                return (typeName, assemblySimpleName.TrimStart()) switch
                 {
                     ("System.Runtime.InteropServices.CallingConvention", "System.Runtime.InteropServices") => KnownType.CallingConvention,
                     ("System.Runtime.CompilerServices.CallConvCdecl", "System.Runtime") => KnownType.CallConvCdecl,
