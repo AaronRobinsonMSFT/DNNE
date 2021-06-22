@@ -15,7 +15,7 @@
 
   <PropertyGroup>
     <PackageId>DNNE</PackageId>
-    <Version>1.0.21</Version>
+    <Version>1.0.22</Version>
     <Authors>AaronRobinsonMSFT</Authors>
     <Owners>AaronRobinsonMSFT</Owners>
     <Description>Package used to generated native exports for .NET assemblies.</Description>
