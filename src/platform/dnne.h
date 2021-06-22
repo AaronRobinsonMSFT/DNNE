@@ -39,9 +39,15 @@
     #define DNNE_API __attribute__((__visibility__("default")))
     #define DNNE_CALLTYPE 
     #define DNNE_CALLTYPE_CDECL 
-    #define DNNE_CALLTYPE_STDCALL __attribute__((stdcall))
-    #define DNNE_CALLTYPE_THISCALL __attribute__((thiscall))
-    #define DNNE_CALLTYPE_FASTCALL __attribute__((fastcall))
+    #ifdef __i386__
+        #define DNNE_CALLTYPE_STDCALL __attribute__((stdcall))
+        #define DNNE_CALLTYPE_THISCALL __attribute__((thiscall))
+        #define DNNE_CALLTYPE_FASTCALL __attribute__((fastcall))
+    #else
+        #define DNNE_CALLTYPE_STDCALL 
+        #define DNNE_CALLTYPE_THISCALL 
+        #define DNNE_CALLTYPE_FASTCALL 
+    #endif
     #define DNNE_STR(s) s
 #endif
 
