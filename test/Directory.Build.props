@@ -1,0 +1,15 @@
+<Project>
+  <PropertyGroup>
+    <RepoRoot>$(MSBuildThisFileDirectory)../</RepoRoot>
+    <SrcRoot>$(RepoRoot)src/</SrcRoot>
+
+    <TestNuPkg Condition="'$(TestNuPkg)' == ''">false</TestNuPkg>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(TestNuPkg)' == 'false'">
+    <!-- Reference the product for local testing -->
+    <ProjectReference Include="$(SrcRoot)dnne-gen/dnne-gen.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+</Project>

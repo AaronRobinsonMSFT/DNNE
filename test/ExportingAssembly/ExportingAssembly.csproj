@@ -1,4 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup Condition="'$(TestNuPkg)' != 'true'">
+    <PseudoPackage>$(SrcRoot)dnne-pkg/bin/$(Configuration)/pkg/</PseudoPackage>
+    <AfterMicrosoftNETSdkTargets>$(PseudoPackage)build/DNNE.targets</AfterMicrosoftNETSdkTargets>
+  </PropertyGroup>
+
+  <Import Condition="'$(TestNuPkg)' != 'true'" Project="$(PseudoPackage)build/DNNE.props" />
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
@@ -12,12 +18,11 @@
     <EnableDynamicLoading>true</EnableDynamicLoading>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="DNNE" Version="1.*" />
-  </ItemGroup>
-
-  <PropertyGroup Condition="'$(RefLocalBuild)'=='true'">
-    <RestoreSources>$(MSBuildThisFileDirectory)../../src/dnne-gen/bin/$(Configuration)</RestoreSources>
+  <PropertyGroup Condition="'$(TestNuPkg)' == 'true' AND '$(RefLocalBuild)'=='true'">
+    <RestoreSources>$(SrcRoot)dnne-pkg/bin/$(Configuration)</RestoreSources>
   </PropertyGroup>
 
+  <ItemGroup Condition="'$(TestNuPkg)' == 'true'">
+    <PackageReference Include="DNNE" Version="1.*" />
+  </ItemGroup>
 </Project>
