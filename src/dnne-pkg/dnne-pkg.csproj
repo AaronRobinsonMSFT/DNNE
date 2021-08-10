@@ -7,6 +7,10 @@
     <PseudoPackageDir>../pkg/</PseudoPackageDir>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Clean Include="$(OutputPath)$(PseudoPackageDir)**/*" />
+  </ItemGroup>
+
   <!--
     NuGet properties and items
     -->
@@ -31,11 +35,6 @@
     <NoWarn>NU5128</NoWarn>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Clean Include="$(OutputPath)$(PseudoPackageDir)**/*" />
-    <None Include="$(OutputPath)$(PseudoPackageDir)**" Pack="True" PackagePath="./" />
-  </ItemGroup>
-
   <!-- Reference the project to trigger build -->
   <ItemGroup>
     <ProjectReference Include="../dnne-gen/dnne-gen.csproj">
@@ -49,6 +48,8 @@
   </ItemGroup>
 
   <Target Name="CreatePseudoPackage" AfterTargets="Build">
+
+    <!-- Define pseudo package structure -->
     <PropertyGroup>
       <PseudoPackageRoot>$(OutputPath)$(PseudoPackageDir)</PseudoPackageRoot>
       <BuildDest>$(PseudoPackageRoot)build/</BuildDest>
@@ -58,14 +59,16 @@
       <PlatformDest>$(ToolsDest)platform/</PlatformDest>
     </PropertyGroup>
 
+    <!-- Create the pseudo package directories -->
     <MakeDir Directories="$(PseudoPackageRoot);$(NetStandard21Dest);$(Net472Dest);$(PlatformDest)" />
 
+    <!-- Define and copy package contents into pseudo package -->
     <ItemGroup>
       <BuildFiles Include="../msbuild/DNNE.props" />
       <BuildFiles Include="../msbuild/DNNE.targets" />
       <NetStandard21Task Include="../msbuild/DNNE.BuildTasks/bin/$(Configuration)/netstandard2.1/*" />
       <Net472Task Include="../msbuild/DNNE.BuildTasks/bin/$(Configuration)/net472/*" />
-      <DnneGenFiles Include="../dnne-gen/bin/$(Configuration)/$(TargetFramework)/dnne-gen.dll;../dnne-gen/bin/$(Configuration)/$(TargetFramework)/dnne-gen.pdb;../dnne-gen/bin/$(Configuration)/$(TargetFramework)/dnne-gen.runtimeconfig.json" />
+      <DnneGenFiles Include="../dnne-gen/bin/$(Configuration)/$(TargetFramework)/dnne-gen.dll;../dnne-gen/bin/$(Configuration)/$(TargetFramework)/dnne-gen.runtimeconfig.json" />
       <PlatformFiles Include="../platform/*" />
     </ItemGroup>
     <Copy SourceFiles="@(BuildFiles)" DestinationFolder="$(BuildDest)" />
@@ -73,6 +76,11 @@
     <Copy SourceFiles="@(Net472Task)" DestinationFolder="$(Net472Dest)" />
     <Copy SourceFiles="@(DnneGenFiles)" DestinationFolder="$(ToolsDest)" />
     <Copy SourceFiles="@(PlatformFiles)" DestinationFolder="$(PlatformDest)" />
+
+    <!-- Define the NuPkg content -->
+    <ItemGroup>
+      <None Include="$(OutputPath)$(PseudoPackageDir)**" Pack="True" PackagePath="./" />
+    </ItemGroup>
   </Target>
 
 </Project>

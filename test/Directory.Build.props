@@ -8,7 +8,7 @@
 
   <ItemGroup Condition="'$(TestNuPkg)' == 'false'">
     <!-- Reference the product for local testing -->
-    <ProjectReference Include="$(SrcRoot)dnne-gen/dnne-gen.csproj">
+    <ProjectReference Include="$(SrcRoot)dnne-pkg/dnne-pkg.csproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
