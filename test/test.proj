@@ -2,11 +2,15 @@
 
   <PropertyGroup>
     <NativeBuildDir>$(MSBuildThisFileDirectory)build</NativeBuildDir>
+    <DnnePkgDir>$(MSBuildThisFileDirectory)../src/dnne-pkg</DnnePkgDir>
     <ExportingAssemblyDir>$(MSBuildThisFileDirectory)ExportingAssembly</ExportingAssemblyDir>
     <ImportingProcessDir>$(MSBuildThisFileDirectory)ImportingProcess</ImportingProcessDir>
   </PropertyGroup>
 
   <Target Name="Build">
+    <Message Text="Building dnne-pkg" Importance="high" />
+    <Exec Command="dotnet build $([MSBuild]::NormalizePath($(DnnePkgDir)))" />
+
     <Message Text="Building ExportingAssembly" Importance="high" />
     <Exec Command="dotnet build $([MSBuild]::NormalizePath($(ExportingAssemblyDir)))" />
 
