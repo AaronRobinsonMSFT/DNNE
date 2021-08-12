@@ -37,7 +37,7 @@ namespace ExportingAssembly
             fptr();
         }
 
-        public delegate void FunctionPointerStdcallIntIntVoidDelegate(delegate* unmanaged[Stdcall]<int, int> fptr, int a, int b);
+        public delegate void FunctionPointerStdcallIntIntVoidDelegate(delegate* unmanaged[Stdcall]<int, int, void> fptr, int a, int b);
 
         [DNNE.Export]
         public static void FunctionPointerStdcallIntIntVoid(delegate* unmanaged[Stdcall]<int, int, void> fptr, int a, int b)

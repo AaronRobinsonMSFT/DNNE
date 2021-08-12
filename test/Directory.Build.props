@@ -5,11 +5,4 @@
 
     <TestNuPkg Condition="'$(TestNuPkg)' == ''">false</TestNuPkg>
   </PropertyGroup>
-
-  <ItemGroup Condition="'$(TestNuPkg)' == 'false'">
-    <!-- Reference the product for local testing -->
-    <ProjectReference Include="$(SrcRoot)dnne-pkg/dnne-pkg.csproj">
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-  </ItemGroup>
 </Project>

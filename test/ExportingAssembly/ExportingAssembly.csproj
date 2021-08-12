@@ -16,6 +16,7 @@
     <!-- <RuntimeIdentifier>win-x64</RuntimeIdentifier> -->
     <!-- <RuntimeIdentifiers>win-x64;win-x86</RuntimeIdentifiers> -->
     <EnableDynamicLoading>true</EnableDynamicLoading>
+    <DnneAddGeneratedBinaryToProject>true</DnneAddGeneratedBinaryToProject>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TestNuPkg)' == 'true' AND '$(RefLocalBuild)'=='true'">
