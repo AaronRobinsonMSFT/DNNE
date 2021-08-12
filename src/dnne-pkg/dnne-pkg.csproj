@@ -1,0 +1,86 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <RootNamespace>dnne_pkg</RootNamespace>
+    <IncludeBuildOutput>False</IncludeBuildOutput>
+    <PseudoPackageDir>../pkg/</PseudoPackageDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Clean Include="$(OutputPath)$(PseudoPackageDir)**/*" />
+  </ItemGroup>
+
+  <!--
+    NuGet properties and items
+    -->
+
+  <PropertyGroup>
+    <PackageId>DNNE</PackageId>
+    <Version>1.0.22</Version>
+    <Authors>AaronRobinsonMSFT</Authors>
+    <Owners>AaronRobinsonMSFT</Owners>
+    <Description>Package used to generated native exports for .NET assemblies.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/AaronRobinsonMSFT/DNNE</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/AaronRobinsonMSFT/DNNE</RepositoryUrl>
+    <RepositoryType>Git</RepositoryType>
+    <PackageTags>pinvoke interop unmanagedcallersonly exports</PackageTags>
+    <IsTool>True</IsTool>
+
+    <!--
+        NU5128 - Sub directories don't match in all first level directories.
+            This is okay because tooling binaries are executables.
+    -->
+    <NoWarn>NU5128</NoWarn>
+  </PropertyGroup>
+
+  <!-- Reference the project to trigger build -->
+  <ItemGroup>
+    <ProjectReference Include="../dnne-gen/dnne-gen.csproj">
+      <Properties>TargetFramework=$(TargetFramework)</Properties>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="../msbuild/DNNE.BuildTasks/DNNE.BuildTasks.csproj">
+      <Properties>TargetFrameworks=net472;netstandard2.1</Properties>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+
+  <Target Name="CreatePseudoPackage" AfterTargets="Build">
+
+    <!-- Define pseudo package structure -->
+    <PropertyGroup>
+      <PseudoPackageRoot>$(OutputPath)$(PseudoPackageDir)</PseudoPackageRoot>
+      <BuildDest>$(PseudoPackageRoot)build/</BuildDest>
+      <NetStandard21Dest>$(BuildDest)netstandard2.1/</NetStandard21Dest>
+      <Net472Dest>$(BuildDest)net472/</Net472Dest>
+      <ToolsDest>$(PseudoPackageRoot)tools/</ToolsDest>
+      <PlatformDest>$(ToolsDest)platform/</PlatformDest>
+    </PropertyGroup>
+
+    <!-- Create the pseudo package directories -->
+    <MakeDir Directories="$(PseudoPackageRoot);$(NetStandard21Dest);$(Net472Dest);$(PlatformDest)" />
+
+    <!-- Define and copy package contents into pseudo package -->
+    <ItemGroup>
+      <BuildFiles Include="../msbuild/DNNE.props" />
+      <BuildFiles Include="../msbuild/DNNE.targets" />
+      <NetStandard21Task Include="../msbuild/DNNE.BuildTasks/bin/$(Configuration)/netstandard2.1/*" />
+      <Net472Task Include="../msbuild/DNNE.BuildTasks/bin/$(Configuration)/net472/*" />
+      <DnneGenFiles Include="../dnne-gen/bin/$(Configuration)/$(TargetFramework)/dnne-gen.dll;../dnne-gen/bin/$(Configuration)/$(TargetFramework)/dnne-gen.runtimeconfig.json" />
+      <PlatformFiles Include="../platform/*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(BuildFiles)" DestinationFolder="$(BuildDest)" />
+    <Copy SourceFiles="@(NetStandard21Task)" DestinationFolder="$(NetStandard21Dest)" />
+    <Copy SourceFiles="@(Net472Task)" DestinationFolder="$(Net472Dest)" />
+    <Copy SourceFiles="@(DnneGenFiles)" DestinationFolder="$(ToolsDest)" />
+    <Copy SourceFiles="@(PlatformFiles)" DestinationFolder="$(PlatformDest)" />
+
+    <!-- Define the NuPkg content -->
+    <ItemGroup>
+      <None Include="$(OutputPath)$(PseudoPackageDir)**" Pack="True" PackagePath="./" />
+    </ItemGroup>
+  </Target>
+
+</Project>

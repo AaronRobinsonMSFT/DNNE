@@ -1,0 +1,8 @@
+<Project>
+  <PropertyGroup>
+    <RepoRoot>$(MSBuildThisFileDirectory)../</RepoRoot>
+    <SrcRoot>$(RepoRoot)src/</SrcRoot>
+
+    <TestNuPkg Condition="'$(TestNuPkg)' == ''">false</TestNuPkg>
+  </PropertyGroup>
+</Project>

@@ -9,44 +9,4 @@
     <RuntimeFrameworkVersion>5.0.0-preview.5.20278.1</RuntimeFrameworkVersion>
   </PropertyGroup>
 
-  <!--
-    NuGet properties and items
-    -->
-
-  <PropertyGroup>
-    <PackageId>DNNE</PackageId>
-    <Version>1.0.22</Version>
-    <Authors>AaronRobinsonMSFT</Authors>
-    <Owners>AaronRobinsonMSFT</Owners>
-    <Description>Package used to generated native exports for .NET assemblies.</Description>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/AaronRobinsonMSFT/DNNE</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/AaronRobinsonMSFT/DNNE</RepositoryUrl>
-    <RepositoryType>Git</RepositoryType>
-    <PackageTags>pinvoke interop unmanagedcallersonly exports</PackageTags>
-    <IsTool>True</IsTool>
-
-    <!--
-        NU5128 - Sub directories don't match in all first level directories.
-            This is okay because tooling binaries are executables.
-    -->
-    <NoWarn>NU5128</NoWarn>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <None Include="../msbuild/DNNE.props" Pack="True" PackagePath="build/" />
-    <None Include="../msbuild/DNNE.targets" Pack="True" PackagePath="build/" />
-    <None Include="../msbuild/DNNE.BuildTasks/bin/$(Configuration)/netstandard2.1/*" Pack="True" PackagePath="build/netstandard2.1" />
-    <None Include="../msbuild/DNNE.BuildTasks/bin/$(Configuration)/net472/*" Pack="True" PackagePath="build/net472" />
-    <None Include="../platform/**" Pack="True" PackagePath="tools/platform/" />
-  </ItemGroup>
-
-  <!-- Reference the project to trigger build, but don't include or else NuGet
-       will attempt to reference the non-existent DNNE.BuildTasks NuGet package -->
-  <ItemGroup>
-    <ProjectReference Include="../msbuild/DNNE.BuildTasks/DNNE.BuildTasks.csproj">
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-  </ItemGroup>
-
 </Project>

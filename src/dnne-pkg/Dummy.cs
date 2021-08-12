@@ -17,38 +17,11 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-using System.Runtime.InteropServices;
+using System;
 
-namespace ExportingAssembly
+namespace dnne_pkg
 {
-    public unsafe class FunctionPointerExports
+    public class Dummy
     {
-        public delegate void FunctionPointerVoidDelegate(delegate* unmanaged<void> fptr);
-
-        [DNNE.Export]
-        public static void FunctionPointerVoid(delegate* unmanaged<void> fptr)
-        {
-            fptr();
-        }
-
-        [UnmanagedCallersOnly]
-        public static void UnmanagedFunctionPointerVoid(delegate* unmanaged<void> fptr)
-        {
-            fptr();
-        }
-
-        public delegate void FunctionPointerStdcallIntIntVoidDelegate(delegate* unmanaged[Stdcall]<int, int, void> fptr, int a, int b);
-
-        [DNNE.Export]
-        public static void FunctionPointerStdcallIntIntVoid(delegate* unmanaged[Stdcall]<int, int, void> fptr, int a, int b)
-        {
-            fptr(a, b);
-        }
-
-        [UnmanagedCallersOnly]
-        public static void UnmanagedFunctionPointerStdcallIntIntVoid(delegate* unmanaged[Stdcall]<int, int, void> fptr, int a, int b)
-        {
-            fptr(a, b);
-        }
     }
 }

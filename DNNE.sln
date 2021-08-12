@@ -1,0 +1,55 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30010.185
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dnne-gen", "src\dnne-gen\dnne-gen.csproj", "{57F736A8-47BA-4F53-82E0-FE5BFE3AAE36}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DNNE.BuildTasks", "src\msbuild\DNNE.BuildTasks\DNNE.BuildTasks.csproj", "{C73EA27E-4F51-491A-985F-A387DE551011}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExportingAssembly", "test\ExportingAssembly\ExportingAssembly.csproj", "{812CA734-8AF4-4556-ACBA-A9C4A27C7157}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{1BA6857D-6E53-4697-83CD-D468A2CD2E8B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DNNE.UnitTests", "test\DNNE.UnitTests\DNNE.UnitTests.csproj", "{0B842C1C-1EDE-4832-9F38-6C519B84822A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dnne-pkg", "src\dnne-pkg\dnne-pkg.csproj", "{451402EC-4AE5-425A-9835-9D36A55E8081}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{57F736A8-47BA-4F53-82E0-FE5BFE3AAE36}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{57F736A8-47BA-4F53-82E0-FE5BFE3AAE36}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{57F736A8-47BA-4F53-82E0-FE5BFE3AAE36}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{57F736A8-47BA-4F53-82E0-FE5BFE3AAE36}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C73EA27E-4F51-491A-985F-A387DE551011}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C73EA27E-4F51-491A-985F-A387DE551011}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C73EA27E-4F51-491A-985F-A387DE551011}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C73EA27E-4F51-491A-985F-A387DE551011}.Release|Any CPU.Build.0 = Release|Any CPU
+		{812CA734-8AF4-4556-ACBA-A9C4A27C7157}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{812CA734-8AF4-4556-ACBA-A9C4A27C7157}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{812CA734-8AF4-4556-ACBA-A9C4A27C7157}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{812CA734-8AF4-4556-ACBA-A9C4A27C7157}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0B842C1C-1EDE-4832-9F38-6C519B84822A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0B842C1C-1EDE-4832-9F38-6C519B84822A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0B842C1C-1EDE-4832-9F38-6C519B84822A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0B842C1C-1EDE-4832-9F38-6C519B84822A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{451402EC-4AE5-425A-9835-9D36A55E8081}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{451402EC-4AE5-425A-9835-9D36A55E8081}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{451402EC-4AE5-425A-9835-9D36A55E8081}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{451402EC-4AE5-425A-9835-9D36A55E8081}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{812CA734-8AF4-4556-ACBA-A9C4A27C7157} = {1BA6857D-6E53-4697-83CD-D468A2CD2E8B}
+		{0B842C1C-1EDE-4832-9F38-6C519B84822A} = {1BA6857D-6E53-4697-83CD-D468A2CD2E8B}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {82B52092-C471-4045-9DC0-0038C7FD6AF8}
+	EndGlobalSection
+EndGlobal

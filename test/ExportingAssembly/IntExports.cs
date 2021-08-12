@@ -33,7 +33,7 @@ namespace ExportingAssembly
         }
 
         [UnmanagedCallersOnly]
-        public static int UnmanagedIntInt(int a, int b)
+        public static int UnmanagedIntInt(int a)
         {
             return IntInt(a);
         }
@@ -66,7 +66,7 @@ namespace ExportingAssembly
             return VoidInt();
         }
 
-        public delegate void IntVoidDelegate();
+        public delegate void IntVoidDelegate(int a);
 
         [DNNE.Export]
         public static void IntVoid(int a)
