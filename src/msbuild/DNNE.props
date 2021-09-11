@@ -53,6 +53,14 @@ DNNE.props
         the computed compiler arguments. -->
     <DnneCompilerCommand></DnneCompilerCommand>
 
+    <!-- Set to add compiler flags.
+        This value will be placed immediately prior to the source passed to the compiler. -->
+    <DnneCompilerUserFlags></DnneCompilerUserFlags>
+
+    <!-- Set to add linker flags.
+        This value will be placed after all other flags passed to the compiler. -->
+    <DnneLinkerUserFlags></DnneLinkerUserFlags>
+
     <!-- Provide a .def file to pass to the Windows Linker for controlling
         how exports are handled. This is only passed to the linker on
         the Windows platform.
