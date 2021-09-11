@@ -127,13 +127,18 @@ DNNE.targets
         RuntimeID="$(DnneRuntimeIdentifier)"
         Architecture="$(TargetedSDKArchitecture)"
         Configuration="$(Configuration)"
-        CommandOverride="$(DnneCompilerCommand)"
         ExportsDefFile="$(DnneWindowsExportsDef)"
         IsSelfContained="$(DnneSelfContained_Experimental)"
+        UserDefinedCompilerFlags="$(DnneCompilerUserFlags)"
+        UserDefinedLinkerFlags="$(DnneLinkerUserFlags)"
         AdditionalIncludeDirectories="@(__DnneAdditionalIncludeDirectories)">
       <Output TaskParameter="Command" PropertyName="CompilerCmd" />
       <Output TaskParameter="CommandArguments" PropertyName="CompilerArgs" />
     </CreateCompileCommand>
+
+    <PropertyGroup>
+      <CompilerCmd Condition="'$(DnneCompilerCommand)' != ''">$(DnneCompilerCommand)</CompilerCmd>
+    </PropertyGroup>
 
     <Message Text="Building native export: &quot;$(CompilerCmd)&quot; $(CompilerArgs)" Importance="high" />
     <Exec Command="&quot;$(CompilerCmd)&quot; $(CompilerArgs)"

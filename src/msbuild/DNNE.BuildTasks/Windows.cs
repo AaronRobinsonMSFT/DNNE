@@ -91,7 +91,10 @@ namespace DNNE.BuildTasks
                 compilerFlags.Append($"/I \"{incPath.ItemSpec}\" ");
             }
 
-            compilerFlags.Append($"\"{export.Source}\" \"{Path.Combine(export.PlatformPath, "platform.c")}\" ");
+            if (!string.IsNullOrEmpty(export.UserDefinedCompilerFlags))
+            {
+                compilerFlags.Append($"{export.UserDefinedCompilerFlags} ");
+            }
 
             // Set linker flags
             linkerFlags.Append($"/DLL /LTCG ");
@@ -117,8 +120,13 @@ namespace DNNE.BuildTasks
             var impLibPath = Path.ChangeExtension(outputPath, ".lib");
             linkerFlags.Append($"/IMPLIB:\"{impLibPath}\" /OUT:\"{outputPath}\" ");
 
+            if (!string.IsNullOrEmpty(export.UserDefinedLinkerFlags))
+            {
+                linkerFlags.Append($"{export.UserDefinedLinkerFlags} ");
+            }
+
             command = Path.Combine(binDir, "cl.exe");
-            commandArguments = $"{compilerFlags} /link {linkerFlags}";
+            commandArguments = $"{compilerFlags} \"{export.Source}\" \"{Path.Combine(export.PlatformPath, "platform.c")}\" /link {linkerFlags}";
         }
 
         private static string ConvertToVCArchSubDir(string arch, string rid)

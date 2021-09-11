@@ -64,7 +64,10 @@ namespace DNNE.BuildTasks
         public string Configuration { get; set; }
 
         // Optional
-        public string CommandOverride { get; set; }
+        public string UserDefinedCompilerFlags { get; set; }
+
+        // Optional
+        public string UserDefinedLinkerFlags { get; set; }
 
         // Optional
         public string ExportsDefFile { get; set; }
@@ -144,7 +147,7 @@ Native Build:
                 throw new NotSupportedException("Unknown native build environment");
             }
 
-            this.Command = string.IsNullOrEmpty(this.CommandOverride) ? command : this.CommandOverride;
+            this.Command = command;
             this.CommandArguments = commandArguments;
 
             return true;
