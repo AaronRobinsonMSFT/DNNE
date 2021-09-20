@@ -27,8 +27,8 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -94,6 +94,7 @@ namespace DNNE
                     continue;
                 }
 
+                OSPlatform? targetPlatform = null;
                 var callConv = SignatureCallingConvention.Unmanaged;
                 var exportAttrType = ExportType.None;
                 string managedMethodName = this.mdReader.GetString(methodDef.Name);
@@ -105,10 +106,14 @@ namespace DNNE
                     var currAttrType = this.GetExportAttributeType(customAttr);
                     if (currAttrType == ExportType.None)
                     {
-                        // Check if method has "additional code" attributes.
+                        // Check if method has other supported attributes.
                         if (TryGetC99DeclCodeAttributeValue(customAttr, out string c99Decl))
                         {
                             additionalCodeStatements.Add(c99Decl);
+                        }
+                        else if (TryGetSupportedOSPlatformAttributeValue(customAttr, out OSPlatform tgtPlatform))
+                        {
+                            targetPlatform = tgtPlatform;
                         }
 
                         continue;
@@ -260,6 +265,7 @@ namespace DNNE
                     MethodName = managedMethodName,
                     ExportName = exportName,
                     CallingConvention = callConv,
+                    TargetPlatform = targetPlatform,
                     ReturnType = returnType,
                     ArgumentTypes = ImmutableArray.Create(argumentTypes),
                     ArgumentNames = ImmutableArray.Create(argumentNames),
@@ -326,6 +332,44 @@ namespace DNNE
             return !string.IsNullOrEmpty(c99Decl);
         }
 
+        private bool TryGetSupportedOSPlatformAttributeValue(CustomAttribute attribute, out OSPlatform platform)
+        {
+            platform = default;
+            if (!IsAttributeType(this.mdReader, attribute, "System.Runtime.Versioning", nameof(SupportedOSPlatformAttribute)))
+            {
+                return false;
+            }
+
+            string value = GetFirstFixedArgAsStringValue(this.typeResolver, attribute);
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+
+            if (value.Contains(nameof(OSPlatform.Windows), StringComparison.OrdinalIgnoreCase))
+            {
+                platform = OSPlatform.Windows;
+            }
+            else if (value.Contains(nameof(OSPlatform.OSX), StringComparison.OrdinalIgnoreCase))
+            {
+                platform = OSPlatform.OSX;
+            }
+            else if (value.Contains(nameof(OSPlatform.Linux), StringComparison.OrdinalIgnoreCase))
+            {
+                platform = OSPlatform.Linux;
+            }
+            else if (value.Contains(nameof(OSPlatform.FreeBSD), StringComparison.OrdinalIgnoreCase))
+            {
+                platform = OSPlatform.FreeBSD;
+            }
+            else
+            {
+                platform = OSPlatform.Create(value);
+            }
+
+            return true;
+        }
+
         private static string GetFirstFixedArgAsStringValue(ICustomAttributeTypeProvider<KnownType> typeResolver, CustomAttribute attribute)
         {
             CustomAttributeValue<KnownType> data = attribute.DecodeValue(typeResolver);
@@ -362,13 +406,19 @@ namespace DNNE
                     return false;
             }
 
+#if DEBUG
+            string attrNamespace = reader.GetString(namespaceMaybe);
+            string attrName = reader.GetString(nameMaybe);
+#endif
             return reader.StringComparer.Equals(namespaceMaybe, targetNamespace) && reader.StringComparer.Equals(nameMaybe, targetName);
         }
 
         private static void EmitC99(TextWriter outputStream, string assemblyName, IEnumerable<ExportedMethod> exports, IEnumerable<string> additionalCodeStatements)
         {
+            const string SafeMacroRegEx = "[^a-zA-Z0-9_]";
+
             // Convert the assembly name into a supported string for C99 macros.
-            var assemblyNameMacroSafe = Regex.Replace(assemblyName, "[^a-zA-Z0-9_]", "_");
+            var assemblyNameMacroSafe = Regex.Replace(assemblyName, SafeMacroRegEx, "_");
             var generatedHeaderDefine = $"__DNNE_GENERATED_HEADER_{assemblyNameMacroSafe.ToUpperInvariant()}__";
             var compileAsSourceDefine = "DNNE_COMPILE_AS_SOURCE";
 
@@ -468,6 +518,17 @@ extern void* get_fast_callable_managed_function(
 ");
             foreach (var export in exports)
             {
+                var preguard = string.Empty;
+                var postguard = string.Empty;
+
+                // Check for target platform guard.
+                if (export.TargetPlatform != null)
+                {
+                    var platformMacroSafe = Regex.Replace(export.TargetPlatform.Value.ToString(), SafeMacroRegEx, "_").ToUpperInvariant();
+                    preguard = $"#ifdef DNNE_{platformMacroSafe}\n";
+                    postguard = $"#endif // DNNE_{platformMacroSafe}\n";
+                }
+
                 // Create declaration and call signature.
                 string delim = "";
                 var declsig = new StringBuilder();
@@ -518,13 +579,13 @@ $@"const char_t* methodName = DNNE_STR(""{export.MethodName}"");
 
                 // Declare export
                 outputStream.WriteLine(
-$@"// Computed from {export.EnclosingTypeName}{Type.Delimiter}{export.MethodName}
+$@"{preguard}// Computed from {export.EnclosingTypeName}{Type.Delimiter}{export.MethodName}
 DNNE_API {export.ReturnType} {callConv} {export.ExportName}({declsig});
-");
+{postguard}");
 
                 // Define export in implementation stream
                 implStream.WriteLine(
-$@"// Computed from {export.EnclosingTypeName}{Type.Delimiter}{export.MethodName}
+$@"{preguard}// Computed from {export.EnclosingTypeName}{Type.Delimiter}{export.MethodName}
 static {export.ReturnType} ({callConv}* {export.ExportName}_ptr)({declsig});
 DNNE_API {export.ReturnType} {callConv} {export.ExportName}({declsig})
 {{
@@ -534,7 +595,7 @@ DNNE_API {export.ReturnType} {callConv} {export.ExportName}({declsig})
     }}
     {returnStatementKeyword}{export.ExportName}_ptr({callsig});
 }}
-");
+{postguard}");
             }
 
             // Emit implementation closing
@@ -567,6 +628,7 @@ $@"#endif // {generatedHeaderDefine}
             public string MethodName { get; init; }
             public string ExportName { get; init; }
             public SignatureCallingConvention CallingConvention { get; init; }
+            public OSPlatform? TargetPlatform { get; init; }
             public string ReturnType { get; init; }
             public ImmutableArray<string> ArgumentTypes { get; init; }
             public ImmutableArray<string> ArgumentNames { get; init; }

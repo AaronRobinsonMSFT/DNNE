@@ -18,6 +18,7 @@
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace ExportingAssembly
 {
@@ -32,6 +33,43 @@ namespace ExportingAssembly
 
         [UnmanagedCallersOnly(EntryPoint = "UnmanagedSetViaEntryPointProperty")]
         public static void UnmanagedDontExportName()
+        {
+        }
+
+        [UnmanagedCallersOnly]
+        [SupportedOSPlatform("windows")]
+        public static void OnlyOnWindows()
+        {
+        }
+
+        [UnmanagedCallersOnly]
+        [SupportedOSPlatform("osx")]
+        public static void OnlyOnOSX()
+        {
+        }
+
+        [UnmanagedCallersOnly]
+        [SupportedOSPlatform("linux")]
+        public static void OnlyOnLinux()
+        {
+        }
+
+        [UnmanagedCallersOnly]
+        [SupportedOSPlatform("freebsd")]
+        public static void OnlyOnFreeSBD()
+        {
+        }
+
+        [UnmanagedCallersOnly]
+        [DNNE.C99DeclCode("#define DNNE___SET_PLATFORM__")]
+        [SupportedOSPlatform("__SET_PLATFORM__")]
+        public static void ManuallySetPlatform()
+        {
+        }
+
+        [UnmanagedCallersOnly]
+        [SupportedOSPlatform("__NEVER_SET_PLATFORM__")]
+        public static void NevetSetPlatform()
         {
         }
 

@@ -20,9 +20,15 @@
 #ifndef __SRC_PLATFORM_DNNE_H__
 #define __SRC_PLATFORM_DNNE_H__
 
-// Check if we are on Windows
+// Define our platform
 #ifdef _WIN32
     #define DNNE_WINDOWS
+#elif defined(__APPLE__)
+    #define DNNE_OSX
+#elif defined(__FreeBSD__)
+    #define DNNE_FREEBSD
+#else
+    #define DNNE_LINUX
 #endif
 
 // Define some platform macros

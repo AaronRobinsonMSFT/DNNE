@@ -30,7 +30,7 @@
 #include <nethost.h>
 
 // Needed for dladdr() in non-macOS scenarios
-#if !defined(DNNE_WINDOWS) && !defined(__APPLE__)
+#if !defined(DNNE_WINDOWS) && !defined(DNNE_OSX)
     #define _GNU_SOURCE
 #endif
 
