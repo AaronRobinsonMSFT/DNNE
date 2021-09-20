@@ -74,7 +74,7 @@ DNNE.props
     <DnneAdditionalIncludeDirectories></DnneAdditionalIncludeDirectories>
 
     <!-- Indicate the dnne-gen tool's roll forward policy. -->
-    <DnneGenRollForward>Minor</DnneGenRollForward>
+    <DnneGenRollForward></DnneGenRollForward>
 
     <!-- EXPERIMENTAL: The native hosting should assume it is in a self-contained scenario.
         When setting this flag to true, the only change in output will be the generated hosting
