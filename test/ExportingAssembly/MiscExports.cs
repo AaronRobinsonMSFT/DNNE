@@ -20,8 +20,21 @@
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
+[assembly: SupportedOSPlatform("SET_ASSEMBLY_PLATFORM")]
+[assembly: UnsupportedOSPlatform("UNSET_ASSEMBLY_PLATFORM1")]
+[assembly: UnsupportedOSPlatform("UNSET_ASSEMBLY_PLATFORM2")]
+[module: SupportedOSPlatform("SET_MODULE_PLATFORM")]
+[module: UnsupportedOSPlatform("UNSET_MODULE_PLATFORM1")]
+[module: UnsupportedOSPlatform("UNSET_MODULE_PLATFORM2")]
+[module: UnsupportedOSPlatform("UNSET_MODULE_PLATFORM3")]
+
 namespace ExportingAssembly
 {
+    [SupportedOSPlatform("SET_TYPE_PLATFORM")]
+    [UnsupportedOSPlatform("UNSET_TYPE_PLATFORM1")]
+    [UnsupportedOSPlatform("UNSET_TYPE_PLATFORM2")]
+    [UnsupportedOSPlatform("UNSET_TYPE_PLATFORM3")]
+    [UnsupportedOSPlatform("UNSET_TYPE_PLATFORM4")]
     public class MiscExports
     {
         public delegate void DontExportNameDelegate();
@@ -37,6 +50,10 @@ namespace ExportingAssembly
         }
 
         [UnmanagedCallersOnly]
+        [DNNE.C99DeclCode(
+@"#define DNNE_SET_ASSEMBLY_PLATFORM
+#define DNNE_SET_MODULE_PLATFORM
+#define DNNE_SET_TYPE_PLATFORM")]
         [SupportedOSPlatform("windows")]
         public static void OnlyOnWindows()
         {
@@ -63,6 +80,12 @@ namespace ExportingAssembly
         [UnmanagedCallersOnly]
         [DNNE.C99DeclCode("#define DNNE___SET_PLATFORM__")]
         [SupportedOSPlatform("__SET_PLATFORM__")]
+        [SupportedOSPlatform("SET_METHOD_PLATFORM")]
+        [UnsupportedOSPlatform("UNSET_METHOD_PLATFORM1")]
+        [UnsupportedOSPlatform("UNSET_METHOD_PLATFORM2")]
+        [UnsupportedOSPlatform("UNSET_METHOD_PLATFORM3")]
+        [UnsupportedOSPlatform("UNSET_METHOD_PLATFORM4")]
+        [UnsupportedOSPlatform("UNSET_METHOD_PLATFORM5")]
         public static void ManuallySetPlatform()
         {
         }
