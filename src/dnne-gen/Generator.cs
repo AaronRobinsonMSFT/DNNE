@@ -427,21 +427,22 @@ namespace DNNE
                 return false;
             }
 
+            const string platformPrefix = "DNNE_";
             if (value.Contains(nameof(OSPlatform.Windows), StringComparison.OrdinalIgnoreCase))
             {
-                platform = OSPlatform.Windows;
+                platform = OSPlatform.Create($"{platformPrefix}{OSPlatform.Windows}");
             }
             else if (value.Contains(nameof(OSPlatform.OSX), StringComparison.OrdinalIgnoreCase))
             {
-                platform = OSPlatform.OSX;
+                platform = OSPlatform.Create($"{platformPrefix}{OSPlatform.OSX}");
             }
             else if (value.Contains(nameof(OSPlatform.Linux), StringComparison.OrdinalIgnoreCase))
             {
-                platform = OSPlatform.Linux;
+                platform = OSPlatform.Create($"{platformPrefix}{OSPlatform.Linux}");
             }
             else if (value.Contains(nameof(OSPlatform.FreeBSD), StringComparison.OrdinalIgnoreCase))
             {
-                platform = OSPlatform.FreeBSD;
+                platform = OSPlatform.Create($"{platformPrefix}{OSPlatform.FreeBSD}");
             }
             else
             {
@@ -747,8 +748,8 @@ $@"#endif // {generatedHeaderDefine}
                     }
 
                     var platformMacroSafe = Regex.Replace(os.ToString(), SafeMacroRegEx, "_").ToUpperInvariant();
-                    pre.Append($"{delim}defined(DNNE_{platformMacroSafe})");
-                    post.Append($"{post}{delim}DNNE_{platformMacroSafe}");
+                    pre.Append($"{delim}defined({platformMacroSafe})");
+                    post.Append($"{post}{delim}{platformMacroSafe}");
                 }
 
                 if (pre.Length != 0)

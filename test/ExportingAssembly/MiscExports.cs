@@ -51,9 +51,9 @@ namespace ExportingAssembly
 
         [UnmanagedCallersOnly]
         [DNNE.C99DeclCode(
-@"#define DNNE_SET_ASSEMBLY_PLATFORM
-#define DNNE_SET_MODULE_PLATFORM
-#define DNNE_SET_TYPE_PLATFORM")]
+@"#define SET_ASSEMBLY_PLATFORM
+#define SET_MODULE_PLATFORM
+#define SET_TYPE_PLATFORM")]
         [SupportedOSPlatform("windows")]
         public static void OnlyOnWindows()
         {
@@ -78,7 +78,7 @@ namespace ExportingAssembly
         }
 
         [UnmanagedCallersOnly]
-        [DNNE.C99DeclCode("#define DNNE___SET_PLATFORM__")]
+        [DNNE.C99DeclCode("#define __SET_PLATFORM__")]
         [SupportedOSPlatform("__SET_PLATFORM__")]
         [SupportedOSPlatform("SET_METHOD_PLATFORM")]
         [UnsupportedOSPlatform("UNSET_METHOD_PLATFORM1")]
