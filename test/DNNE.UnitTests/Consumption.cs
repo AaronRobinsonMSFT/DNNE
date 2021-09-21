@@ -78,6 +78,47 @@ namespace DNNE.UnitTests
             ExportingAssembly.MiscExports.SetViaEntryPointProperty();
             ExportingAssembly.MiscExports.UnmanagedSetViaEntryPointProperty();
 
+            try
+            {
+                ExportingAssembly.MiscExports.OnlyOnWindows();
+                Assert.True(RuntimeInformation.IsOSPlatform(OSPlatform.Windows));
+            }
+            catch (EntryPointNotFoundException)
+            {
+                Assert.False(RuntimeInformation.IsOSPlatform(OSPlatform.Windows));
+            }
+            try
+            {
+                ExportingAssembly.MiscExports.OnlyOnOSX();
+                Assert.True(RuntimeInformation.IsOSPlatform(OSPlatform.OSX));
+            }
+            catch (EntryPointNotFoundException)
+            {
+                Assert.False(RuntimeInformation.IsOSPlatform(OSPlatform.OSX));
+            }
+            try
+            {
+                ExportingAssembly.MiscExports.OnlyOnFreeBSD();
+                Assert.True(RuntimeInformation.IsOSPlatform(OSPlatform.FreeBSD));
+            }
+            catch (EntryPointNotFoundException)
+            {
+                Assert.False(RuntimeInformation.IsOSPlatform(OSPlatform.FreeBSD));
+            }
+            try
+            {
+                ExportingAssembly.MiscExports.OnlyOnLinux();
+                Assert.True(RuntimeInformation.IsOSPlatform(OSPlatform.Linux));
+            }
+            catch (EntryPointNotFoundException)
+            {
+                Assert.False(RuntimeInformation.IsOSPlatform(OSPlatform.Linux));
+            }
+
+            ExportingAssembly.MiscExports.ManuallySetPlatform();
+            Assert.Throws<EntryPointNotFoundException>(() => ExportingAssembly.MiscExports.NeverSupportedPlatform());
+            ExportingAssembly.MiscExports.NeverUnsupportedPlatform();
+
             int c = 29;
             {
                 var d = new ExportingAssembly.MiscExports.Data()

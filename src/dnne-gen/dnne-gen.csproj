@@ -4,9 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
     <RootNamespace>DNNE</RootNamespace>
-
-    <!-- Specify the minimum version -->
-    <RuntimeFrameworkVersion>5.0.0-preview.5.20278.1</RuntimeFrameworkVersion>
+    <RollForward>major</RollForward>
   </PropertyGroup>
 
 </Project>

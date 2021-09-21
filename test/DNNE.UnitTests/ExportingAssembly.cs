@@ -97,6 +97,27 @@ namespace DNNE.UnitTests
             [DllImport(nameof(ExportingAssemblyNE))]
             public static extern void UnmanagedSetViaEntryPointProperty();
 
+            [DllImport(nameof(ExportingAssemblyNE))]
+            public static extern void OnlyOnWindows();
+
+            [DllImport(nameof(ExportingAssemblyNE))]
+            public static extern void OnlyOnOSX();
+
+            [DllImport(nameof(ExportingAssemblyNE))]
+            public static extern void OnlyOnLinux();
+
+            [DllImport(nameof(ExportingAssemblyNE))]
+            public static extern void OnlyOnFreeBSD();
+
+            [DllImport(nameof(ExportingAssemblyNE))]
+            public static extern void ManuallySetPlatform();
+
+            [DllImport(nameof(ExportingAssemblyNE))]
+            public static extern void NeverSupportedPlatform();
+
+            [DllImport(nameof(ExportingAssemblyNE))]
+            public static extern void NeverUnsupportedPlatform();
+
             public struct Data
             {
                 public int a;

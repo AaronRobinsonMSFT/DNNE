@@ -27,8 +27,8 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -54,12 +54,22 @@ namespace DNNE
         private readonly string assemblyPath;
         private readonly PEReader peReader;
         private readonly MetadataReader mdReader;
+        private readonly Scope assemblyScope;
+        private readonly Scope moduleScope;
+        private readonly IDictionary<TypeDefinitionHandle, Scope> typePlatformScenarios = new Dictionary<TypeDefinitionHandle, Scope>();
 
         public Generator(string validAssemblyPath)
         {
             this.assemblyPath = validAssemblyPath;
             this.peReader = new PEReader(File.OpenRead(this.assemblyPath));
             this.mdReader = this.peReader.GetMetadataReader(MetadataReaderOptions.None);
+
+            // Check for platform scenario attributes
+            AssemblyDefinition asmDef = this.mdReader.GetAssemblyDefinition();
+            this.assemblyScope = GetOSPlatformScope(asmDef.GetCustomAttributes());
+
+            ModuleDefinition modDef = this.mdReader.GetModuleDefinition();
+            this.moduleScope = GetOSPlatformScope(modDef.GetCustomAttributes());
         }
 
         public void Emit(string outputFile)
@@ -94,6 +104,8 @@ namespace DNNE
                     continue;
                 }
 
+                var supported = new List<OSPlatform>();
+                var unsupported = new List<OSPlatform>();
                 var callConv = SignatureCallingConvention.Unmanaged;
                 var exportAttrType = ExportType.None;
                 string managedMethodName = this.mdReader.GetString(methodDef.Name);
@@ -105,10 +117,21 @@ namespace DNNE
                     var currAttrType = this.GetExportAttributeType(customAttr);
                     if (currAttrType == ExportType.None)
                     {
-                        // Check if method has "additional code" attributes.
+                        // Check if method has other supported attributes.
                         if (TryGetC99DeclCodeAttributeValue(customAttr, out string c99Decl))
                         {
                             additionalCodeStatements.Add(c99Decl);
+                        }
+                        else if (TryGetOSPlatformAttributeValue(customAttr, out bool isSupported, out OSPlatform scen))
+                        {
+                            if (isSupported)
+                            {
+                                supported.Add(scen);
+                            }
+                            else
+                            {
+                                unsupported.Add(scen);
+                            }
                         }
 
                         continue;
@@ -260,6 +283,17 @@ namespace DNNE
                     MethodName = managedMethodName,
                     ExportName = exportName,
                     CallingConvention = callConv,
+                    Platforms = new PlatformSupport()
+                    {
+                        Assembly = this.assemblyScope,
+                        Module = this.moduleScope,
+                        Type = GetTypeOSPlatformScope(methodDef),
+                        Method = new Scope()
+                        {
+                            Support = supported,
+                            NoSupport = unsupported,
+                        }
+                    },
                     ReturnType = returnType,
                     ArgumentTypes = ImmutableArray.Create(argumentTypes),
                     ArgumentNames = ImmutableArray.Create(argumentNames),
@@ -326,6 +360,98 @@ namespace DNNE
             return !string.IsNullOrEmpty(c99Decl);
         }
 
+        private Scope GetTypeOSPlatformScope(MethodDefinition methodDef)
+        {
+            TypeDefinitionHandle typeDefHandle = methodDef.GetDeclaringType();
+            if (this.typePlatformScenarios.TryGetValue(typeDefHandle, out Scope scope))
+            {
+                return scope;
+            }
+
+            TypeDefinition typeDef = this.mdReader.GetTypeDefinition(typeDefHandle);
+            var typeScope = GetOSPlatformScope(typeDef.GetCustomAttributes());
+
+            // Record and return the scenarios.
+            this.typePlatformScenarios.Add(typeDefHandle, typeScope);
+            return typeScope;
+        }
+
+        private Scope GetOSPlatformScope(CustomAttributeHandleCollection attrs)
+        {
+            var supported = new List<OSPlatform>();
+            var unsupported = new List<OSPlatform>();
+            foreach (var customAttrHandle in attrs)
+            {
+                CustomAttribute customAttr = this.mdReader.GetCustomAttribute(customAttrHandle);
+                if (TryGetOSPlatformAttributeValue(customAttr, out bool isSupported, out OSPlatform scen))
+                {
+                    if (isSupported)
+                    {
+                        supported.Add(scen);
+                    }
+                    else
+                    {
+                        unsupported.Add(scen);
+                    }
+                }
+            }
+
+            return new Scope()
+            {
+                Support = supported,
+                NoSupport = unsupported
+            };
+        }
+
+        private bool TryGetOSPlatformAttributeValue(
+            CustomAttribute attribute,
+            out bool support,
+            out OSPlatform platform)
+        {
+            platform = default;
+
+            support = IsAttributeType(this.mdReader, attribute, "System.Runtime.Versioning", nameof(SupportedOSPlatformAttribute));
+            if (!support)
+            {
+                // If the unsupported attribute exists the "support" value is properly set.
+                bool nosupport = IsAttributeType(this.mdReader, attribute, "System.Runtime.Versioning", nameof(UnsupportedOSPlatformAttribute));
+                if (!nosupport)
+                {
+                    return false;
+                }
+            }
+
+            string value = GetFirstFixedArgAsStringValue(this.typeResolver, attribute);
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+
+            const string platformPrefix = "DNNE_";
+            if (value.Contains(nameof(OSPlatform.Windows), StringComparison.OrdinalIgnoreCase))
+            {
+                platform = OSPlatform.Create($"{platformPrefix}{OSPlatform.Windows}");
+            }
+            else if (value.Contains(nameof(OSPlatform.OSX), StringComparison.OrdinalIgnoreCase))
+            {
+                platform = OSPlatform.Create($"{platformPrefix}{OSPlatform.OSX}");
+            }
+            else if (value.Contains(nameof(OSPlatform.Linux), StringComparison.OrdinalIgnoreCase))
+            {
+                platform = OSPlatform.Create($"{platformPrefix}{OSPlatform.Linux}");
+            }
+            else if (value.Contains(nameof(OSPlatform.FreeBSD), StringComparison.OrdinalIgnoreCase))
+            {
+                platform = OSPlatform.Create($"{platformPrefix}{OSPlatform.FreeBSD}");
+            }
+            else
+            {
+                platform = OSPlatform.Create(value);
+            }
+
+            return true;
+        }
+
         private static string GetFirstFixedArgAsStringValue(ICustomAttributeTypeProvider<KnownType> typeResolver, CustomAttribute attribute)
         {
             CustomAttributeValue<KnownType> data = attribute.DecodeValue(typeResolver);
@@ -362,13 +488,19 @@ namespace DNNE
                     return false;
             }
 
+#if DEBUG
+            string attrNamespace = reader.GetString(namespaceMaybe);
+            string attrName = reader.GetString(nameMaybe);
+#endif
             return reader.StringComparer.Equals(namespaceMaybe, targetNamespace) && reader.StringComparer.Equals(nameMaybe, targetName);
         }
+
+        private const string SafeMacroRegEx = "[^a-zA-Z0-9_]";
 
         private static void EmitC99(TextWriter outputStream, string assemblyName, IEnumerable<ExportedMethod> exports, IEnumerable<string> additionalCodeStatements)
         {
             // Convert the assembly name into a supported string for C99 macros.
-            var assemblyNameMacroSafe = Regex.Replace(assemblyName, "[^a-zA-Z0-9_]", "_");
+            var assemblyNameMacroSafe = Regex.Replace(assemblyName, SafeMacroRegEx, "_");
             var generatedHeaderDefine = $"__DNNE_GENERATED_HEADER_{assemblyNameMacroSafe.ToUpperInvariant()}__";
             var compileAsSourceDefine = "DNNE_COMPILE_AS_SOURCE";
 
@@ -468,6 +600,8 @@ extern void* get_fast_callable_managed_function(
 ");
             foreach (var export in exports)
             {
+                (var preguard, var postguard) = GetC99PlatformGuards(export.Platforms);
+
                 // Create declaration and call signature.
                 string delim = "";
                 var declsig = new StringBuilder();
@@ -518,13 +652,13 @@ $@"const char_t* methodName = DNNE_STR(""{export.MethodName}"");
 
                 // Declare export
                 outputStream.WriteLine(
-$@"// Computed from {export.EnclosingTypeName}{Type.Delimiter}{export.MethodName}
+$@"{preguard}// Computed from {export.EnclosingTypeName}{Type.Delimiter}{export.MethodName}
 DNNE_API {export.ReturnType} {callConv} {export.ExportName}({declsig});
-");
+{postguard}");
 
                 // Define export in implementation stream
                 implStream.WriteLine(
-$@"// Computed from {export.EnclosingTypeName}{Type.Delimiter}{export.MethodName}
+$@"{preguard}// Computed from {export.EnclosingTypeName}{Type.Delimiter}{export.MethodName}
 static {export.ReturnType} ({callConv}* {export.ExportName}_ptr)({declsig});
 DNNE_API {export.ReturnType} {callConv} {export.ExportName}({declsig})
 {{
@@ -534,7 +668,7 @@ DNNE_API {export.ReturnType} {callConv} {export.ExportName}({declsig})
     }}
     {returnStatementKeyword}{export.ExportName}_ptr({callsig});
 }}
-");
+{postguard}");
             }
 
             // Emit implementation closing
@@ -545,6 +679,87 @@ DNNE_API {export.ReturnType} {callConv} {export.ExportName}({declsig})
 $@"#endif // {generatedHeaderDefine}
 
 {implStream}");
+        }
+
+        private static (string preguard, string postguard) GetC99PlatformGuards(in PlatformSupport platformSupport)
+        {
+            var pre = new StringBuilder();
+            var post = new StringBuilder();
+
+            var postAssembly = ConvertScope(platformSupport.Assembly, ref pre);
+            var postModule = ConvertScope(platformSupport.Module, ref pre);
+            var postType = ConvertScope(platformSupport.Type, ref pre);
+            var postMethod = ConvertScope(platformSupport.Method, ref pre);
+
+            // Append the post guards in reverse order
+            post.Append(postMethod);
+            post.Append(postType);
+            post.Append(postModule);
+            post.Append(postAssembly);
+
+            return (pre.ToString(), post.ToString());
+
+            static string ConvertScope(in Scope scope, ref StringBuilder pre)
+            {
+                (string pre_support, string post_support) = ConvertCollection(scope.Support, "(", ")");
+                (string pre_nosupport, string post_nosupport) = ConvertCollection(scope.NoSupport, "!(", ")");
+
+                var post = new StringBuilder();
+                if (!string.IsNullOrEmpty(pre_support)
+                    || !string.IsNullOrEmpty(pre_nosupport))
+                {
+                    // Add the preamble for the guard
+                    pre.Append("#if ");
+                    post.Append("#endif // ");
+
+                    // Append the "support" clauses because if they don't exist they are string.Empty
+                    pre.Append(pre_support);
+                    post.Append(post_support);
+
+                    // Check if we need to chain the clauses
+                    if (!string.IsNullOrEmpty(pre_support) && !string.IsNullOrEmpty(pre_nosupport))
+                    {
+                        pre.Append(" && ");
+                        post.Append(" && ");
+                    }
+
+                    // Append the "mpsupport" clauses because if they don't exist they are string.Empty
+                    pre.Append($"{pre_nosupport}");
+                    post.Append($"{post_nosupport}");
+
+                    pre.Append('\n');
+                    post.Append('\n');
+                }
+
+                return post.ToString();
+            }
+
+            static (string pre, string post) ConvertCollection(in IEnumerable<OSPlatform> platforms, in string prefix, in string suffix)
+            {
+                var pre = new StringBuilder();
+                var post = new StringBuilder();
+
+                var delim = prefix;
+                foreach (OSPlatform os in platforms)
+                {
+                    if (pre.Length != 0)
+                    {
+                        delim = " || ";
+                    }
+
+                    var platformMacroSafe = Regex.Replace(os.ToString(), SafeMacroRegEx, "_").ToUpperInvariant();
+                    pre.Append($"{delim}defined({platformMacroSafe})");
+                    post.Append($"{post}{delim}{platformMacroSafe}");
+                }
+
+                if (pre.Length != 0)
+                {
+                    pre.Append(suffix);
+                    post.Append(suffix);
+                }
+
+                return (pre.ToString(), post.ToString());
+            }
         }
 
         private static string GetC99CallConv(SignatureCallingConvention callConv)
@@ -560,6 +775,20 @@ $@"#endif // {generatedHeaderDefine}
             };
         }
 
+        private struct PlatformSupport
+        {
+            public Scope Assembly { get; init; }
+            public Scope Module { get; init; }
+            public Scope Type { get; init; }
+            public Scope Method { get; init; }
+        }
+
+        private struct Scope
+        {
+            public IEnumerable<OSPlatform> Support { get; init; }
+            public IEnumerable<OSPlatform> NoSupport { get; init; }
+        }
+
         private class ExportedMethod
         {
             public ExportType Type { get; init; }
@@ -567,6 +796,7 @@ $@"#endif // {generatedHeaderDefine}
             public string MethodName { get; init; }
             public string ExportName { get; init; }
             public SignatureCallingConvention CallingConvention { get; init; }
+            public PlatformSupport Platforms { get; init; }
             public string ReturnType { get; init; }
             public ImmutableArray<string> ArgumentTypes { get; init; }
             public ImmutableArray<string> ArgumentNames { get; init; }
