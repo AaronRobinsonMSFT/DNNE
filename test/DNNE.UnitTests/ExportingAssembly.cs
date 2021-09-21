@@ -113,7 +113,10 @@ namespace DNNE.UnitTests
             public static extern void ManuallySetPlatform();
 
             [DllImport(nameof(ExportingAssemblyNE))]
-            public static extern void NevetSetPlatform();
+            public static extern void NeverSupportedPlatform();
+
+            [DllImport(nameof(ExportingAssemblyNE))]
+            public static extern void NeverUnsupportedPlatform();
 
             public struct Data
             {

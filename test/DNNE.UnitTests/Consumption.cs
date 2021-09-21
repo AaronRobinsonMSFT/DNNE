@@ -116,7 +116,8 @@ namespace DNNE.UnitTests
             }
 
             ExportingAssembly.MiscExports.ManuallySetPlatform();
-            Assert.Throws<EntryPointNotFoundException>(() => ExportingAssembly.MiscExports.NevetSetPlatform());
+            Assert.Throws<EntryPointNotFoundException>(() => ExportingAssembly.MiscExports.NeverSupportedPlatform());
+            ExportingAssembly.MiscExports.NeverUnsupportedPlatform();
 
             int c = 29;
             {

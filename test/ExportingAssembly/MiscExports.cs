@@ -91,8 +91,14 @@ namespace ExportingAssembly
         }
 
         [UnmanagedCallersOnly]
-        [SupportedOSPlatform("__NEVER_SET_PLATFORM__")]
-        public static void NevetSetPlatform()
+        [SupportedOSPlatform("__NEVER_SUPPORTED_PLATFORM__")]
+        public static void NeverSupportedPlatform()
+        {
+        }
+
+        [UnmanagedCallersOnly]
+        [UnsupportedOSPlatform("__NEVER_UNSUPPORTED_PLATFORM__")]
+        public static void NeverUnsupportedPlatform()
         {
         }
 
