@@ -66,10 +66,10 @@ namespace DNNE
 
             // Check for platform scenario attributes
             AssemblyDefinition asmDef = this.mdReader.GetAssemblyDefinition();
-            this.assemblyScope = GetOSPlatformScope(asmDef.GetCustomAttributes());
+            this.assemblyScope = this.GetOSPlatformScope(asmDef.GetCustomAttributes());
 
             ModuleDefinition modDef = this.mdReader.GetModuleDefinition();
-            this.moduleScope = GetOSPlatformScope(modDef.GetCustomAttributes());
+            this.moduleScope = this.GetOSPlatformScope(modDef.GetCustomAttributes());
         }
 
         public void Emit(string outputFile)
@@ -118,11 +118,11 @@ namespace DNNE
                     if (currAttrType == ExportType.None)
                     {
                         // Check if method has other supported attributes.
-                        if (TryGetC99DeclCodeAttributeValue(customAttr, out string c99Decl))
+                        if (this.TryGetC99DeclCodeAttributeValue(customAttr, out string c99Decl))
                         {
                             additionalCodeStatements.Add(c99Decl);
                         }
-                        else if (TryGetOSPlatformAttributeValue(customAttr, out bool isSupported, out OSPlatform scen))
+                        else if (this.TryGetOSPlatformAttributeValue(customAttr, out bool isSupported, out OSPlatform scen))
                         {
                             if (isSupported)
                             {
@@ -211,13 +211,7 @@ namespace DNNE
 
                 // Extract method details
                 var typeDef = this.mdReader.GetTypeDefinition(methodDef.GetDeclaringType());
-                var classString = this.mdReader.GetString(typeDef.Name);
-
-                // Exporting from nested types is not supported.
-                if (typeDef.IsNested)
-                {
-                    throw new GeneratorException(this.assemblyPath, $"Method '{this.mdReader.GetString(methodDef.Name)}' is being exported by nested type {classString}.");
-                }
+                var enclosingTypeName = this.ComputeEnclosingTypeName(typeDef);
 
                 // Process method signature.
                 MethodSignature<string> signature;
@@ -275,11 +269,10 @@ namespace DNNE
                     }
                 }
 
-                var namespaceString = this.mdReader.GetString(typeDef.Namespace);
                 exportedMethods.Add(new ExportedMethod()
                 {
                     Type = exportAttrType,
-                    EnclosingTypeName = namespaceString + Type.Delimiter + classString,
+                    EnclosingTypeName = enclosingTypeName,
                     MethodName = managedMethodName,
                     ExportName = exportName,
                     CallingConvention = callConv,
@@ -344,6 +337,26 @@ namespace DNNE
             }
         }
 
+        private string ComputeEnclosingTypeName(TypeDefinition typeDef)
+        {
+            var enclosingTypes = new List<string>() { this.mdReader.GetString(typeDef.Name) };
+            TypeDefinition parentTypeDef = typeDef;
+            while (parentTypeDef.IsNested)
+            {
+                parentTypeDef = this.mdReader.GetTypeDefinition(parentTypeDef.GetDeclaringType());
+                enclosingTypes.Add(this.mdReader.GetString(parentTypeDef.Name));
+            }
+
+            enclosingTypes.Reverse();
+            string name = string.Join('+', enclosingTypes);
+            if (!parentTypeDef.Namespace.IsNil)
+            {
+                name = $"{this.mdReader.GetString(parentTypeDef.Namespace)}{Type.Delimiter}{name}";
+            }
+
+            return name;
+        }
+
         private bool TryGetC99TypeAttributeValue(CustomAttribute attribute, out string c99Type)
         {
             c99Type = IsAttributeType(this.mdReader, attribute, "DNNE", "C99TypeAttribute")
@@ -369,7 +382,7 @@ namespace DNNE
             }
 
             TypeDefinition typeDef = this.mdReader.GetTypeDefinition(typeDefHandle);
-            var typeScope = GetOSPlatformScope(typeDef.GetCustomAttributes());
+            var typeScope = this.GetOSPlatformScope(typeDef.GetCustomAttributes());
 
             // Record and return the scenarios.
             this.typePlatformScenarios.Add(typeDefHandle, typeScope);
@@ -383,7 +396,7 @@ namespace DNNE
             foreach (var customAttrHandle in attrs)
             {
                 CustomAttribute customAttr = this.mdReader.GetCustomAttribute(customAttrHandle);
-                if (TryGetOSPlatformAttributeValue(customAttr, out bool isSupported, out OSPlatform scen))
+                if (this.TryGetOSPlatformAttributeValue(customAttr, out bool isSupported, out OSPlatform scen))
                 {
                     if (isSupported)
                     {

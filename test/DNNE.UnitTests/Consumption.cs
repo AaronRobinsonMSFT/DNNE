@@ -176,5 +176,14 @@ namespace DNNE.UnitTests
             Assert.True(UIntPtr.Zero == ExportingAssembly.UnsafeExports.VoidUIntPtr());
             Assert.True(UIntPtr.Zero == ExportingAssembly.UnsafeExports.UnmanagedVoidUIntPtr());
         }
+
+        [Fact]
+        public void NestedClassExports()
+        {
+            ExportingAssembly.NestedClassExports.Nested1_VoidVoid();
+            ExportingAssembly.NestedClassExports.Nested1_UnmanagedVoidVoid();
+            ExportingAssembly.NestedClassExports.Nested2_VoidVoid();
+            ExportingAssembly.NestedClassExports.Nested2_UnmanagedVoidVoid();
+        }
     }
 }

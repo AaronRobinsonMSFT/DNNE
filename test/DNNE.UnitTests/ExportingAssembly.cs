@@ -221,5 +221,20 @@ namespace DNNE.UnitTests
             [DllImport(nameof(ExportingAssemblyNE))]
             public static extern UIntPtr UnmanagedVoidUIntPtr();
         }
+
+        public unsafe static class NestedClassExports
+        {
+            [DllImport(nameof(ExportingAssemblyNE))]
+            public static extern void Nested1_VoidVoid();
+
+            [DllImport(nameof(ExportingAssemblyNE))]
+            public static extern void Nested1_UnmanagedVoidVoid();
+
+            [DllImport(nameof(ExportingAssemblyNE))]
+            public static extern void Nested2_VoidVoid();
+
+            [DllImport(nameof(ExportingAssemblyNE))]
+            public static extern void Nested2_UnmanagedVoidVoid();
+        }
     }
 }
