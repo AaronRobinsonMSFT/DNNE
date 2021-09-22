@@ -348,7 +348,7 @@ namespace DNNE
             }
 
             enclosingTypes.Reverse();
-            string name = string.Join("+", enclosingTypes);
+            string name = string.Join('+', enclosingTypes);
             if (!parentTypeDef.Namespace.IsNil)
             {
                 name = $"{this.mdReader.GetString(parentTypeDef.Namespace)}{Type.Delimiter}{name}";

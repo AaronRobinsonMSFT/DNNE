@@ -33,8 +33,6 @@ This work is inspired by work in the [Xamarin][xamarin_embed_link], [CoreRT][cor
 
 - The exported function must be marked `static` and `public`.
 
-- The type exporting the function cannot be a nested type.
-
 - Mark functions to export with [`UnmanagedCallersOnlyAttribute`][unmanagedcallersonly_link].
 
     ```CSharp
