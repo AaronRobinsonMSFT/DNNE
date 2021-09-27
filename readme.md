@@ -31,7 +31,7 @@ This work is inspired by work in the [Xamarin][xamarin_embed_link], [CoreRT][cor
 
 ## Exporting details
 
-- The exported function must be marked `static` and `public`.
+- The exported function must be marked `static` and `public`. Note that enclosing class accessibility has no impact on exporting.
 
 - Mark functions to export with [`UnmanagedCallersOnlyAttribute`][unmanagedcallersonly_link].
 
