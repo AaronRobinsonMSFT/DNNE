@@ -108,9 +108,9 @@ DNNE.targets
 
     <PropertyGroup>
       <DnneAssemblyName>$(TargetName)</DnneAssemblyName>
-      <DnneRuntimeIdentifier>$(RuntimeIdentifier)</DnneRuntimeIdentifier>
+      <DnneRuntimeIdentifier Condition="'$(DnneRuntimeIdentifier)'==''">$(RuntimeIdentifier)</DnneRuntimeIdentifier>
       <DnneRuntimeIdentifier Condition="'$(DnneRuntimeIdentifier)'==''">$(NETCoreSdkRuntimeIdentifier)</DnneRuntimeIdentifier>
-      <DnneNetHostDir>$(NetCoreTargetingPackRoot)/Microsoft.NETCore.App.Host.$(DnneRuntimeIdentifier)/$(BundledNETCoreAppPackageVersion)/runtimes/$(DnneRuntimeIdentifier)/native</DnneNetHostDir>
+      <DnneNetHostDir Condition="'$(DnneNetHostDir)' == ''">$(NetCoreTargetingPackRoot)/Microsoft.NETCore.App.Host.$(DnneRuntimeIdentifier)/$(BundledNETCoreAppPackageVersion)/runtimes/$(DnneRuntimeIdentifier)/native</DnneNetHostDir>
       <__DnneGeneratedSourceFile>@(DnneGeneratedSourceFile)</__DnneGeneratedSourceFile>
     </PropertyGroup>
 

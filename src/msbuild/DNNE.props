@@ -68,10 +68,18 @@ DNNE.props
     <DnneWindowsExportsDef></DnneWindowsExportsDef>
 
     <!-- Set to add additional include paths to use during the native build.
-        The directories should be semicolon (e.g. C:\Foo;D:\Bar) delimited.
+        The directories should be semicolon (e.g., C:\Foo;D:\Bar) delimited.
         These additional directories are appended to the end of the compiler
         search paths. -->
     <DnneAdditionalIncludeDirectories></DnneAdditionalIncludeDirectories>
+
+    <!-- Set the Runtime ID (RID) and nethost library directory.
+        These can be useful for cross-architecture compilation.
+        It is recommended to set both as it helps to keep the
+        system in a consistent state. Note, computing a nethost library
+        location will typically require defining a RID. -->
+    <DnneRuntimeIdentifier></DnneRuntimeIdentifier>
+    <DnneNetHostDir></DnneNetHostDir>
 
     <!-- Indicate the dnne-gen tool's roll forward policy. -->
     <DnneGenRollForward></DnneGenRollForward>
