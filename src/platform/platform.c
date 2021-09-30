@@ -204,6 +204,16 @@ static int get_this_image_path(int32_t buffer_len, char_t* buffer, int32_t* writ
     return DNNE_SUCCESS;
 }
 
+static int get_current_error()
+{
+    return (int)GetLastError();
+}
+
+static void set_current_error(int err)
+{
+    SetLastError((DWORD)err);
+}
+
 #else
 
 #include <dlfcn.h>
@@ -249,6 +259,16 @@ static int get_this_image_path(int32_t buffer_len, char_t* buffer, int32_t* writ
 
     *written = (int32_t)len_local;
     return DNNE_SUCCESS;
+}
+
+static int get_current_error()
+{
+    return errno;
+}
+
+static void set_current_error(int err)
+{
+    errno = err;
 }
 
 #endif // !DNNE_WINDOWS
@@ -432,6 +452,12 @@ void* get_callable_managed_function(
 {
     assert(dotnet_type && dotnet_type_method);
 
+    // Store the current error state to reset it when
+    // we exit this function. This being done because this
+    // API is an implementation detail of the export but
+    // can result in side-effects during export resolution.
+    int curr_error = get_current_error();
+
     // Check if the runtime has already been prepared.
     if (!get_managed_export_fptr)
     {
@@ -459,6 +485,9 @@ void* get_callable_managed_function(
     if (is_failure(rc))
         noreturn_export_load_failure(rc);
 
+    // Now that the export has been resolved, reset
+    // the error state to hide this implementation detail.
+    set_current_error(curr_error);
     return func;
 }
 
