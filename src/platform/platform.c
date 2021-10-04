@@ -219,7 +219,7 @@ static void set_current_error(int err)
 #include <dlfcn.h>
 #include <limits.h>
 #include <string.h>
-#include <sys/errno.h>
+#include <errno.h>
 
 #define DNNE_NORETURN __attribute__((__noreturn__))
 #define DNNE_DIR_SEPARATOR '/'
