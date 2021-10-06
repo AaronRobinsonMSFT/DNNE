@@ -1,4 +1,4 @@
-name: DNNE - all platforms
+name: DNNE
 
 on:
   push:
@@ -9,6 +9,9 @@ on:
 jobs:
   linux:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        flavor: [ 'Debug', 'Release' ]
     steps:
     - uses: actions/checkout@v2
     - name: Setup .NET
@@ -16,12 +19,15 @@ jobs:
       with:
         dotnet-version: 5.0.x
     - name: Build Product and Package
-      run: dotnet build src/create_package.proj -c Debug
-    - name: Build and Test Product (Debug)
-      run: dotnet test test/DNNE.UnitTests -c Debug
+      run: dotnet build src/create_package.proj -c ${{ matrix.flavor }}
+    - name: Build and Test Product
+      run: dotnet test test/DNNE.UnitTests -c ${{ matrix.flavor }}
 
   windows:
     runs-on: windows-latest
+    strategy:
+      matrix:
+        flavor: [ 'Debug', 'Release' ]
     steps:
     - uses: actions/checkout@v2
     - name: Setup .NET
@@ -29,12 +35,15 @@ jobs:
       with:
         dotnet-version: 5.0.x
     - name: Build Product and Package
-      run: dotnet build src\create_package.proj
-    - name: Build and Test Product (Release)
-      run: dotnet test test\DNNE.UnitTests -c Release
+      run: dotnet build src\create_package.proj -c  ${{ matrix.flavor }}
+    - name: Build and Test Product
+      run: dotnet test test\DNNE.UnitTests -c ${{ matrix.flavor }}
 
   macos:
     runs-on: macos-latest
+    strategy:
+      matrix:
+        flavor: [ 'Debug', 'Release' ]
     steps:
     - uses: actions/checkout@v2
     - name: Setup .NET
@@ -42,6 +51,6 @@ jobs:
       with:
         dotnet-version: 5.0.x
     - name: Build Product and Package
-      run: dotnet build src/create_package.proj -c Debug
-    - name: Build and Test Product (Debug)
-      run: dotnet test test/DNNE.UnitTests -c Debug
+      run: dotnet build src/create_package.proj -c  ${{ matrix.flavor }}
+    - name: Build and Test Product
+      run: dotnet test test/DNNE.UnitTests -c  ${{ matrix.flavor }}
