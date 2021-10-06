@@ -1,4 +1,4 @@
-name: .NET
+name: DNNE - all platforms
 
 on:
   push:
@@ -10,7 +10,6 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v2
     - name: Setup .NET
@@ -19,3 +18,23 @@ jobs:
         dotnet-version: 5.0.x
     - name: Build
       run: dotnet build src/create_package.proj
+
+    runs-on: windows-latest
+      steps:
+      - uses: actions/checkout@v2
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 5.0.x
+      - name: Build
+        run: dotnet build src\create_package.proj
+
+    runs-on: macos-latest
+      steps:
+      - uses: actions/checkout@v2
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 5.0.x
+      - name: Build
+        run: dotnet build src/create_package.proj
