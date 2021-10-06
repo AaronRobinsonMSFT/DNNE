@@ -9,6 +9,7 @@
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RollForward>Major</RollForward>
     <!--
         Defining RID(s) in the project enable specifying the bitness of the native binary.
         See repository readme.md for more details.
