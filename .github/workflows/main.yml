@@ -7,8 +7,7 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
-
+  build_linux:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -19,6 +18,7 @@ jobs:
     - name: Build
       run: dotnet build src/create_package.proj
 
+  build_windows:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
@@ -29,6 +29,7 @@ jobs:
     - name: Build
       run: dotnet build src\create_package.proj
 
+  build_macos:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v2
