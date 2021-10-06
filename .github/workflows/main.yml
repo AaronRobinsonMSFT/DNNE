@@ -16,9 +16,9 @@ jobs:
       with:
         dotnet-version: 5.0.x
     - name: Build Product and Package
-      run: dotnet build src/create_package.proj
-    - name: Build and Test Product (Release)
-      run: dotnet test test/DNNE.UnitTests -c Release
+      run: dotnet build src/create_package.proj -c Debug
+    - name: Build and Test Product (Debug)
+      run: dotnet test test/DNNE.UnitTests -c Debug
 
   windows:
     runs-on: windows-latest
@@ -42,6 +42,6 @@ jobs:
       with:
         dotnet-version: 5.0.x
     - name: Build Product and Package
-      run: dotnet build src/create_package.proj
-    - name: Build and Test Product (Release)
-      run: dotnet test test/DNNE.UnitTests -c Release
+      run: dotnet build src/create_package.proj -c Debug
+    - name: Build and Test Product (Debug)
+      run: dotnet test test/DNNE.UnitTests -c Debug
