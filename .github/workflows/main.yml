@@ -20,7 +20,7 @@ jobs:
         dotnet-version: 5.0.x
     - name: Build Product and Package
       run: dotnet build src/create_package.proj -c ${{ matrix.flavor }}
-    - name: Build and Test Product
+    - name: Unit Test Product
       run: dotnet test test/DNNE.UnitTests -c ${{ matrix.flavor }}
 
   windows:
@@ -36,7 +36,7 @@ jobs:
         dotnet-version: 5.0.x
     - name: Build Product and Package
       run: dotnet build src\create_package.proj -c  ${{ matrix.flavor }}
-    - name: Build and Test Product
+    - name: Unit Test Product
       run: dotnet test test\DNNE.UnitTests -c ${{ matrix.flavor }}
 
   macos:
@@ -52,5 +52,5 @@ jobs:
         dotnet-version: 5.0.x
     - name: Build Product and Package
       run: dotnet build src/create_package.proj -c  ${{ matrix.flavor }}
-    - name: Build and Test Product
+    - name: Unit Test Product
       run: dotnet test test/DNNE.UnitTests -c  ${{ matrix.flavor }}
