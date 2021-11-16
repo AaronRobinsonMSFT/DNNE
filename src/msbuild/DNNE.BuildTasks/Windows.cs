@@ -255,49 +255,51 @@ namespace DNNE.BuildTasks
 
         private static WinSDK GetLatestWinSDK()
         {
-            using (var kits = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows Kits\Installed Roots"))
+            // Always use the 32-bit hive.
+            // See https://developercommunity.visualstudio.com/t/ucrt-doesnt-work-in-x64-msbuild/1184283#T-N1201257
+            using var key = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
+            using var kits = key.OpenSubKey(@"SOFTWARE\Microsoft\Windows Kits\Installed Roots");
+
+            string win10sdkRoot = (string)kits.GetValue("KitsRoot10");
+
+            // Sort the entries in descending order as
+            // to defer to the latest version.
+            var versions = new SortedList<Version, string>(new VersionDescendingOrder());
+
+            // Collect the possible SDK versions.
+            foreach (var verMaybe in kits.GetSubKeyNames())
             {
-                string win10sdkRoot = (string)kits.GetValue("KitsRoot10");
-
-                // Sort the entries in descending order as
-                // to defer to the latest version.
-                var versions = new SortedList<Version, string>(new VersionDescendingOrder());
-
-                // Collect the possible SDK versions.
-                foreach (var verMaybe in kits.GetSubKeyNames())
+                if (!Version.TryParse(verMaybe, out Version versionMaybe))
                 {
-                    if (!Version.TryParse(verMaybe, out Version versionMaybe))
-                    {
-                        continue;
-                    }
-
-                    versions.Add(versionMaybe, verMaybe);
+                    continue;
                 }
 
-                // Find the latest version of the SDK.
-                foreach (var tgtVerMaybe in versions)
+                versions.Add(versionMaybe, verMaybe);
+            }
+
+            // Find the latest version of the SDK.
+            foreach (var tgtVerMaybe in versions)
+            {
+                // WinSDK inc and lib paths
+                var incDir = Path.Combine(win10sdkRoot, "Include", tgtVerMaybe.Value);
+                var libDir = Path.Combine(win10sdkRoot, "Lib", tgtVerMaybe.Value);
+                if (!Directory.Exists(incDir) || !Directory.Exists(libDir))
                 {
-                    // WinSDK inc and lib paths
-                    var incDir = Path.Combine(win10sdkRoot, "Include", tgtVerMaybe.Value);
-                    var libDir = Path.Combine(win10sdkRoot, "Lib", tgtVerMaybe.Value);
-                    if (!Directory.Exists(incDir) || !Directory.Exists(libDir))
-                    {
-                        continue;
-                    }
-
-                    var sharedIncDir = Path.Combine(incDir, "shared");
-                    var umIncDir = Path.Combine(incDir, "um");
-                    var ucrtIncDir = Path.Combine(incDir, "ucrt");
-                    var umLibDir = Path.Combine(libDir, "um");
-                    var ucrtLibDir = Path.Combine(libDir, "ucrt");
-
-                    return new WinSDK()
-                    {
-                        Version = tgtVerMaybe.Value,
-                        IncPaths = new[] { sharedIncDir, umIncDir, ucrtIncDir },
-                        LibPaths = new[] { umLibDir, ucrtLibDir },
-                    };
+                    continue;
                 }
+
+                var sharedIncDir = Path.Combine(incDir, "shared");
+                var umIncDir = Path.Combine(incDir, "um");
+                var ucrtIncDir = Path.Combine(incDir, "ucrt");
+                var umLibDir = Path.Combine(libDir, "um");
+                var ucrtLibDir = Path.Combine(libDir, "ucrt");
+
+                return new WinSDK()
+                {
+                    Version = tgtVerMaybe.Value,
+                    IncPaths = new[] { sharedIncDir, umIncDir, ucrtIncDir },
+                    LibPaths = new[] { umLibDir, ucrtLibDir },
+                };
             }
 
             throw new Exception("No Win10 SDK version found.");
