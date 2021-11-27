@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30010.185
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.31915.379
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dnne-gen", "src\dnne-gen\dnne-gen.csproj", "{57F736A8-47BA-4F53-82E0-FE5BFE3AAE36}"
 EndProject
@@ -14,6 +14,12 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DNNE.UnitTests", "test\DNNE.UnitTests\DNNE.UnitTests.csproj", "{0B842C1C-1EDE-4832-9F38-6C519B84822A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dnne-pkg", "src\dnne-pkg\dnne-pkg.csproj", "{451402EC-4AE5-425A-9835-9D36A55E8081}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "platform", "platform", "{95BB9742-2FF9-4256-86F5-1393A4E70306}"
+	ProjectSection(SolutionItems) = preProject
+		src\platform\dnne.h = src\platform\dnne.h
+		src\platform\platform.c = src\platform\platform.c
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

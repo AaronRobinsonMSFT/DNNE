@@ -273,11 +273,29 @@ static void set_current_error(int err)
 
 #endif // !DNNE_WINDOWS
 
+
 static failure_fn failure_fptr;
 
 DNNE_API void DNNE_CALLTYPE set_failure_callback(failure_fn cb)
 {
     failure_fptr = cb;
+}
+
+// Provide mechanism for users to override default behavior of certain functions.
+//  - See https://stackoverflow.com/questions/51656838/attribute-weak-and-static-libraries
+//  - Use the MSC macro to enable Windows builds without MSVC.
+#ifdef _MSC_VER
+    #define DNNE_DEFAULT_IMPL(methodName, ...) default_ ## methodName(__VA_ARGS__)
+
+    // List of overridable APIs
+    #pragma comment(linker, "/alternatename:dnne_abort=default_dnne_abort")
+#else
+    #define DNNE_DEFAULT_IMPL(methodName, ...) __attribute__((weak)) methodName(__VA_ARGS__)
+#endif
+
+DNNE_API void DNNE_DEFAULT_IMPL(dnne_abort, enum failure_type type, int error_code)
+{
+    abort();
 }
 
 DNNE_NORETURN static void noreturn_runtime_load_failure(int error_code)
@@ -286,6 +304,9 @@ DNNE_NORETURN static void noreturn_runtime_load_failure(int error_code)
         failure_fptr(failure_load_runtime, error_code);
 
     // Nothing to do if the runtime failed to load.
+    dnne_abort(failure_load_runtime, error_code);
+
+    // Don't trust anything the user can override.
     abort();
 }
 DNNE_NORETURN static void noreturn_export_load_failure(int error_code)
@@ -294,6 +315,9 @@ DNNE_NORETURN static void noreturn_export_load_failure(int error_code)
         failure_fptr(failure_load_export, error_code);
 
     // Nothing to do if the export didn't exist.
+    dnne_abort(failure_load_export, error_code);
+
+    // Don't trust anything the user can override.
     abort();
 }
 
