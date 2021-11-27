@@ -76,6 +76,7 @@ typedef void (DNNE_CALLTYPE* failure_fn)(enum failure_type type, int error_code)
 
 // Provide a callback for any catastrophic failures.
 // The provided callback will be the last call prior to a rude-abort of the process.
+// See dnne_abort().
 DNNE_API void DNNE_CALLTYPE set_failure_callback(failure_fn cb);
 
 // Preload the runtime.
@@ -83,5 +84,9 @@ DNNE_API void DNNE_CALLTYPE set_failure_callback(failure_fn cb);
 // preloads the runtime independent of calling any export and avoids the startup
 // cost associated with calling an export for the first time.
 DNNE_API void DNNE_CALLTYPE preload_runtime(void);
+
+// Users can override DNNE's rude-abort behavior by providing their own dnne_abort() at link time.
+// It is expected this function will not return. If it does return, the behavior is undefined.
+extern DNNE_API void dnne_abort(enum failure_type type, int error_code);
 
 #endif // __SRC_PLATFORM_DNNE_H__
