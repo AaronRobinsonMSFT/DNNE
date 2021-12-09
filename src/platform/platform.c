@@ -283,12 +283,19 @@ DNNE_API void DNNE_CALLTYPE set_failure_callback(failure_fn cb)
 
 // Provide mechanism for users to override default behavior of certain functions.
 //  - See https://stackoverflow.com/questions/51656838/attribute-weak-and-static-libraries
+//  - See https://devblogs.microsoft.com/oldnewthing/20200731-00/?p=104024
 //  - Use the MSC macro to enable Windows builds without MSVC.
 #ifdef _MSC_VER
     #define DNNE_DEFAULT_IMPL(methodName, ...) default_ ## methodName(__VA_ARGS__)
 
     // List of overridable APIs
-    #pragma comment(linker, "/alternatename:dnne_abort=default_dnne_abort")
+    // Note the default calling convention is cdecl on x86 for DNNE_APIs.
+    // This means, on x86, we mangle the alternative name in the linker command.
+    #ifdef _M_IX86
+        #pragma comment(linker, "/alternatename:_dnne_abort=_default_dnne_abort")
+    #else
+        #pragma comment(linker, "/alternatename:dnne_abort=default_dnne_abort")
+    #endif
 #else
     #define DNNE_DEFAULT_IMPL(methodName, ...) __attribute__((weak)) methodName(__VA_ARGS__)
 #endif
