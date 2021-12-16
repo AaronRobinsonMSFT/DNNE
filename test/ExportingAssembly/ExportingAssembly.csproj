@@ -18,8 +18,10 @@
     <!-- <RuntimeIdentifiers>win-x64;win-x86</RuntimeIdentifiers> -->
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <DnneAddGeneratedBinaryToProject>true</DnneAddGeneratedBinaryToProject>
+    <DnneCompilerUserFlags Condition="'$(BuildAsCPP)'=='true'">/TP </DnneCompilerUserFlags>
     <DnneCompilerCommand Condition="'$(BuildWithGCC)'=='true'">gcc</DnneCompilerCommand>
     <DnneCompilerCommand Condition="'$(BuildWithGPP)'=='true'">g++</DnneCompilerCommand>
+    <DnneCompilerCommand Condition="'$(BuildWithClangPP)'=='true'">clang++</DnneCompilerCommand>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TestNuPkg)' == 'true' AND '$(RefLocalBuild)'=='true'">

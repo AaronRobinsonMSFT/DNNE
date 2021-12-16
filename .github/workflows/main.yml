@@ -46,8 +46,12 @@ jobs:
         include-prerelease: true
     - name: Build Product and Package
       run: dotnet build src\create_package.proj -c ${{ matrix.flavor }}
+    - name: Unit Test Product (cpp)
+      run: dotnet test test\DNNE.UnitTests -c ${{ matrix.flavor }} -p:BuildAsCPP=true
     - name: Unit Test Product
-      run: dotnet test test\DNNE.UnitTests -c ${{ matrix.flavor }}
+      run: |
+        dotnet clean test\DNNE.UnitTests -c ${{ matrix.flavor }}
+        dotnet test test\DNNE.UnitTests -c ${{ matrix.flavor }}
     - name: Upload Package
       uses: actions/upload-artifact@v2
       with:
@@ -70,3 +74,7 @@ jobs:
       run: dotnet build src/create_package.proj -c  ${{ matrix.flavor }}
     - name: Unit Test Product
       run: dotnet test test/DNNE.UnitTests -c  ${{ matrix.flavor }}
+    - name: Unit Test Product (clang++)
+      run: |
+        dotnet clean test/DNNE.UnitTests -c ${{ matrix.flavor }}
+        dotnet test test/DNNE.UnitTests -c  ${{ matrix.flavor }} -p:BuildWithClangPP=true
