@@ -666,14 +666,14 @@ $@"const char_t* methodName = DNNE_STR(""{export.MethodName}"");
                 // Declare export
                 outputStream.WriteLine(
 $@"{preguard}// Computed from {export.EnclosingTypeName}{Type.Delimiter}{export.MethodName}
-DNNE_API {export.ReturnType} {callConv} {export.ExportName}({declsig});
+DNNE_EXTERN_C DNNE_API {export.ReturnType} {callConv} {export.ExportName}({declsig});
 {postguard}");
 
                 // Define export in implementation stream
                 implStream.WriteLine(
 $@"{preguard}// Computed from {export.EnclosingTypeName}{Type.Delimiter}{export.MethodName}
 static {export.ReturnType} ({callConv}* {export.ExportName}_ptr)({declsig});
-DNNE_API {export.ReturnType} {callConv} {export.ExportName}({declsig})
+DNNE_EXTERN_C DNNE_API {export.ReturnType} {callConv} {export.ExportName}({declsig})
 {{
     if ({export.ExportName}_ptr == NULL)
     {{
