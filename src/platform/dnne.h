@@ -43,16 +43,16 @@
     #define DNNE_STR(s) _DNNE_STR(s)
 #else
     #define DNNE_API __attribute__((__visibility__("default")))
-    #define DNNE_CALLTYPE 
-    #define DNNE_CALLTYPE_CDECL 
+    #define DNNE_CALLTYPE
+    #define DNNE_CALLTYPE_CDECL
     #ifdef __i386__
         #define DNNE_CALLTYPE_STDCALL __attribute__((stdcall))
         #define DNNE_CALLTYPE_THISCALL __attribute__((thiscall))
         #define DNNE_CALLTYPE_FASTCALL __attribute__((fastcall))
     #else
-        #define DNNE_CALLTYPE_STDCALL 
-        #define DNNE_CALLTYPE_THISCALL 
-        #define DNNE_CALLTYPE_FASTCALL 
+        #define DNNE_CALLTYPE_STDCALL
+        #define DNNE_CALLTYPE_THISCALL
+        #define DNNE_CALLTYPE_FASTCALL
     #endif
     #define DNNE_STR(s) s
 #endif
@@ -74,6 +74,14 @@ enum failure_type
 };
 typedef void (DNNE_CALLTYPE* failure_fn)(enum failure_type type, int error_code);
 
+#ifdef __cplusplus
+    #define DNNE_EXTERN_C extern "C"
+    DNNE_EXTERN_C
+    {
+#else
+    #define DNNE_EXTERN_C
+#endif
+
 // Provide a callback for any catastrophic failures.
 // The provided callback will be the last call prior to a rude-abort of the process.
 // See dnne_abort().
@@ -88,5 +96,9 @@ DNNE_API void DNNE_CALLTYPE preload_runtime(void);
 // Users can override DNNE's rude-abort behavior by providing their own dnne_abort() at link time.
 // It is expected this function will not return. If it does return, the behavior is undefined.
 extern DNNE_API void dnne_abort(enum failure_type type, int error_code);
+
+#ifdef __cplusplus
+    }
+#endif
 
 #endif // __SRC_PLATFORM_DNNE_H__

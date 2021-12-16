@@ -30,7 +30,7 @@
 #include <nethost.h>
 
 // Needed for dladdr() in non-macOS scenarios
-#if !defined(DNNE_WINDOWS) && !defined(DNNE_OSX)
+#if !defined(DNNE_WINDOWS) && !defined(DNNE_OSX) && !defined(_GNU_SOURCE)
     #define _GNU_SOURCE
 #endif
 
@@ -276,7 +276,7 @@ static void set_current_error(int err)
 
 static failure_fn failure_fptr;
 
-DNNE_API void DNNE_CALLTYPE set_failure_callback(failure_fn cb)
+DNNE_EXTERN_C DNNE_API void DNNE_CALLTYPE set_failure_callback(failure_fn cb)
 {
     failure_fptr = cb;
 }
@@ -300,7 +300,7 @@ DNNE_API void DNNE_CALLTYPE set_failure_callback(failure_fn cb)
     #define DNNE_DEFAULT_IMPL(methodName, ...) __attribute__((weak)) methodName(__VA_ARGS__)
 #endif
 
-DNNE_API void DNNE_DEFAULT_IMPL(dnne_abort, enum failure_type type, int error_code)
+DNNE_EXTERN_C DNNE_API void DNNE_DEFAULT_IMPL(dnne_abort, enum failure_type type, int error_code)
 {
     abort();
 }
@@ -471,7 +471,7 @@ static void prepare_runtime(void)
     assert(get_managed_export_fptr != NULL);
 }
 
-DNNE_API void DNNE_CALLTYPE preload_runtime(void)
+DNNE_EXTERN_C DNNE_API void DNNE_CALLTYPE preload_runtime(void)
 {
     prepare_runtime();
 }

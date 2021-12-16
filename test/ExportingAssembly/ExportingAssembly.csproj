@@ -19,6 +19,7 @@
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <DnneAddGeneratedBinaryToProject>true</DnneAddGeneratedBinaryToProject>
     <DnneCompilerCommand Condition="'$(BuildWithGCC)'=='true'">gcc</DnneCompilerCommand>
+    <DnneCompilerCommand Condition="'$(BuildWithGPP)'=='true'">g++</DnneCompilerCommand>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TestNuPkg)' == 'true' AND '$(RefLocalBuild)'=='true'">
