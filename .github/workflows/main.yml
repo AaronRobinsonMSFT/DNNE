@@ -23,6 +23,10 @@ jobs:
       run: dotnet build src/create_package.proj -c ${{ matrix.flavor }}
     - name: Unit Test Product
       run: dotnet test test/DNNE.UnitTests -c ${{ matrix.flavor }}
+    - name: Unit Test Product (GCC)
+      run: |
+        dotnet clean test/DNNE.UnitTests -c ${{ matrix.flavor }}
+        dotnet test test/DNNE.UnitTests -c ${{ matrix.flavor }} -p:BuildWithGCC=true
 
   windows:
     runs-on: windows-latest
