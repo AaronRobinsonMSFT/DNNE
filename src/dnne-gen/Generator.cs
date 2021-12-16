@@ -652,7 +652,7 @@ extern void* get_fast_callable_managed_function(
                     acquireManagedFunction =
 $@"const char_t* methodName = DNNE_STR(""{export.MethodName}"");
         const char_t* delegateType = DNNE_STR(""{export.EnclosingTypeName}+{export.MethodName}Delegate, {assemblyName}"");
-        {export.ExportName}_ptr = get_callable_managed_function({classNameConstant}, methodName, delegateType);";
+        {export.ExportName}_ptr = ({export.ReturnType}({callConv}*)({declsig}))get_callable_managed_function({classNameConstant}, methodName, delegateType);";
 
                 }
                 else
@@ -660,7 +660,7 @@ $@"const char_t* methodName = DNNE_STR(""{export.MethodName}"");
                     Debug.Assert(export.Type == ExportType.UnmanagedCallersOnly);
                     acquireManagedFunction =
 $@"const char_t* methodName = DNNE_STR(""{export.MethodName}"");
-        {export.ExportName}_ptr = get_fast_callable_managed_function({classNameConstant}, methodName);";
+        {export.ExportName}_ptr = ({export.ReturnType}({callConv}*)({declsig}))get_fast_callable_managed_function({classNameConstant}, methodName);";
                 }
 
                 // Declare export

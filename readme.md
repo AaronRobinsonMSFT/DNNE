@@ -249,11 +249,11 @@ public class Exports
 
 [dotnet repo](https://github.com/dotnet/runtime)
 
-[`nethost` example](https://github.com/dotnet/samples/tree/master/core/hosting/HostWithHostFxr)
+[`nethost` example](https://github.com/dotnet/samples/tree/main/core/hosting)
 
 <!-- Links -->
 [xamarin_embed_link]: https://docs.microsoft.com/xamarin/tools/dotnet-embedding/release-notes/preview/0.4
 [corert_feature_link]: https://github.com/dotnet/corert/tree/master/samples/NativeLibrary
 [dllexport_link]: https://github.com/3F/DllExport
-[csharp_funcptr_link]: https://github.com/dotnet/csharplang/blob/master/proposals/function-pointers.md
+[csharp_funcptr_link]: https://github.com/dotnet/csharplang/blob/main/proposals/csharp-9.0/function-pointers.md
 [unmanagedcallersonly_link]: https://docs.microsoft.com/dotnet/api/system.runtime.interopservices.unmanagedcallersonlyattribute
