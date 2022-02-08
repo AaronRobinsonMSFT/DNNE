@@ -64,6 +64,7 @@ typedef int (DNNE_CALLTYPE* ReturnRefDataCMember_t)(struct T*);
 
 typedef void (DNNE_CALLTYPE* set_failure_callback_t)(failure_fn cb);
 typedef void (DNNE_CALLTYPE* preload_runtime_t)(void);
+typedef int (DNNE_CALLTYPE* try_preload_runtime_t)(void);
 
 static void DNNE_CALLTYPE on_failure(enum failure_type type, int error_code)
 {
@@ -79,9 +80,18 @@ int main(int ac, char** av)
     RETURN_FAIL_IF_FALSE(set_cb, "Failed to get set_failure_callback export\n");
     set_cb(on_failure);
 
-    preload_runtime_t preload = (preload_runtime_t)get_export(mod, "preload_runtime");
-    RETURN_FAIL_IF_FALSE(preload, "Failed to get preload_runtime export\n");
-    preload();
+    {
+        try_preload_runtime_t try_preload = (try_preload_runtime_t)get_export(mod, "try_preload_runtime");
+        RETURN_FAIL_IF_FALSE(try_preload, "Failed to get try_preload_runtime export\n");
+        int ret = try_preload();
+        RETURN_FAIL_IF_FALSE(ret == DNNE_SUCCESS, "try_preload_runtime failed\n");
+    }
+
+    {
+        preload_runtime_t preload = (preload_runtime_t)get_export(mod, "preload_runtime");
+        RETURN_FAIL_IF_FALSE(preload, "Failed to get preload_runtime export\n");
+        preload();
+    }
 
     {
         IntIntInt_t fptr = NULL;
