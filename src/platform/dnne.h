@@ -67,6 +67,8 @@
 //
 // Public exports
 //
+#define DNNE_SUCCESS 0
+
 enum failure_type
 {
     failure_load_runtime = 1,
@@ -91,7 +93,15 @@ DNNE_API void DNNE_CALLTYPE set_failure_callback(failure_fn cb);
 // The runtime is lazily loaded whenever the first export is called. This function
 // preloads the runtime independent of calling any export and avoids the startup
 // cost associated with calling an export for the first time.
+// If the runtime fails to load, dnne_abort() will be called.
 DNNE_API void DNNE_CALLTYPE preload_runtime(void);
+
+// Attempt to preload the runtime.
+// The runtime is lazily loaded whenever the first export is called. This function
+// preloads the runtime independent of calling any export and avoids the startup
+// cost associated with calling an export for the first time.
+// If the runtime fails to load, an error code will be returned.
+DNNE_API int DNNE_CALLTYPE try_preload_runtime(void);
 
 // Users can override DNNE's rude-abort behavior by providing their own dnne_abort() at link time.
 // It is expected this function will not return. If it does return, the behavior is undefined.

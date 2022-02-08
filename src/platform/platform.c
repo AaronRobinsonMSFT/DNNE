@@ -146,7 +146,6 @@ typedef int (CORECLR_DELEGATE_CALLTYPE* component_entry_point_fn)(void* arg, int
 #define DNNE_DEBUG
 #endif
 
-#define DNNE_SUCCESS 0
 #define DNNE_MAX_PATH 512
 #define DNNE_ARRAY_SIZE(_array) (sizeof(_array) / sizeof(*_array))
 
@@ -305,24 +304,13 @@ DNNE_EXTERN_C DNNE_API void DNNE_DEFAULT_IMPL(dnne_abort, enum failure_type type
     abort();
 }
 
-DNNE_NORETURN static void noreturn_runtime_load_failure(int error_code)
+DNNE_NORETURN static void noreturn_failure(enum failure_type type, int error_code)
 {
     if (failure_fptr)
-        failure_fptr(failure_load_runtime, error_code);
+        failure_fptr(type, error_code);
 
     // Nothing to do if the runtime failed to load.
-    dnne_abort(failure_load_runtime, error_code);
-
-    // Don't trust anything the user can override.
-    abort();
-}
-DNNE_NORETURN static void noreturn_export_load_failure(int error_code)
-{
-    if (failure_fptr)
-        failure_fptr(failure_load_export, error_code);
-
-    // Nothing to do if the export didn't exist.
-    dnne_abort(failure_load_export, error_code);
+    dnne_abort(type, error_code);
 
     // Don't trust anything the user can override.
     abort();
@@ -377,7 +365,7 @@ static hostfxr_initialize_for_runtime_config_fn init_fptr;
 static hostfxr_get_runtime_delegate_fn get_delegate_fptr;
 static hostfxr_close_fn close_fptr;
 
-static void load_hostfxr(const char_t* assembly_path)
+static int load_hostfxr(const char_t* assembly_path)
 {
     // Discover the path to hostfxr.
     char_t buffer[DNNE_MAX_PATH];
@@ -388,7 +376,7 @@ static void load_hostfxr(const char_t* assembly_path)
     params.dotnet_root = NULL;
     int rc = get_hostfxr_path(buffer, &buffer_size, &params);
     if (is_failure(rc))
-        noreturn_runtime_load_failure(rc);
+        return rc;
 
     // Load hostfxr and get desired exports.
     void* lib = load_library(buffer);
@@ -398,12 +386,13 @@ static void load_hostfxr(const char_t* assembly_path)
     close_fptr = (hostfxr_close_fn)get_export(lib, "hostfxr_close");
 
     assert(init_self_contained_fptr && init_fptr && get_delegate_fptr && close_fptr);
+    return DNNE_SUCCESS;
 }
 
 // Globals to hold runtime exports
 static load_assembly_and_get_function_pointer_fn get_managed_export_fptr;
 
-static void init_dotnet(const char_t* assembly_path)
+static int init_dotnet(const char_t* assembly_path)
 {
     const char_t* config_path = NULL;
     int rc;
@@ -419,7 +408,7 @@ static void init_dotnet(const char_t* assembly_path)
     const char_t config_filename[] = DNNE_STR(DNNE_TOSTRING(DNNE_ASSEMBLY_NAME)) DNNE_STR(".runtimeconfig.json");
     rc = get_current_dir_filepath(DNNE_ARRAY_SIZE(buffer), buffer, DNNE_ARRAY_SIZE(config_filename), config_filename, &config_path);
     if (is_failure(rc))
-        noreturn_runtime_load_failure(rc);
+        return rc;
 #endif
 
     // Load .NET runtime
@@ -430,10 +419,10 @@ static void init_dotnet(const char_t* assembly_path)
 #else
     rc = init_fptr(config_path, NULL, &cxt);
 #endif
-    if (is_failure(rc) || cxt == NULL)
+    if (is_failure(rc))
     {
         close_fptr(cxt);
-        noreturn_runtime_load_failure(rc);
+        return rc;
     }
 
     // Get the load assembly function pointer
@@ -441,16 +430,30 @@ static void init_dotnet(const char_t* assembly_path)
         cxt,
         hdt_load_assembly_and_get_function_pointer,
         &load_assembly_and_get_function_pointer);
-    if (is_failure(rc) || load_assembly_and_get_function_pointer == NULL)
+    if (is_failure(rc))
     {
         close_fptr(cxt);
-        noreturn_runtime_load_failure(rc);
+        return rc;
     }
 
     get_managed_export_fptr = (load_assembly_and_get_function_pointer_fn)load_assembly_and_get_function_pointer;
+    return DNNE_SUCCESS;
 }
 
-static void prepare_runtime(void)
+#define IF_FAILURE_RETURN_OR_ABORT(ret_maybe, type, rc) \
+{ \
+    if (is_failure(rc)) \
+    { \
+        if (ret_maybe) \
+        { \
+            *ret_maybe = rc; \
+            return; \
+        } \
+        noreturn_failure(type, rc); \
+    } \
+}
+
+static void prepare_runtime(int* ret)
 {
     // Check if the needed export was already acquired.
     if (get_managed_export_fptr)
@@ -460,20 +463,29 @@ static void prepare_runtime(void)
     const char_t assembly_filename[] = DNNE_STR(DNNE_TOSTRING(DNNE_ASSEMBLY_NAME)) DNNE_STR(".dll");
     const char_t* assembly_path = NULL;
     int rc = get_current_dir_filepath(DNNE_ARRAY_SIZE(buffer), buffer, DNNE_ARRAY_SIZE(assembly_filename), assembly_filename, &assembly_path);
-    if (is_failure(rc))
-        noreturn_runtime_load_failure(rc);
+    IF_FAILURE_RETURN_OR_ABORT(ret, failure_load_runtime, rc);
 
     // Load HostFxr and get exported hosting functions.
-    load_hostfxr(assembly_path);
+    rc = load_hostfxr(assembly_path);
+    IF_FAILURE_RETURN_OR_ABORT(ret, failure_load_runtime, rc);
 
     // Initialize and start the runtime.
-    init_dotnet(assembly_path);
+    rc = init_dotnet(assembly_path);
+    IF_FAILURE_RETURN_OR_ABORT(ret, failure_load_runtime, rc);
+
     assert(get_managed_export_fptr != NULL);
 }
 
 DNNE_EXTERN_C DNNE_API void DNNE_CALLTYPE preload_runtime(void)
 {
-    prepare_runtime();
+    prepare_runtime(NULL);
+}
+
+DNNE_EXTERN_C DNNE_API int DNNE_CALLTYPE try_preload_runtime(void)
+{
+    int ret = DNNE_SUCCESS;
+    prepare_runtime(&ret);
+    return ret;
 }
 
 void* get_callable_managed_function(
@@ -492,7 +504,7 @@ void* get_callable_managed_function(
     // Check if the runtime has already been prepared.
     if (!get_managed_export_fptr)
     {
-        prepare_runtime();
+        prepare_runtime(NULL);
         assert(get_managed_export_fptr != NULL);
     }
 
@@ -501,7 +513,7 @@ void* get_callable_managed_function(
     const char_t* assembly_path = NULL;
     int rc = get_current_dir_filepath(DNNE_ARRAY_SIZE(buffer), buffer, DNNE_ARRAY_SIZE(assembly_filename), assembly_filename, &assembly_path);
     if (is_failure(rc))
-        noreturn_export_load_failure(rc);
+        noreturn_failure(failure_load_export, rc);
 
     // Function pointer to managed function
     void* func = NULL;
@@ -514,7 +526,7 @@ void* get_callable_managed_function(
         &func);
 
     if (is_failure(rc))
-        noreturn_export_load_failure(rc);
+        noreturn_failure(failure_load_export, rc);
 
     // Now that the export has been resolved, reset
     // the error state to hide this implementation detail.
