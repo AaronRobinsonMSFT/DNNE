@@ -68,7 +68,7 @@ The `set_failure_callback()` function can be used prior to calling an export to 
 
 Failure to load the runtime or find an export results in the native library calling [`abort()`](https://en.cppreference.com/w/c/program/abort). See FAQs for how this can be overridden.
 
-The `preload_runtime()` function can be used to preload the runtime. This may be desirable prior to calling an export to avoid the cost of loading the runtime during the first export dispatch.
+The `preload_runtime()` or `try_preload_runtime()` functions can be used to preload the runtime. This may be desirable prior to calling an export to avoid the cost of loading the runtime during the first export dispatch.
 
 ## Exporting a managed function
 

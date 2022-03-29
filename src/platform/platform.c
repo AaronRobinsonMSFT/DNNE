@@ -152,6 +152,9 @@ typedef int (CORECLR_DELEGATE_CALLTYPE* component_entry_point_fn)(void* arg, int
 #define DNNE_TOSTRING2(s) #s
 #define DNNE_TOSTRING(s) DNNE_TOSTRING2(s)
 
+typedef volatile long dnne_lock_handle;
+#define DNNE_LOCK_OPEN (0)
+
 #ifdef DNNE_WINDOWS
 
 #define WIN32_LEAN_AND_MEAN
@@ -213,11 +216,25 @@ static void set_current_error(int err)
     SetLastError((DWORD)err);
 }
 
+static void enter_lock(dnne_lock_handle* lock)
+{
+    while (InterlockedCompareExchange(lock, -1, DNNE_LOCK_OPEN) != DNNE_LOCK_OPEN)
+    {
+        Sleep(1 /* milliseconds */);
+    }
+}
+
+static void exit_lock(dnne_lock_handle* lock)
+{
+    InterlockedExchange(lock, DNNE_LOCK_OPEN);
+}
+
 #else
 
 #include <dlfcn.h>
 #include <limits.h>
 #include <string.h>
+#include <sched.h>
 #include <errno.h>
 
 #define DNNE_NORETURN __attribute__((__noreturn__))
@@ -268,6 +285,19 @@ static int get_current_error()
 static void set_current_error(int err)
 {
     errno = err;
+}
+
+static void enter_lock(dnne_lock_handle* lock)
+{
+    while (__sync_val_compare_and_swap(lock, DNNE_LOCK_OPEN, -1) != DNNE_LOCK_OPEN)
+    {
+        (void)sched_yield(); // Yield instead of sleeping.
+    }
+}
+
+static void exit_lock(dnne_lock_handle* lock)
+{
+    __atomic_exchange_n(lock, DNNE_LOCK_OPEN, __ATOMIC_ACQ_REL);
 }
 
 #endif // !DNNE_WINDOWS
@@ -390,7 +420,7 @@ static int load_hostfxr(const char_t* assembly_path)
 }
 
 // Globals to hold runtime exports
-static load_assembly_and_get_function_pointer_fn get_managed_export_fptr;
+static load_assembly_and_get_function_pointer_fn volatile get_managed_export_fptr;
 
 static int init_dotnet(const char_t* assembly_path)
 {
@@ -440,10 +470,11 @@ static int init_dotnet(const char_t* assembly_path)
     return DNNE_SUCCESS;
 }
 
-#define IF_FAILURE_RETURN_OR_ABORT(ret_maybe, type, rc) \
+#define IF_FAILURE_RETURN_OR_ABORT(ret_maybe, type, rc, lock) \
 { \
     if (is_failure(rc)) \
     { \
+        exit_lock(lock); \
         if (ret_maybe) \
         { \
             *ret_maybe = rc; \
@@ -453,9 +484,12 @@ static int init_dotnet(const char_t* assembly_path)
     } \
 }
 
+dnne_lock_handle _prepare_lock = DNNE_LOCK_OPEN;
+
 static void prepare_runtime(int* ret)
 {
-    // Check if the needed export was already acquired.
+    // Lock and check if the needed export was already acquired.
+    enter_lock(&_prepare_lock);
     if (get_managed_export_fptr)
         return;
 
@@ -463,17 +497,18 @@ static void prepare_runtime(int* ret)
     const char_t assembly_filename[] = DNNE_STR(DNNE_TOSTRING(DNNE_ASSEMBLY_NAME)) DNNE_STR(".dll");
     const char_t* assembly_path = NULL;
     int rc = get_current_dir_filepath(DNNE_ARRAY_SIZE(buffer), buffer, DNNE_ARRAY_SIZE(assembly_filename), assembly_filename, &assembly_path);
-    IF_FAILURE_RETURN_OR_ABORT(ret, failure_load_runtime, rc);
+    IF_FAILURE_RETURN_OR_ABORT(ret, failure_load_runtime, rc, &_prepare_lock);
 
     // Load HostFxr and get exported hosting functions.
     rc = load_hostfxr(assembly_path);
-    IF_FAILURE_RETURN_OR_ABORT(ret, failure_load_runtime, rc);
+    IF_FAILURE_RETURN_OR_ABORT(ret, failure_load_runtime, rc, &_prepare_lock);
 
     // Initialize and start the runtime.
     rc = init_dotnet(assembly_path);
-    IF_FAILURE_RETURN_OR_ABORT(ret, failure_load_runtime, rc);
+    IF_FAILURE_RETURN_OR_ABORT(ret, failure_load_runtime, rc, &_prepare_lock);
 
     assert(get_managed_export_fptr != NULL);
+    exit_lock(&_prepare_lock);
 }
 
 DNNE_EXTERN_C DNNE_API void DNNE_CALLTYPE preload_runtime(void)
