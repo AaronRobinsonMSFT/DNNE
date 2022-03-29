@@ -218,7 +218,7 @@ static void set_current_error(int err)
 
 static void enter_lock(dnne_lock_handle* lock)
 {
-    while (InterlockedCompareExchange(lock, -1, DNNE_LOCK_OPEN) == DNNE_LOCK_OPEN)
+    while (InterlockedCompareExchange(lock, -1, DNNE_LOCK_OPEN) != DNNE_LOCK_OPEN)
     {
         Sleep(1 /* milliseconds */);
     }
@@ -289,7 +289,7 @@ static void set_current_error(int err)
 
 static void enter_lock(dnne_lock_handle* lock)
 {
-    while (__sync_val_compare_and_swap(lock, DNNE_LOCK_OPEN, -1) == DNNE_LOCK_OPEN)
+    while (__sync_val_compare_and_swap(lock, DNNE_LOCK_OPEN, -1) != DNNE_LOCK_OPEN)
     {
         (void)sched_yield(); // Yield instead of sleeping.
     }
