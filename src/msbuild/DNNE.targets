@@ -87,6 +87,11 @@ DNNE.targets
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Visible>false</Visible>
     </None>
+    <None Include="$(DnneGeneratedBinPath)/$(DnneNativeExportsBinaryName).pdb" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+      <Link>$(DnneNativeExportsBinaryName).pdb</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Visible>false</Visible>
+    </None>
   </ItemGroup>
 
   <UsingTask
