@@ -65,7 +65,7 @@ namespace DNNE
             this.assemblyPath = validAssemblyPath;
             this.peReader = new PEReader(File.OpenRead(this.assemblyPath));
             this.mdReader = this.peReader.GetMetadataReader(MetadataReaderOptions.None);
-            this.LoadXmlDocumentation(Path.ChangeExtension(validAssemblyPath, "xml"));
+            this.loadedXmlDocumentation = Generator.LoadXmlDocumentation(Path.ChangeExtension(validAssemblyPath, "xml"));
 
             // Check for platform scenario attributes
             AssemblyDefinition asmDef = this.mdReader.GetAssemblyDefinition();
@@ -272,9 +272,7 @@ namespace DNNE
                     }
                 }
 
-                var namespaceString = this.mdReader.GetString(typeDef.Namespace);
-                var classString = this.mdReader.GetString(typeDef.Name);
-                var xmlDoc = findXmlDoc(namespaceString + Type.Delimiter + classString + Type.Delimiter + managedMethodName, argumentTypes);
+                var xmlDoc = FindXmlDoc(enclosingTypeName.Replace('+', '.') + Type.Delimiter + managedMethodName, argumentTypes);
 
                 exportedMethods.Add(new ExportedMethod()
                 {
@@ -310,8 +308,9 @@ namespace DNNE
             EmitC99(outputStream, assemblyName, exportedMethods, additionalCodeStatements);
         }
 
-        public void LoadXmlDocumentation(string xmlDocumentation)
+        private static Dictionary<string, string> LoadXmlDocumentation(string xmlDocumentation)
         {
+            var actXml = new Dictionary<string, string>();
             try
             {
                 using (XmlReader xmlReader = XmlReader.Create(xmlDocumentation))
@@ -321,7 +320,7 @@ namespace DNNE
                         if (xmlReader.NodeType == XmlNodeType.Element && xmlReader.Name == "member")
                         {
                             string raw_name = xmlReader["name"];
-                            loadedXmlDocumentation[raw_name] = xmlReader.ReadInnerXml();
+                            actXml[raw_name] = xmlReader.ReadInnerXml();
                         }
                     }
                 }
@@ -329,20 +328,22 @@ namespace DNNE
             catch (FileNotFoundException)
             {
             }
+            return actXml;
         }
 
-        private string findXmlDoc(string fullMethodName, string[] argumentTypes)
+        private string FindXmlDoc(string fullMethodName, string[] argumentTypes)
         {
             string xmlDoc = "";
             foreach (var item in loadedXmlDocumentation)
             {
-                if (item.Key.StartsWith("M:" + fullMethodName + "("))
+                if (item.Key.StartsWith("M:" + fullMethodName))
                 {
                     xmlDoc = item.Value;
                     break;
                 }
             }
-            if (xmlDoc == "") return "";
+            if (xmlDoc == "") 
+                return "";
 
             var lines = xmlDoc.TrimStart('\n').TrimEnd().Split("\n");
             string prefix = "/// ";
