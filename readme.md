@@ -244,6 +244,15 @@ public class Exports
   * The .NET platform provides [`SupportedOSPlatformAttribute`](https://docs.microsoft.com/dotnet/api/system.runtime.versioning.supportedosplatformattribute) and [`UnsupportedOSPlatformAttribute`](https://docs.microsoft.com/dotnet/api/system.runtime.versioning.unsupportedosplatformattribute) which are fully supported by DNNE. All .NET supplied platform names are recognized. It is also possible to define your own using `C99DeclCodeAttribute`. See [`MiscExport.cs`](./test/ExportingAssembly/MiscExports.cs) for an example.
 * The consuming application for my .NET assembly fails catastrophically if .NET is not installed. How can I improve this UX?
   * For all non-recoverable scenarios, DNNE will call the standard C `abort()` function. This can be overridden by providing your own `dnne_abort()` function. See [`override.c`](./test/ExportingAssembly/override.c) in the [`ExportingAssembly`](./test/ExportingAssembly/ExportingAssembly.csproj) project for an example.
+* To also copy the native binary including header and library file to the publish folder add the following snippet to the project file:
+```
+<Target Name="PrepublishScript" BeforeTargets="PrepareForPublish">
+		<ItemGroup>
+			<NeFile Include="$(TargetDir)\$(TargetName)NE.*" />
+		</ItemGroup>
+		<Copy SourceFiles="@(NeFile)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="false" />
+	</Target>
+```
 
 # Additional References
 
