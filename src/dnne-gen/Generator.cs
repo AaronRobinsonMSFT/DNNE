@@ -58,7 +58,7 @@ namespace DNNE
         private readonly Scope assemblyScope;
         private readonly Scope moduleScope;
         private readonly IDictionary<TypeDefinitionHandle, Scope> typePlatformScenarios = new Dictionary<TypeDefinitionHandle, Scope>();
-        private Dictionary<string, string> loadedXmlDocumentation = new Dictionary<string, string>();
+        private readonly Dictionary<string, string> loadedXmlDocumentation;
 
         public Generator(string validAssemblyPath)
         {
@@ -313,15 +313,15 @@ namespace DNNE
             var actXml = new Dictionary<string, string>();
             try
             {
-                using (XmlReader xmlReader = XmlReader.Create(xmlDocumentation))
+                // See https://docs.microsoft.com/dotnet/csharp/language-reference/xmldoc/
+                // for xml documenation definition
+                using XmlReader xmlReader = XmlReader.Create(xmlDocumentation);
+                while (xmlReader.Read())
                 {
-                    while (xmlReader.Read())
+                    if (xmlReader.NodeType == XmlNodeType.Element && xmlReader.Name == "member")
                     {
-                        if (xmlReader.NodeType == XmlNodeType.Element && xmlReader.Name == "member")
-                        {
-                            string raw_name = xmlReader["name"];
-                            actXml[raw_name] = xmlReader.ReadInnerXml();
-                        }
+                        string raw_name = xmlReader["name"];
+                        actXml[raw_name] = xmlReader.ReadInnerXml();
                     }
                 }
             }
