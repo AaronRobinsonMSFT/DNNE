@@ -32,7 +32,7 @@ namespace ExportingAssembly
     /// The C++ code to consume this could also be auto generated. The
     /// below example illustrates one possible way to wrap the exports
     /// to create a natural C++ experience.
-    /// <code>
+    /// <code><![CDATA[
     /// #ifndef _MYCLASS_HPP_
     /// #define _MYCLASS_HPP_
     /// class MyClass
@@ -65,7 +65,7 @@ namespace ExportingAssembly
     ///     MyClass& operator=(const MyClass&) = delete;
     /// };
     /// #endif // _MYCLASS_HPP_
-    /// </code>
+    /// ]]></code>
     /// </remarks>
     public class InstanceExports
     {
