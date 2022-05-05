@@ -60,12 +60,12 @@ namespace DNNE
         private readonly IDictionary<TypeDefinitionHandle, Scope> typePlatformScenarios = new Dictionary<TypeDefinitionHandle, Scope>();
         private readonly Dictionary<string, string> loadedXmlDocumentation;
 
-        public Generator(string validAssemblyPath)
+        public Generator(string validAssemblyPath, string xmlDocFile)
         {
             this.assemblyPath = validAssemblyPath;
             this.peReader = new PEReader(File.OpenRead(this.assemblyPath));
             this.mdReader = this.peReader.GetMetadataReader(MetadataReaderOptions.None);
-            this.loadedXmlDocumentation = Generator.LoadXmlDocumentation(Path.ChangeExtension(validAssemblyPath, "xml"));
+            this.loadedXmlDocumentation = Generator.LoadXmlDocumentation(xmlDocFile);
 
             // Check for platform scenario attributes
             AssemblyDefinition asmDef = this.mdReader.GetAssemblyDefinition();
@@ -311,22 +311,19 @@ namespace DNNE
         private static Dictionary<string, string> LoadXmlDocumentation(string xmlDocumentation)
         {
             var actXml = new Dictionary<string, string>();
-            try
+            if (xmlDocumentation is null)
+                return actXml;
+            
+            // See https://docs.microsoft.com/dotnet/csharp/language-reference/xmldoc/
+            // for xml documenation definition
+            using XmlReader xmlReader = XmlReader.Create(xmlDocumentation);
+            while (xmlReader.Read())
             {
-                // See https://docs.microsoft.com/dotnet/csharp/language-reference/xmldoc/
-                // for xml documenation definition
-                using XmlReader xmlReader = XmlReader.Create(xmlDocumentation);
-                while (xmlReader.Read())
+                if (xmlReader.NodeType == XmlNodeType.Element && xmlReader.Name == "member")
                 {
-                    if (xmlReader.NodeType == XmlNodeType.Element && xmlReader.Name == "member")
-                    {
-                        string raw_name = xmlReader["name"];
-                        actXml[raw_name] = xmlReader.ReadInnerXml();
-                    }
+                    string raw_name = xmlReader["name"];
+                    actXml[raw_name] = xmlReader.ReadInnerXml();
                 }
-            }
-            catch (FileNotFoundException)
-            {
             }
             return actXml;
         }
