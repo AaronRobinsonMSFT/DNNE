@@ -247,11 +247,13 @@ public class Exports
 * To also copy the native binary including header and library file to the publish folder add the following snippet to the project file:
 ```
 <Target Name="PrepublishScript" BeforeTargets="PrepareForPublish">
-		<ItemGroup>
-			<NeFile Include="$(TargetDir)\$(TargetName)NE.*" />
-		</ItemGroup>
-		<Copy SourceFiles="@(NeFile)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="false" />
-	</Target>
+    <ItemGroup>
+        <NeFile Include="$(TargetDir)\$(TargetName)NE.*" />
+        <HeaderFile Include="$(TargetDir)\dnne.h" />
+    </ItemGroup>
+    <Copy SourceFiles="@(HeaderFile)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="false" />
+    <Copy SourceFiles="@(NeFile)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="false" />
+</Target>
 ```
 
 # Additional References
