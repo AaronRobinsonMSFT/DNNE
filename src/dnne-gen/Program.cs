@@ -148,7 +148,7 @@ namespace DNNE
                         written to stdout.
     -d <xmldocfile>   : The location to the XML documentation file.
                         This can be activated project properties.
-                        If supplied the comments from the fucntions
+                        If supplied the comments from the functions
                         are added to the output header file.
     -?              : This message.
 ");
