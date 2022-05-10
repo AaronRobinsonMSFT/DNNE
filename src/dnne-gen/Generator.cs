@@ -31,6 +31,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Xml;
 
 namespace DNNE
 {
@@ -57,12 +58,14 @@ namespace DNNE
         private readonly Scope assemblyScope;
         private readonly Scope moduleScope;
         private readonly IDictionary<TypeDefinitionHandle, Scope> typePlatformScenarios = new Dictionary<TypeDefinitionHandle, Scope>();
+        private readonly Dictionary<string, string> loadedXmlDocumentation;
 
-        public Generator(string validAssemblyPath)
+        public Generator(string validAssemblyPath, string xmlDocFile)
         {
             this.assemblyPath = validAssemblyPath;
             this.peReader = new PEReader(File.OpenRead(this.assemblyPath));
             this.mdReader = this.peReader.GetMetadataReader(MetadataReaderOptions.None);
+            this.loadedXmlDocumentation = Generator.LoadXmlDocumentation(xmlDocFile);
 
             // Check for platform scenario attributes
             AssemblyDefinition asmDef = this.mdReader.GetAssemblyDefinition();
@@ -269,6 +272,8 @@ namespace DNNE
                     }
                 }
 
+                var xmlDoc = FindXmlDoc(enclosingTypeName.Replace('+', '.') + Type.Delimiter + managedMethodName, argumentTypes);
+
                 exportedMethods.Add(new ExportedMethod()
                 {
                     Type = exportAttrType,
@@ -288,6 +293,7 @@ namespace DNNE
                         }
                     },
                     ReturnType = returnType,
+                    XmlDoc = xmlDoc,
                     ArgumentTypes = ImmutableArray.Create(argumentTypes),
                     ArgumentNames = ImmutableArray.Create(argumentNames),
                 });
@@ -300,6 +306,49 @@ namespace DNNE
 
             string assemblyName = this.mdReader.GetString(this.mdReader.GetAssemblyDefinition().Name);
             EmitC99(outputStream, assemblyName, exportedMethods, additionalCodeStatements);
+        }
+
+        private static Dictionary<string, string> LoadXmlDocumentation(string xmlDocumentation)
+        {
+            var actXml = new Dictionary<string, string>();
+            if (xmlDocumentation is null)
+                return actXml;
+            
+            // See https://docs.microsoft.com/dotnet/csharp/language-reference/xmldoc/
+            // for xml documenation definition
+            using XmlReader xmlReader = XmlReader.Create(xmlDocumentation);
+            while (xmlReader.Read())
+            {
+                if (xmlReader.NodeType == XmlNodeType.Element && xmlReader.Name == "member")
+                {
+                    string raw_name = xmlReader["name"];
+                    actXml[raw_name] = xmlReader.ReadInnerXml();
+                }
+            }
+            return actXml;
+        }
+
+        private string FindXmlDoc(string fullMethodName, string[] argumentTypes)
+        {
+            string xmlDoc = "";
+            foreach (var item in loadedXmlDocumentation)
+            {
+                if (item.Key.StartsWith("M:" + fullMethodName))
+                {
+                    xmlDoc = item.Value;
+                    break;
+                }
+            }
+            if (xmlDoc == "") 
+                return "";
+
+            var lines = xmlDoc.TrimStart('\n').TrimEnd().Split("\n");
+            string prefix = "/// ";
+            var result = lines
+             .Select(x => prefix + x.Trim())
+             .ToList();
+
+            return Environment.NewLine + string.Join(Environment.NewLine, result);
         }
 
         public void Dispose()
@@ -665,7 +714,7 @@ $@"const char_t* methodName = DNNE_STR(""{export.MethodName}"");
 
                 // Declare export
                 outputStream.WriteLine(
-$@"{preguard}// Computed from {export.EnclosingTypeName}{Type.Delimiter}{export.MethodName}
+$@"{preguard}// Computed from {export.EnclosingTypeName}{Type.Delimiter}{export.MethodName}{export.XmlDoc}
 DNNE_EXTERN_C DNNE_API {export.ReturnType} {callConv} {export.ExportName}({declsig});
 {postguard}");
 
@@ -811,6 +860,7 @@ $@"#endif // {generatedHeaderDefine}
             public SignatureCallingConvention CallingConvention { get; init; }
             public PlatformSupport Platforms { get; init; }
             public string ReturnType { get; init; }
+            public string XmlDoc { get; init; }
             public ImmutableArray<string> ArgumentTypes { get; init; }
             public ImmutableArray<string> ArgumentNames { get; init; }
         }

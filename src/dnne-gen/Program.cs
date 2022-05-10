@@ -36,7 +36,7 @@ namespace DNNE
 
                 var parsed = Parse(args);
 
-                using (var g = new Generator(parsed.AssemblyPath))
+                using (var g = new Generator(parsed.AssemblyPath, parsed.XmlDocFile))
                 {
                     if (string.IsNullOrWhiteSpace(parsed.OutputPath))
                     {
@@ -63,6 +63,7 @@ namespace DNNE
         {
             public string AssemblyPath { get; set; }
             public string OutputPath { get; set; }
+            public string XmlDocFile { get; set; }
         }
 
         class ParseException : Exception
@@ -121,6 +122,20 @@ namespace DNNE
                         parsed.OutputPath = arg;
                         break;
                     }
+                    case "d":
+                    {
+                        if ((i + 1) == args.Length)
+                        {
+                            throw new ParseException(flag, "Missing documentation file");
+                        }
+                        arg = args[++i];
+                        if (!File.Exists(arg))
+                        {
+                            throw new ParseException(arg, "Documentation file not found.");
+                        }
+                        parsed.XmlDocFile = arg;
+                        break;
+                    }
                     case "?":
                     case "help":
                     {
@@ -131,6 +146,10 @@ namespace DNNE
                         it will be overwritten.
                         If not supplied the generated source is
                         written to stdout.
+    -d <xmldocfile>   : The location to the XML documentation file.
+                        This can be activated project properties.
+                        If supplied the comments from the functions
+                        are added to the output header file.
     -?              : This message.
 ");
                     }

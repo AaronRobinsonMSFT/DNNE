@@ -69,7 +69,11 @@ DNNE.targets
     <!-- Ensure the output directory exists -->
     <MakeDir Directories="$(DnneGeneratedOutputPath)" />
 
-    <Exec Command="$(DnneGenExe) @(IntermediateAssembly) -o @(DnneGeneratedSourceFile)" />
+    <PropertyGroup>
+      <DocFlag Condition="Exists($(DocumentationFile))">-d &quot;$(DocumentationFile)&quot;</DocFlag>
+    </PropertyGroup>
+
+    <Exec Command="$(DnneGenExe) @(IntermediateAssembly) $(DocFlag) -o @(DnneGeneratedSourceFile)" />
   </Target>
 
   <PropertyGroup>
