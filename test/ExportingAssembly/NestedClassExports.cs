@@ -41,11 +41,17 @@ namespace ExportingAssembly
             {
                 public delegate void Nested2_VoidVoidDelegate();
 
+                /// <summary>
+                /// Documentation for Nested2_VoidVoid
+                /// </summary>
                 [DNNE.Export]
                 public static void Nested2_VoidVoid()
                 {
                 }
 
+                /// <summary>
+                /// Documentation for Nested2_UnmanagedVoidVoid
+                /// </summary>
                 [UnmanagedCallersOnly]
                 public static void Nested2_UnmanagedVoidVoid()
                 {

@@ -32,6 +32,11 @@ namespace ExportingAssembly
             return a * 3;
         }
 
+        /// <summary>
+        /// Multiply input value by three
+        /// </summary>
+        /// <param name="a">Input value</param>
+        /// <returns>Result of multiplication</returns>
         [UnmanagedCallersOnly]
         public static int UnmanagedIntInt(int a)
         {
