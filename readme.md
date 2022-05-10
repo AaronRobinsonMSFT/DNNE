@@ -245,7 +245,7 @@ public class Exports
 * The consuming application for my .NET assembly fails catastrophically if .NET is not installed. How can I improve this UX?
   * For all non-recoverable scenarios, DNNE will call the standard C `abort()` function. This can be overridden by providing your own `dnne_abort()` function. See [`override.c`](./test/ExportingAssembly/override.c) in the [`ExportingAssembly`](./test/ExportingAssembly/ExportingAssembly.csproj) project for an example.
 * How can I add documentation to the exported function in the header file?
-  * Just enable "GenerateDocumentationFile" in the project settings and add some xml documentation to the export function in .NET.
+  * Add the MSBuild property `GenerateDocumentationFile` to the project and the xml documentation on exported C# functions will be added to the generated header file.
 
 # Additional References
 
