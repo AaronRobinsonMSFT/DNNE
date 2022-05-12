@@ -9,10 +9,10 @@
 
   <Target Name="Build">
     <Message Text="Building dnne-pkg" Importance="high" />
-    <Exec Command="dotnet build $([MSBuild]::NormalizePath($(DnnePkgDir)))" />
+    <Exec Command="dotnet build $([MSBuild]::NormalizePath($(DnnePkgDir))) -c $(Configuration)" />
 
     <Message Text="Building ExportingAssembly" Importance="high" />
-    <Exec Command="dotnet build $([MSBuild]::NormalizePath($(ExportingAssemblyDir)))" />
+    <Exec Command="dotnet build $([MSBuild]::NormalizePath($(ExportingAssemblyDir))) -c $(Configuration)" />
 
     <Message Text="Generating ImportingProcess" Importance="high" />
     <Exec Command="cmake -S &quot;$([MSBuild]::NormalizePath($(ImportingProcessDir)))&quot; -B &quot;$([MSBuild]::NormalizePath($(NativeBuildDir)))&quot;" />
