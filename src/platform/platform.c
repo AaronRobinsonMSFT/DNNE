@@ -490,24 +490,24 @@ static void prepare_runtime(int* ret)
 {
     // Lock and check if the needed export was already acquired.
     enter_lock(&_prepare_lock);
-    if (get_managed_export_fptr)
-        return;
+    if (!get_managed_export_fptr)
+    {
+        char_t buffer[DNNE_MAX_PATH];
+        const char_t assembly_filename[] = DNNE_STR(DNNE_TOSTRING(DNNE_ASSEMBLY_NAME)) DNNE_STR(".dll");
+        const char_t* assembly_path = NULL;
+        int rc = get_current_dir_filepath(DNNE_ARRAY_SIZE(buffer), buffer, DNNE_ARRAY_SIZE(assembly_filename), assembly_filename, &assembly_path);
+        IF_FAILURE_RETURN_OR_ABORT(ret, failure_load_runtime, rc, &_prepare_lock);
 
-    char_t buffer[DNNE_MAX_PATH];
-    const char_t assembly_filename[] = DNNE_STR(DNNE_TOSTRING(DNNE_ASSEMBLY_NAME)) DNNE_STR(".dll");
-    const char_t* assembly_path = NULL;
-    int rc = get_current_dir_filepath(DNNE_ARRAY_SIZE(buffer), buffer, DNNE_ARRAY_SIZE(assembly_filename), assembly_filename, &assembly_path);
-    IF_FAILURE_RETURN_OR_ABORT(ret, failure_load_runtime, rc, &_prepare_lock);
+        // Load HostFxr and get exported hosting functions.
+        rc = load_hostfxr(assembly_path);
+        IF_FAILURE_RETURN_OR_ABORT(ret, failure_load_runtime, rc, &_prepare_lock);
 
-    // Load HostFxr and get exported hosting functions.
-    rc = load_hostfxr(assembly_path);
-    IF_FAILURE_RETURN_OR_ABORT(ret, failure_load_runtime, rc, &_prepare_lock);
+        // Initialize and start the runtime.
+        rc = init_dotnet(assembly_path);
+        IF_FAILURE_RETURN_OR_ABORT(ret, failure_load_runtime, rc, &_prepare_lock);
 
-    // Initialize and start the runtime.
-    rc = init_dotnet(assembly_path);
-    IF_FAILURE_RETURN_OR_ABORT(ret, failure_load_runtime, rc, &_prepare_lock);
-
-    assert(get_managed_export_fptr != NULL);
+        assert(get_managed_export_fptr != NULL);
+    }
     exit_lock(&_prepare_lock);
 }
 
