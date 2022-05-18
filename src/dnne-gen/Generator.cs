@@ -313,7 +313,7 @@ namespace DNNE
             var actXml = new Dictionary<string, string>();
             if (xmlDocumentation is null)
                 return actXml;
-            
+
             // See https://docs.microsoft.com/dotnet/csharp/language-reference/xmldoc/
             // for xml documenation definition
             using XmlReader xmlReader = XmlReader.Create(xmlDocumentation);
@@ -339,7 +339,7 @@ namespace DNNE
                     break;
                 }
             }
-            if (xmlDoc == "") 
+            if (xmlDoc == "")
                 return "";
 
             var lines = xmlDoc.TrimStart('\n').TrimEnd().Split("\n");
@@ -1045,7 +1045,7 @@ $@"#endif // {generatedHeaderDefine}
                     PrimitiveTypeCode.Single => "float",
                     PrimitiveTypeCode.Double => "double",
                     PrimitiveTypeCode.Void => "void",
-                    _ => throw new NotSupportedTypeException(nameof(typeCode))
+                    _ => throw new NotSupportedTypeException(typeCode.ToString())
                 };
             }
 
