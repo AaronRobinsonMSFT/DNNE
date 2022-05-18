@@ -183,6 +183,54 @@ namespace DNNE.UnitTests
             public static extern void UnmanagedDoubleVoid(double a);
         }
 
+        public unsafe static class StringExports
+        {
+            [DllImport(nameof(ExportingAssemblyNE))]
+            public static extern int StringInt([MarshalAs(UnmanagedType.LPStr)] string a);
+
+            [DllImport(nameof(ExportingAssemblyNE))]
+            public static extern int UnmanagedStringInt([MarshalAs(UnmanagedType.LPStr)] string a);
+
+            [DllImport(nameof(ExportingAssemblyNE))]
+            public static extern int StringStringInt([MarshalAs(UnmanagedType.LPStr)] string a, [MarshalAs(UnmanagedType.LPStr)] string b);
+
+            [DllImport(nameof(ExportingAssemblyNE))]
+            public static extern int UnmanagedStringStringInt([MarshalAs(UnmanagedType.LPStr)] string a, [MarshalAs(UnmanagedType.LPStr)] string b);
+
+            [DllImport(nameof(ExportingAssemblyNE))]
+            public static extern void StringVoid([MarshalAs(UnmanagedType.LPStr)] string a);
+
+            [DllImport(nameof(ExportingAssemblyNE))]
+            public static extern void UnmanagedStringVoid([MarshalAs(UnmanagedType.LPStr)] string a);
+
+            [DllImport(nameof(ExportingAssemblyNE), CallingConvention = CallingConvention.Cdecl)]
+            public static extern void UnmanagedStringVoidCdecl([MarshalAs(UnmanagedType.LPStr)] string a);
+        }
+
+        public unsafe static class WStringExports
+        {
+            [DllImport(nameof(ExportingAssemblyNE))]
+            public static extern int WStringInt([MarshalAs(UnmanagedType.LPWStr)] string a);
+
+            [DllImport(nameof(ExportingAssemblyNE))]
+            public static extern int UnmanagedWStringInt([MarshalAs(UnmanagedType.LPWStr)] string a);
+
+            [DllImport(nameof(ExportingAssemblyNE))]
+            public static extern int WStringStringInt([MarshalAs(UnmanagedType.LPWStr)] string a, [MarshalAs(UnmanagedType.LPWStr)] string b);
+
+            [DllImport(nameof(ExportingAssemblyNE))]
+            public static extern int UnmanagedWStringStringInt([MarshalAs(UnmanagedType.LPWStr)] string a, [MarshalAs(UnmanagedType.LPWStr)] string b);
+
+            [DllImport(nameof(ExportingAssemblyNE))]
+            public static extern void WStringVoid([MarshalAs(UnmanagedType.LPWStr)] string a);
+
+            [DllImport(nameof(ExportingAssemblyNE))]
+            public static extern void UnmanagedWStringVoid([MarshalAs(UnmanagedType.LPWStr)] string a);
+
+            [DllImport(nameof(ExportingAssemblyNE), CallingConvention = CallingConvention.Cdecl)]
+            public static extern void UnmanagedWStringVoidCdecl([MarshalAs(UnmanagedType.LPWStr)] string a);
+        }
+
         public unsafe static class UnsafeExports
         {
             [DllImport(nameof(ExportingAssemblyNE))]
