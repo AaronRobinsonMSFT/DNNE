@@ -79,7 +79,7 @@ int main()
 
 	LPStrPrintProc fLPStrPrintProc = (LPStrPrintProc)GetProcAddress(dnne, "LPStrPrint");
 
-    char message[] = "DNNE - .Net Native Exports";
+	char message[] = "DNNE - .Net Native Exports";
 
 	fLPStrPrintProc(message);
 
@@ -115,7 +115,7 @@ int main()
 
 	LPWStrPrintProc fLPWStrPrintProc = (LPWStrPrintProc)GetProcAddress(dnne, "LPWStrPrint");
 
-    wchar_t message[] = L"DNNE - .Net Native Exports";
+	wchar_t message[] = L"DNNE - .Net Native Exports";
 
 	fLPWStrPrintProc(message);
 
