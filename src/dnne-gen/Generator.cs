@@ -1067,7 +1067,7 @@ $@"#endif // {generatedHeaderDefine}
 
             public void ThrowIfUnsupportedLastPrimitiveType()
             {
-                if (mLastUnsupportedPrimitiveType.HasValue)
+                if (this.lastUnsupportedPrimitiveType.HasValue)
                 {
                     throw new NotSupportedTypeException(mLastUnsupportedPrimitiveType.Value.ToString());
                 }
