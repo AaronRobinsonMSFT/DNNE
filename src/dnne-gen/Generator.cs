@@ -1043,7 +1043,7 @@ $@"#endif // {generatedHeaderDefine}
                     // Record the current type here with the expectation
                     // it will be of pointer type to Char, which is supported.
                     this.lastUnsupportedPrimitiveType = typeCode;
-                    return "wchar_t";
+                    return "DNNE_WCHAR";
                 }
 
                 return typeCode switch
