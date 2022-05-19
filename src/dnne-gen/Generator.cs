@@ -585,7 +585,6 @@ $@"//
 
 #include <stddef.h>
 #include <stdint.h>
-#include <stdbool.h>
 #include <dnne.h>
 ");
 
@@ -1079,28 +1078,9 @@ $@"#endif // {generatedHeaderDefine}
                 throw new NotSupportedTypeException($"Array - {elementType}");
             }
 
-            static string GetTypeDefinitionFullName(MetadataReader reader, TypeDefinitionHandle handle)
-            {
-                var typeDef = reader.GetTypeDefinition(handle);
-
-                var nsDef = reader.GetNamespaceDefinition(typeDef.NamespaceDefinition);
-
-                return $"{reader.GetString(nsDef.Name)}.{reader.GetString(typeDef.Name)}";
-            }
-
             public string GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
             {
-                string typeName = GetTypeDefinitionFullName(reader, handle);
-
-                switch (typeName)
-                {
-                    case "DNNE.WinBool":
-                        return "DNNE_BOOL";
-                    case "DNNE.CBool":
-                        return "bool";
-                    default:
-                        return SupportNonPrimitiveTypes(rawTypeKind);
-                }
+                return SupportNonPrimitiveTypes(rawTypeKind);
             }
 
             public string GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)

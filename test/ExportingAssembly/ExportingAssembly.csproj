@@ -35,8 +35,4 @@
   <ItemGroup Condition="'$(TestNuPkg)' == 'true'">
     <PackageReference Include="DNNE" Version="1.*" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Compile Include="..\..\src\platform\dnne.cs" Link="dnne.cs" />
-  </ItemGroup>
 </Project>

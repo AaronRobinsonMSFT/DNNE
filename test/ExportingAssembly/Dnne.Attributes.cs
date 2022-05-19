@@ -1,4 +1,4 @@
-﻿// Copyright 2022 Aaron R Robinson, Martin Wetzko
+﻿// Copyright 2020 Aaron R Robinson
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,55 +21,19 @@ using System;
 
 namespace DNNE
 {
-    internal class ExportAttribute : Attribute
+    internal class ExportAttribute : System.Attribute
     {
         public ExportAttribute() { }
         public string EntryPoint { get; set; }
     }
 
-    internal class C99TypeAttribute : Attribute
+    internal class C99TypeAttribute : System.Attribute
     {
         public C99TypeAttribute(string code) { }
     }
 
-    internal class C99DeclCodeAttribute : Attribute
+    internal class C99DeclCodeAttribute : System.Attribute
     {
         public C99DeclCodeAttribute(string code) { }
-    }
-
-    /// <summary>
-    /// Win32 'BOOL' equivalent
-    /// </summary>
-    public struct WinBool
-    {
-        int b;
-
-        public static implicit operator bool(WinBool b)
-        {
-            return b.b != 0;
-        }
-
-        public static implicit operator WinBool(bool b)
-        {
-            return new WinBool { b = b ? 1 : 0 };
-        }
-    }
-
-    /// <summary>
-    /// C99 'bool' equivalent
-    /// </summary>
-    public struct CBool
-    {
-        byte b;
-
-        public static implicit operator bool(CBool b)
-        {
-            return b.b != 0;
-        }
-
-        public static implicit operator CBool(bool b)
-        {
-            return new CBool { b = b ? (byte)0x1 : (byte)0x0 };
-        }
     }
 }

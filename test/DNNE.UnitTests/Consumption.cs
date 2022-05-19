@@ -27,34 +27,6 @@ namespace DNNE.UnitTests
     public class Consumption
     {
         [Fact]
-        public void WinBoolExports()
-        {
-            Assert.True(ExportingAssembly.WinBoolExports.WinBoolWinBool(false));
-            Assert.True(ExportingAssembly.WinBoolExports.UnmanagedWinBoolWinBool(false));
-            Assert.True(ExportingAssembly.WinBoolExports.WinBoolWinBoolWinBool(true, true));
-            Assert.True(ExportingAssembly.WinBoolExports.UnmanagedWinBoolWinBoolWinBool(true, true));
-            Assert.False(ExportingAssembly.WinBoolExports.WinBoolWinBoolWinBool(true, false));
-            Assert.False(ExportingAssembly.WinBoolExports.UnmanagedWinBoolWinBoolWinBool(true, false));
-            ExportingAssembly.WinBoolExports.WinBoolVoid(true);
-            ExportingAssembly.WinBoolExports.UnmanagedWinBoolVoid(true);
-            ExportingAssembly.WinBoolExports.UnmanagedWinBoolVoidCdecl(true);
-        }
-
-        [Fact]
-        public void CBoolExports()
-        {
-            Assert.True(ExportingAssembly.CBoolExports.CBoolCBool(false));
-            Assert.True(ExportingAssembly.CBoolExports.UnmanagedCBoolCBool(false));
-            Assert.True(ExportingAssembly.CBoolExports.CBoolCBoolCBool(true, true));
-            Assert.True(ExportingAssembly.CBoolExports.UnmanagedCBoolCBoolCBool(true, true));
-            Assert.False(ExportingAssembly.CBoolExports.CBoolCBoolCBool(true, false));
-            Assert.False(ExportingAssembly.CBoolExports.UnmanagedCBoolCBoolCBool(true, false));
-            ExportingAssembly.CBoolExports.CBoolVoid(true);
-            ExportingAssembly.CBoolExports.UnmanagedCBoolVoid(true);
-            ExportingAssembly.CBoolExports.UnmanagedCBoolVoidCdecl(true);
-        }
-
-        [Fact]
         public unsafe void FunctionPointerExports()
         {
             ExportingAssembly.FunctionPointerExports.FunctionPointerVoid(&VoidVoid);

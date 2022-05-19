@@ -26,62 +26,6 @@ namespace DNNE.UnitTests
     {
         private static class ExportingAssemblyNE { }
 
-        public unsafe static class WinBoolExports
-        {
-            [DllImport(nameof(ExportingAssemblyNE))]
-            [return: MarshalAs(UnmanagedType.Bool)]
-            public static extern bool WinBoolWinBool([MarshalAs(UnmanagedType.Bool)] bool a);
-
-            [DllImport(nameof(ExportingAssemblyNE))]
-            [return: MarshalAs(UnmanagedType.Bool)]
-            public static extern bool UnmanagedWinBoolWinBool([MarshalAs(UnmanagedType.Bool)] bool a);
-
-            [DllImport(nameof(ExportingAssemblyNE))]
-            [return: MarshalAs(UnmanagedType.Bool)]
-            public static extern bool WinBoolWinBoolWinBool([MarshalAs(UnmanagedType.Bool)] bool a, [MarshalAs(UnmanagedType.Bool)] bool b);
-
-            [DllImport(nameof(ExportingAssemblyNE))]
-            [return: MarshalAs(UnmanagedType.Bool)]
-            public static extern bool UnmanagedWinBoolWinBoolWinBool([MarshalAs(UnmanagedType.Bool)] bool a, [MarshalAs(UnmanagedType.Bool)] bool b);
-
-            [DllImport(nameof(ExportingAssemblyNE))]
-            public static extern void WinBoolVoid([MarshalAs(UnmanagedType.Bool)] bool a);
-
-            [DllImport(nameof(ExportingAssemblyNE))]
-            public static extern void UnmanagedWinBoolVoid([MarshalAs(UnmanagedType.Bool)] bool a);
-
-            [DllImport(nameof(ExportingAssemblyNE), CallingConvention = CallingConvention.Cdecl)]
-            public static extern void UnmanagedWinBoolVoidCdecl([MarshalAs(UnmanagedType.Bool)] bool a);
-        }
-
-        public unsafe static class CBoolExports
-        {
-            [DllImport(nameof(ExportingAssemblyNE))]
-            [return: MarshalAs(UnmanagedType.U1)]
-            public static extern bool CBoolCBool([MarshalAs(UnmanagedType.U1)] bool a);
-
-            [DllImport(nameof(ExportingAssemblyNE))]
-            [return: MarshalAs(UnmanagedType.U1)]
-            public static extern bool UnmanagedCBoolCBool([MarshalAs(UnmanagedType.U1)] bool a);
-
-            [DllImport(nameof(ExportingAssemblyNE))]
-            [return: MarshalAs(UnmanagedType.U1)]
-            public static extern bool CBoolCBoolCBool([MarshalAs(UnmanagedType.U1)] bool a, [MarshalAs(UnmanagedType.U1)] bool b);
-
-            [DllImport(nameof(ExportingAssemblyNE))]
-            [return: MarshalAs(UnmanagedType.U1)]
-            public static extern bool UnmanagedCBoolCBoolCBool([MarshalAs(UnmanagedType.U1)] bool a, [MarshalAs(UnmanagedType.U1)] bool b);
-
-            [DllImport(nameof(ExportingAssemblyNE))]
-            public static extern void CBoolVoid([MarshalAs(UnmanagedType.U1)] bool a);
-
-            [DllImport(nameof(ExportingAssemblyNE))]
-            public static extern void UnmanagedCBoolVoid([MarshalAs(UnmanagedType.U1)] bool a);
-
-            [DllImport(nameof(ExportingAssemblyNE), CallingConvention = CallingConvention.Cdecl)]
-            public static extern void UnmanagedCBoolVoidCdecl([MarshalAs(UnmanagedType.U1)] bool a);
-        }
-
         public unsafe static class FunctionPointerExports
         {
             [DllImport(nameof(ExportingAssemblyNE))]
