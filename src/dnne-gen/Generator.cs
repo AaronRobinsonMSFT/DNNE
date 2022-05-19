@@ -968,7 +968,7 @@ $@"#endif // {generatedHeaderDefine}
 
         private class C99TypeProvider : ISignatureTypeProvider<string, UnusedGenericContext>
         {
-            PrimitiveTypeCode? mLastUnsupportedPrimitiveType;
+            PrimitiveTypeCode? lastUnsupportedPrimitiveType;
 
             public string GetArrayType(string elementType, ArrayShape shape)
             {
