@@ -1030,7 +1030,7 @@ $@"#endif // {generatedHeaderDefine}
 
             public string GetPointerType(string elementType)
             {
-                mLastUnsupportedPrimitiveType = null;
+                this.lastUnsupportedPrimitiveType = null;
                 return elementType + "*";
             }
 
