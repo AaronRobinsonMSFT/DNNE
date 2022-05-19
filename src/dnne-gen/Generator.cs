@@ -51,7 +51,6 @@ namespace DNNE
         private bool isDisposed = false;
 
         private readonly ICustomAttributeTypeProvider<KnownType> typeResolver = new TypeResolver();
-        private readonly ISignatureTypeProvider<string, UnusedGenericContext> typeProvider = new C99TypeProvider();
         private readonly string assemblyPath;
         private readonly PEReader peReader;
         private readonly MetadataReader mdReader;
@@ -200,7 +199,7 @@ namespace DNNE
                                     break;
 
                                 default:
-                                    throw new GeneratorException(this.assemblyPath, $"Method '{this.mdReader.GetString(methodDef.Name)}' has unknown Attribute value type.");
+                                    throw new GeneratorException(this.assemblyPath, $"Method '{managedMethodName}' has unknown Attribute value type.");
                             }
                         }
                     }
@@ -220,11 +219,15 @@ namespace DNNE
                 MethodSignature<string> signature;
                 try
                 {
+                    var typeProvider = new C99TypeProvider();
+
                     signature = methodDef.DecodeSignature(typeProvider, null);
+
+                    typeProvider.ThrowIfUnsupportedLastPrimitiveType();
                 }
                 catch (NotSupportedTypeException nste)
                 {
-                    throw new GeneratorException(this.assemblyPath, $"Method '{this.mdReader.GetString(methodDef.Name)}' has non-exportable type '{nste.Type}'");
+                    throw new GeneratorException(this.assemblyPath, $"Method '{managedMethodName}' has non-exportable type '{nste.Type}'");
                 }
 
                 var returnType = signature.ReturnType;
@@ -965,6 +968,8 @@ $@"#endif // {generatedHeaderDefine}
 
         private class C99TypeProvider : ISignatureTypeProvider<string, UnusedGenericContext>
         {
+            PrimitiveTypeCode? lastUnsupportedPrimitiveType;
+
             public string GetArrayType(string elementType, ArrayShape shape)
             {
                 throw new NotSupportedTypeException(elementType);
@@ -1025,11 +1030,22 @@ $@"#endif // {generatedHeaderDefine}
 
             public string GetPointerType(string elementType)
             {
+                this.lastUnsupportedPrimitiveType = null;
                 return elementType + "*";
             }
 
             public string GetPrimitiveType(PrimitiveTypeCode typeCode)
             {
+                ThrowIfUnsupportedLastPrimitiveType();
+
+                if (typeCode == PrimitiveTypeCode.Char)
+                {
+                    // Record the current type here with the expectation
+                    // it will be of pointer type to Char, which is supported.
+                    this.lastUnsupportedPrimitiveType = typeCode;
+                    return "DNNE_WCHAR";
+                }
+
                 return typeCode switch
                 {
                     PrimitiveTypeCode.SByte => "int8_t",
@@ -1047,6 +1063,14 @@ $@"#endif // {generatedHeaderDefine}
                     PrimitiveTypeCode.Void => "void",
                     _ => throw new NotSupportedTypeException(typeCode.ToString())
                 };
+            }
+
+            public void ThrowIfUnsupportedLastPrimitiveType()
+            {
+                if (this.lastUnsupportedPrimitiveType.HasValue)
+                {
+                    throw new NotSupportedTypeException(this.lastUnsupportedPrimitiveType.Value.ToString());
+                }
             }
 
             public string GetSZArrayType(string elementType)

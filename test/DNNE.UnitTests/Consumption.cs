@@ -35,10 +35,12 @@ namespace DNNE.UnitTests
             ExportingAssembly.FunctionPointerExports.UnmanagedFunctionPointerStdcallIntIntVoid(&IntIntVoid, 3, 4);
 
             [UnmanagedCallersOnly]
-            static void VoidVoid() { }
+            static void VoidVoid()
+            { }
 
             [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
-            static void IntIntVoid(int a, int b) { }
+            static void IntIntVoid(int a, int b)
+            { }
         }
 
         [Fact]
@@ -123,7 +125,9 @@ namespace DNNE.UnitTests
             {
                 var d = new ExportingAssembly.MiscExports.Data()
                 {
-                    a = -1, b = -1, c = c
+                    a = -1,
+                    b = -1,
+                    c = c
                 };
                 Assert.Equal(c, ExportingAssembly.MiscExports.ReturnDataCMember(d));
             }
@@ -158,6 +162,34 @@ namespace DNNE.UnitTests
             Assert.Equal(27, ExportingAssembly.RealExports.UnmanagedVoidDouble());
             ExportingAssembly.RealExports.DoubleVoid(27);
             ExportingAssembly.RealExports.UnmanagedDoubleVoid(27);
+        }
+
+        [Fact]
+        public void StringExports()
+        {
+            Assert.Equal(26, ExportingAssembly.StringExports.StringInt("DNNE - .Net Native Exports"));
+            Assert.Equal(26, ExportingAssembly.StringExports.UnmanagedStringInt("DNNE - .Net Native Exports"));
+            Assert.Equal(7, ExportingAssembly.StringExports.StringStringInt("DNNE - .Net Native Exports", ".Net"));
+            Assert.Equal(7, ExportingAssembly.StringExports.UnmanagedStringStringInt("DNNE - .Net Native Exports", ".Net"));
+            Assert.Equal(-1, ExportingAssembly.StringExports.StringStringInt("DNNE - .Net Native Exports", "..Net"));
+            Assert.Equal(-1, ExportingAssembly.StringExports.UnmanagedStringStringInt("DNNE - .Net Native Exports", "..Net"));
+            ExportingAssembly.StringExports.StringVoid("DNNE");
+            ExportingAssembly.StringExports.UnmanagedStringVoid("DNNE");
+            ExportingAssembly.StringExports.UnmanagedStringVoidCdecl("DNNE");
+        }
+
+        [Fact]
+        public void WStringExports()
+        {
+            Assert.Equal(26, ExportingAssembly.WStringExports.WStringInt("DNNE - .Net Native Exports"));
+            Assert.Equal(26, ExportingAssembly.WStringExports.UnmanagedWStringInt("DNNE - .Net Native Exports"));
+            Assert.Equal(7, ExportingAssembly.WStringExports.WStringStringInt("DNNE - .Net Native Exports", ".Net"));
+            Assert.Equal(7, ExportingAssembly.WStringExports.UnmanagedWStringStringInt("DNNE - .Net Native Exports", ".Net"));
+            Assert.Equal(-1, ExportingAssembly.WStringExports.WStringStringInt("DNNE - .Net Native Exports", "..Net"));
+            Assert.Equal(-1, ExportingAssembly.WStringExports.UnmanagedWStringStringInt("DNNE - .Net Native Exports", "..Net"));
+            ExportingAssembly.WStringExports.WStringVoid("DNNE");
+            ExportingAssembly.WStringExports.UnmanagedWStringVoid("DNNE");
+            ExportingAssembly.WStringExports.UnmanagedWStringVoidCdecl("DNNE");
         }
 
         [Fact]
