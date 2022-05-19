@@ -1069,7 +1069,7 @@ $@"#endif // {generatedHeaderDefine}
             {
                 if (this.lastUnsupportedPrimitiveType.HasValue)
                 {
-                    throw new NotSupportedTypeException(mLastUnsupportedPrimitiveType.Value.ToString());
+                    throw new NotSupportedTypeException(this.lastUnsupportedPrimitiveType.Value.ToString());
                 }
             }
 
