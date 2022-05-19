@@ -42,6 +42,7 @@
     #define _DNNE_STR(s1) L ## s1
     #define DNNE_STR(s) _DNNE_STR(s)
     #define DNNE_WCHAR wchar_t
+    #define DNNE_BOOL int
 #else
     #define DNNE_API __attribute__((__visibility__("default")))
     #define DNNE_CALLTYPE
@@ -57,6 +58,7 @@
     #endif
     #define DNNE_STR(s) s
     #define DNNE_WCHAR uint16_t
+    #define DNNE_BOOL int32_t
 #endif
 
 // Override the DNNE_API macro.
