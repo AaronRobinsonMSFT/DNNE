@@ -47,7 +47,7 @@ jobs:
     - name: Build Product and Package
       run: dotnet build src\create_package.proj -c ${{ matrix.flavor }}
     - name: Unit Test Product (cpp)
-      run: dotnet test test\DNNE.UnitTests -c ${{ matrix.flavor }} -p:BuildAsCPP=true
+      run: dotnet test test\DNNE.UnitTests -c ${{ matrix.flavor }} -p:BuildAsCPPWithMSVC=true
     - name: Unit Test Product
       run: |
         dotnet clean test\DNNE.UnitTests -c ${{ matrix.flavor }}

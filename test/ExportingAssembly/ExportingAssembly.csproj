@@ -22,10 +22,13 @@
     <!-- <RuntimeIdentifiers>win-x64;win-x86</RuntimeIdentifiers> -->
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <DnneAddGeneratedBinaryToProject>true</DnneAddGeneratedBinaryToProject>
-    <DnneCompilerUserFlags Condition="'$(BuildAsCPP)'=='true'">/TP </DnneCompilerUserFlags>
+    <DnneCompilerUserFlags Condition="'$(BuildAsCPPWithMSVC)'=='true'">/TP </DnneCompilerUserFlags>
     <DnneCompilerCommand Condition="'$(BuildWithGCC)'=='true'">gcc</DnneCompilerCommand>
     <DnneCompilerCommand Condition="'$(BuildWithGPP)'=='true'">g++</DnneCompilerCommand>
     <DnneCompilerCommand Condition="'$(BuildWithClangPP)'=='true'">clang++</DnneCompilerCommand>
+
+    <!-- Include the override option for dnne_abort() -->
+    <DnneCompilerUserFlags>$(DnneCompilerUserFlags)$(MSBuildThisFileDirectory)override.c</DnneCompilerUserFlags>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TestNuPkg)' == 'true' AND '$(RefLocalBuild)'=='true'">
