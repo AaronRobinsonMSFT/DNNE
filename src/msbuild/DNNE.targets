@@ -82,17 +82,17 @@ DNNE.targets
   </PropertyGroup>
 
   <!--
-      Include the compiled binary in the project's None Items so
-      it will flow through project references.
+      Include all output artifacts in the project's None Items so
+      they flow through project references.
   -->
   <ItemGroup Condition="'$(DnneBuildExports)' == 'true' AND '$(DnneAddGeneratedBinaryToProject)' == 'true'">
-    <None Include="$(DnneCompiledToBinPath)">
-      <Link>$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt)</Link>
+    <None Include="@(DnneNativeExportsOutputs->'%(FullPath)')">
+      <Link>%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Visible>false</Visible>
     </None>
     <None Include="$(DnneGeneratedBinPath)/$(DnneNativeExportsBinaryName).pdb" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
-      <Link>$(DnneNativeExportsBinaryName).pdb</Link>
+      <Link>%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Visible>false</Visible>
     </None>
