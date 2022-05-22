@@ -24,7 +24,7 @@ namespace DNNE.UnitTests
 {
     internal static class ExportingAssembly
     {
-        private static class ExportingAssemblyNE { }
+        public static class ExportingAssemblyNE { }
 
         public unsafe static class FunctionPointerExports
         {
