@@ -32,20 +32,20 @@ namespace DNNE.UnitTests
         [Fact]
         public void ValidateDnneProjectAssets()
         {
-            string currentAssembly = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            string currDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
             // The following native assets are expected to flow with a project reference
             // to a managed project using DNNE to create a native exporting binary.
             string[] assets = new[]
             {
-                Path.Combine(currentAssembly, nameof(ExportingAssembly.ExportingAssemblyNE) + GetSystemExtension()),
-                Path.Combine(currentAssembly, nameof(ExportingAssembly.ExportingAssemblyNE) + ".h"),
-                Path.Combine(currentAssembly, "dnne.h"),
+                Path.Combine(currDirectory, nameof(ExportingAssembly.ExportingAssemblyNE) + GetSystemExtension()),
+                Path.Combine(currDirectory, nameof(ExportingAssembly.ExportingAssemblyNE) + ".h"),
+                Path.Combine(currDirectory, "dnne.h"),
             };
 
             // On Windows we also propagate the PDB symbols file.
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                assets = assets.Append(Path.Combine(currentAssembly, nameof(ExportingAssembly.ExportingAssemblyNE) + ".pdb")).ToArray();
+                assets = assets.Append(Path.Combine(currDirectory, nameof(ExportingAssembly.ExportingAssemblyNE) + ".pdb")).ToArray();
 
             foreach (var a in assets)
             {
