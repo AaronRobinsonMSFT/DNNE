@@ -18,6 +18,9 @@
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Xunit;
@@ -26,6 +29,39 @@ namespace DNNE.UnitTests
 {
     public class Consumption
     {
+        [Fact]
+        public void ValidateDnneProjectAssets()
+        {
+            string currDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
+            // The following native assets are expected to flow with a project reference
+            // to a managed project using DNNE to create a native exporting binary.
+            string[] assets = new[]
+            {
+                Path.Combine(currDirectory, nameof(ExportingAssembly.ExportingAssemblyNE) + GetSystemExtension()),
+                Path.Combine(currDirectory, nameof(ExportingAssembly.ExportingAssemblyNE) + ".h"),
+                Path.Combine(currDirectory, "dnne.h"),
+            };
+
+            // On Windows we also propagate the PDB symbols file.
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                assets = assets.Append(Path.Combine(currDirectory, nameof(ExportingAssembly.ExportingAssemblyNE) + ".pdb")).ToArray();
+
+            foreach (var a in assets)
+            {
+                Assert.True(File.Exists(a));
+            }
+
+            static string GetSystemExtension()
+            {
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    return ".dll";
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                    return ".dylib";
+                return ".so";
+            }
+        }
+
         [Fact]
         public unsafe void FunctionPointerExports()
         {

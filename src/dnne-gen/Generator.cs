@@ -788,7 +788,7 @@ $@"#endif // {generatedHeaderDefine}
                         post.Append(" && ");
                     }
 
-                    // Append the "mpsupport" clauses because if they don't exist they are string.Empty
+                    // Append the "nosupport" clauses because if they don't exist they are string.Empty
                     pre.Append($"{pre_nosupport}");
                     post.Append($"{post_nosupport}");
 
