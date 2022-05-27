@@ -245,7 +245,9 @@ public class Exports
 * The consuming application for my .NET assembly fails catastrophically if .NET is not installed. How can I improve this UX?
   * For all non-recoverable scenarios, DNNE will call the standard C `abort()` function. This can be overridden by providing your own `dnne_abort()` function. See [`override.c`](./test/ExportingAssembly/override.c) in the [`ExportingAssembly`](./test/ExportingAssembly/ExportingAssembly.csproj) project for an example.
 * How can I add documentation to the exported function in the header file?
-  * Add the MSBuild property `GenerateDocumentationFile` to the project and the xml documentation on exported C# functions will be added to the generated header file.
+  * Add the normal triple-slash comments to the exported functions and then set the MSBuild property `GenerateDocumentationFile` to `true` in the project. The compiler will generated xml documentation for the exported C# functions and that will be be added to the generated header file.
+* How can I keep my project cross-platform and generate a native binary for other platforms than the one I am currently building on?
+  * The managed assembly will remain cross-platform but the native component is difficult to produce due to native tool chain constraints. In order to accomplish this on the native side, there would need to exist a C99 tool chain that can target any platform from any other platform. For example, the native tool chain could run on Windows but would need to provide a macOS SDK, linux SDK, and produce a macOS `.dylib` (Mach-O image) and/or a linux `.so` (ELF image). If such a native tool chain exists, it would be possible.
 
 # Additional References
 
