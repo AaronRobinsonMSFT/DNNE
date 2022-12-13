@@ -83,6 +83,8 @@ The `preload_runtime()` or `try_preload_runtime()` functions can be used to prel
 
 1) Set the `<EnableDynamicLoading>true</EnableDynamicLoading>` property in the managed project containing the methods to export. This will produce a `*.runtimeconfig.json` that is needed to activate the runtime during export dispatch.
 
+An example C# project can be found in [`Sample`](./sample).
+
 ### Native code customization
 
 The mapping of .NET types to their native representation is addressed by the concept of [blittability](https://docs.microsoft.com/dotnet/framework/interop/blittable-and-non-blittable-types). This approach however limits what can be expressed by the managed type signature when being called from an unmanaged context. For example, there is no way for DNNE to know how it should describe the following C struct in C# without being enriched with knowledge of how to construct marshallable types.
