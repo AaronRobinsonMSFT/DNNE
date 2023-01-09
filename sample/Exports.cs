@@ -21,7 +21,7 @@ using System.Runtime.InteropServices;
 
 public class Exports
 {
-    [UnmanagedCallersOnlyAttribute(EntryPoint = "FancyName")]
+    [UnmanagedCallersOnly(EntryPoint = "FancyName")]
     public static int MyExport(int a)
     {
         return a;

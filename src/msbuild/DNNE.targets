@@ -60,7 +60,7 @@ DNNE.targets
 
   <Target
     Name="DnneGenerateNativeExports"
-    Condition="'$(DnneGenerateExports)' == 'true'"
+    Condition="('$(DesignTimeBuild)' != 'true' OR '$(BuildingProject)' == 'true') AND '$(DnneBuildExports)' == 'true'"
     Inputs="@(IntermediateAssembly)"
     Outputs="@(DnneGeneratedSourceFile)"
     AfterTargets="CoreCompile">
