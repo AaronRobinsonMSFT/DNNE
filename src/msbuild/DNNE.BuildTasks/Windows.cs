@@ -97,7 +97,7 @@ namespace DNNE.BuildTasks
             }
 
             // Set linker flags
-            linkerFlags.Append($"/DLL /LTCG ");
+            linkerFlags.Append($"/DLL ");
 
             if (!string.IsNullOrEmpty(exportsDefFile))
             {
