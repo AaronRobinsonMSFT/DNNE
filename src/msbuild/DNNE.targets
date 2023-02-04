@@ -112,6 +112,10 @@ DNNE.targets
     DependsOnTargets="ResolvePackageAssets;ResolveFrameworkReferences">
     <Message Text="Building native exports binary from @(DnneGeneratedSourceFile)" Importance="$(DnneMSBuildLogging)" />
 
+    <Error
+      Condition="!Exists(@(DnneGeneratedSourceFile))"
+      Text="Generated source file(s), @(DnneGeneratedSourceFile), not found. In order to generate source an export must exist. Create an export by adorning a function with UnmanagedCallersOnly." />
+
     <!-- Ensure the output directory exists -->
     <MakeDir Directories="$(DnneGeneratedBinPath)" />
 
