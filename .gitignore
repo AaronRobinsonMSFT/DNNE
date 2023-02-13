@@ -6,3 +6,7 @@
 **/launchSettings.json
 
 test/build/
+sample/SampleNativeConsole/inc/
+sample/SampleNativeConsole/lib/
+sample/SampleNativeConsole/x64/
+sample/x64/
