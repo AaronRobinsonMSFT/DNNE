@@ -585,7 +585,13 @@ $@"//
 
 #include <stddef.h>
 #include <stdint.h>
+#ifdef {compileAsSourceDefine}
 #include <dnne.h>
+#else
+// When used as a header file, the assumption is
+// dnne.h will be next to this file.
+#include ""dnne.h""
+#endif // !{compileAsSourceDefine}
 ");
 
             // Emit additional code statements
