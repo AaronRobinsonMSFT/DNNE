@@ -83,7 +83,7 @@ The `preload_runtime()` or `try_preload_runtime()` functions can be used to prel
 
 1) Set the `<EnableDynamicLoading>true</EnableDynamicLoading>` property in the managed project containing the methods to export. This will produce a `*.runtimeconfig.json` that is needed to activate the runtime during export dispatch.
 
-An example C# project can be found in [`Sample`](./sample).
+An example C# project can be found in [`Sample`](./sample). There is also a [native example](./sample/native/main.c), written in C, for consumption options.
 
 ### Native code customization
 
@@ -250,6 +250,8 @@ public class Exports
   * Add the normal triple-slash comments to the exported functions and then set the MSBuild property `GenerateDocumentationFile` to `true` in the project. The compiler will generated xml documentation for the exported C# functions and that will be be added to the generated header file.
 * How can I keep my project cross-platform and generate a native binary for other platforms than the one I am currently building on?
   * The managed assembly will remain cross-platform but the native component is difficult to produce due to native tool chain constraints. In order to accomplish this on the native side, there would need to exist a C99 tool chain that can target any platform from any other platform. For example, the native tool chain could run on Windows but would need to provide a macOS SDK, linux SDK, and produce a macOS `.dylib` (Mach-O image) and/or a linux `.so` (ELF image). If such a native tool chain exists, it would be possible.
+* How can I consume the resulting native binary?
+  * There are two primary options: (1) manually load the binary and discover its exports or (2) directly link against the binary. Both options are discussed in the [native sample](./sample/native/main.c).
 
 # Additional References
 
