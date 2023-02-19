@@ -32,6 +32,7 @@ namespace ExportingAssembly
             return a * 3;
         }
 
+#if !NETFRAMEWORK
         /// <summary>
         /// Multiply input value by three
         /// </summary>
@@ -42,6 +43,7 @@ namespace ExportingAssembly
         {
             return IntInt(a);
         }
+#endif // !NETFRAMEWORK
 
         public delegate int IntIntIntDelegate(int a, int b);
 
@@ -51,11 +53,13 @@ namespace ExportingAssembly
             return a * b;
         }
 
+#if !NETFRAMEWORK
         [UnmanagedCallersOnly]
         public static int UnmanagedIntIntInt(int a, int b)
         {
             return IntIntInt(a, b);
         }
+#endif // !NETFRAMEWORK
 
         public delegate int VoidIntDelegate();
 
@@ -65,11 +69,13 @@ namespace ExportingAssembly
             return 27;
         }
 
+#if !NETFRAMEWORK
         [UnmanagedCallersOnly]
         public static int UnmanagedVoidInt()
         {
             return VoidInt();
         }
+#endif // !NETFRAMEWORK
 
         public delegate void IntVoidDelegate(int a);
 
@@ -78,6 +84,7 @@ namespace ExportingAssembly
         {
         }
 
+#if !NETFRAMEWORK
         [UnmanagedCallersOnly]
         public static void UnmanagedIntVoid(int a)
         {
@@ -89,5 +96,6 @@ namespace ExportingAssembly
         {
             IntVoid(a);
         }
+#endif // !NETFRAMEWORK
     }
 }

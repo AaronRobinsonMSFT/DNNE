@@ -8,7 +8,7 @@ This work is inspired by work in the [Xamarin][xamarin_embed_link], [CoreRT][cor
 
 ### Minimum
 
-* [.NET 5.0](https://dotnet.microsoft.com/download/dotnet/5.0) or greater.
+* [.NET 6.0](https://dotnet.microsoft.com/download) or greater.
 * [C99](https://en.cppreference.com/w/c/language/history) compatible compiler.
 
 ### DNNE NuPkg Requirements
@@ -18,6 +18,7 @@ This work is inspired by work in the [Xamarin][xamarin_embed_link], [CoreRT][cor
     - The x86_64 version of the .NET runtime is the default install.
     - In order to target x86, the x86 .NET runtime must be explicitly installed.
 * Windows 10 SDK - Installed with Visual Studio.
+* .NET Framework SDK - Installed with Visual Studio. Only required if targeting a .NET Framework TFM.
 * x86, x86_64, ARM64 compilation supported.
     - The Visual Studio package containing the desired compiler architecture must have been installed.
 
@@ -183,7 +184,7 @@ In addition to providing declaration code directly, users can also supply `#incl
 
     ```xml
     <ItemGroup>
-      <PackageReference Include="DNNE" Version="1.*" />
+      <PackageReference Include="DNNE" Version="2.*" />
     </ItemGroup>
     ```
 
@@ -254,6 +255,8 @@ public class Exports
   * There are two primary options: (1) manually load the binary and discover its exports or (2) directly link against the binary. Both options are discussed in the [native sample](./sample/native/main.c).
 * Along with exporting a function, I would also like to export data. Is there a way to export a static variable defined in .NET?
   * There is no simple way to do this starting from .NET. DNNE could be updated to read static metadata and then generate the appropriate export in C code, but that approach is complicated by how static data can be defined during module load in .NET. It is recommended instead to define the desired static data in a separate translation unit (`.c` file) and include it in the native build through the `DnneCompilerUserFlags` property.
+* I am trying to port a .NET Framework application to .NET Core. Does DNNE support targeting .NET Framework?
+  * Yes. It has support for targeting .NET Framework TFMs, although only v4.0+&mdash;There is no support for v2.0 or v3.5. DNNE respects multi-targeting using the `TargetFrameworks` MSBuild property and will produce a native binary that can be used to activate .NET Framework. Note there are loading semantic differences between .NET Framework and .NET Core. Tools like [`fuslogvw.exe`](https://learn.microsoft.com/dotnet/framework/tools/fuslogvw-exe-assembly-binding-log-viewer) can help you understand loading failures in .NET Framework.
 
 # Additional References
 

@@ -7,7 +7,7 @@
   <Import Condition="'$(TestNuPkg)' != 'true'" Project="$(PseudoPackage)build/DNNE.props" />
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFrameworks>net6.0;net472</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RollForward>Major</RollForward>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -29,13 +29,21 @@
 
     <!-- Include the override option for dnne_abort() -->
     <DnneCompilerUserFlags>$(DnneCompilerUserFlags)$(MSBuildThisFileDirectory)override.c</DnneCompilerUserFlags>
+
+    <!-- When targeting .NET Framework we only use a subset of files -->
+    <EnableDefaultCompileItems Condition="$(TargetFramework.StartsWith('net4'))">false</EnableDefaultCompileItems>
   </PropertyGroup>
+
+  <ItemGroup Condition="'$(EnableDefaultCompileItems)' == 'false'">
+    <Compile Include="Dnne.Attributes.cs" />
+    <Compile Include="IntExports.cs" />
+  </ItemGroup>
 
   <PropertyGroup Condition="'$(TestNuPkg)' == 'true' AND '$(RefLocalBuild)'=='true'">
     <RestoreSources>$(SrcRoot)dnne-pkg/bin/$(Configuration)</RestoreSources>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TestNuPkg)' == 'true'">
-    <PackageReference Include="DNNE" Version="1.*" />
+    <PackageReference Include="DNNE" Version="2.*" />
   </ItemGroup>
 </Project>

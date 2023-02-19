@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <RootNamespace>dnne_pkg</RootNamespace>
     <IncludeBuildOutput>False</IncludeBuildOutput>
     <PseudoPackageDir>../pkg/</PseudoPackageDir>
@@ -17,7 +17,7 @@
 
   <PropertyGroup>
     <PackageId>DNNE</PackageId>
-    <Version>1.1.0</Version>
+    <Version>2.0.0</Version>
     <Authors>AaronRobinsonMSFT</Authors>
     <Owners>AaronRobinsonMSFT</Owners>
     <Description>Package used to generated native exports for .NET assemblies.</Description>

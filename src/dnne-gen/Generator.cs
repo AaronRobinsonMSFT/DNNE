@@ -658,7 +658,13 @@ extern void* get_fast_callable_managed_function(
                 }
 
                 string id = $"t{count++}_name";
-                implStream.WriteLine($"static const char_t* {id} = DNNE_STR(\"{method.EnclosingTypeName}, {assemblyName}\");");
+                implStream.WriteLine(
+$@"#ifdef DNNE_TARGET_NET_FRAMEWORK
+    static const char_t* {id} = DNNE_STR(""{method.EnclosingTypeName}"");
+#else
+    static const char_t* {id} = DNNE_STR(""{method.EnclosingTypeName}, {assemblyName}"");
+#endif // !DNNE_TARGET_NET_FRAMEWORK
+");
                 map.Add(method.EnclosingTypeName, id);
             }
 

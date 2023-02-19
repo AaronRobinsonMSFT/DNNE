@@ -47,6 +47,12 @@ DNNE.targets
     <DnneNativeBinaryExt Condition="$([MSBuild]::IsOsPlatform('OSX'))">.dylib</DnneNativeBinaryExt>
     <DnneNativeBinaryExt Condition="'$(DnneNativeBinaryExt)' == '' OR $([MSBuild]::IsOsPlatform('Linux'))">.so</DnneNativeBinaryExt>
 
+    <!-- Compute details about TFM -->
+    <DnneIsNetFramework>false</DnneIsNetFramework>
+    <DnneIsNetFramework Condition="$(TargetFramework.StartsWith('net4'))">true</DnneIsNetFramework>
+    <DnneSupportedTFM>true</DnneSupportedTFM>
+    <DnneSupportedTFM Condition="!$([MSBuild]::IsOsPlatform('Windows')) AND '$(DnneIsNetFramework)' == 'true'">false</DnneSupportedTFM>
+
     <DnneCompiledToBinPath>$(DnneGeneratedBinPath)/$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt)</DnneCompiledToBinPath>
   </PropertyGroup>
 
@@ -60,7 +66,7 @@ DNNE.targets
 
   <Target
     Name="DnneGenerateNativeExports"
-    Condition="('$(DesignTimeBuild)' != 'true' OR '$(BuildingProject)' == 'true') AND '$(DnneBuildExports)' == 'true'"
+    Condition="('$(DesignTimeBuild)' != 'true' OR '$(BuildingProject)' == 'true') AND '$(DnneSupportedTFM)' == 'true' AND '$(DnneBuildExports)' == 'true'"
     Inputs="@(IntermediateAssembly)"
     Outputs="@(DnneGeneratedSourceFile)"
     AfterTargets="CoreCompile">
@@ -141,6 +147,7 @@ DNNE.targets
         RuntimeID="$(DnneRuntimeIdentifier)"
         Architecture="$(TargetedSDKArchitecture)"
         Configuration="$(Configuration)"
+        TargetFramework="$(TargetFramework)"
         ExportsDefFile="$(DnneWindowsExportsDef)"
         IsSelfContained="$(DnneSelfContained_Experimental)"
         UserDefinedCompilerFlags="$(DnneCompilerUserFlags)"
