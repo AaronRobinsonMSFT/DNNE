@@ -20,6 +20,9 @@
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
+// Suppress since users can define custom platforms for DNNE scenarios.
+#pragma warning disable CA1418 // Validate platform compatibility
+
 [assembly: SupportedOSPlatform("SET_ASSEMBLY_PLATFORM")]
 [assembly: UnsupportedOSPlatform("UNSET_ASSEMBLY_PLATFORM1")]
 [assembly: UnsupportedOSPlatform("UNSET_ASSEMBLY_PLATFORM2")]
