@@ -97,7 +97,8 @@ namespace DNNE.BuildTasks
             {
                 compilerFlags.Append($"/D DNNE_SELF_CONTAINED_RUNTIME ");
             }
-            else if (export.IsTargetingNetFramework)
+
+            if (export.IsTargetingNetFramework)
             {
                 compilerFlags.Append($"/D DNNE_TARGET_NET_FRAMEWORK ");
             }
@@ -303,6 +304,10 @@ namespace DNNE.BuildTasks
             // See https://developercommunity.visualstudio.com/t/ucrt-doesnt-work-in-x64-msbuild/1184283#T-N1201257
             using var key = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
             using var kits = key.OpenSubKey(@"SOFTWARE\Microsoft\Windows Kits\Installed Roots");
+            if (kits is null)
+            {
+                throw new Exception("No Win10 SDK found.");
+            }
 
             string win10sdkRoot = (string)kits.GetValue("KitsRoot10");
 
@@ -346,7 +351,7 @@ namespace DNNE.BuildTasks
                 };
             }
 
-            throw new Exception("No Win10 SDK version found.");
+            throw new Exception("No valid Win10 SDK version found.");
         }
 
         private static SDK GetLatestNetFxSDK()
@@ -354,6 +359,10 @@ namespace DNNE.BuildTasks
             // Always use the 32-bit hive.
             using var key = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
             using var sdks = key.OpenSubKey(@"SOFTWARE\Microsoft\Microsoft SDKs\NETFXSDK");
+            if (sdks is null)
+            {
+                throw new Exception("No .Net Framework SDK found.");
+            }
 
             // Sort the entries in descending order as
             // to defer to the latest version.
@@ -400,7 +409,7 @@ namespace DNNE.BuildTasks
                 };
             }
 
-            throw new Exception("No .Net Framework SDK version found.");
+            throw new Exception("No valid .Net Framework SDK version found.");
         }
     }
 }

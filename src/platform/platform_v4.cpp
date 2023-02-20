@@ -25,18 +25,17 @@
 #endif
 
 #if !defined(DNNE_WINDOWS) || !defined(_MSC_VER) || !defined(__cplusplus)
-    #error .NET Framework v4 support requires Windows and MSVC C++.
+    #error .NET Framework v4.x support requires Windows and MSVC C++.
 #endif
 
 #include <cassert>
 
 #define NOMINMAX
 #include <Windows.h>
-
 #include <mscoree.h>
 #include <metahost.h>
 
-// Modified copy of definition of ICLRPrivRuntime
+// Modified copy of ICLRPrivRuntime definition
 MIDL_INTERFACE("BC1B53A8-DCBC-43B2-BB17-1E4061447AE9")
 ICLRPrivRuntime : public IUnknown
 {
@@ -88,7 +87,7 @@ namespace
 {
     DNNE_NORETURN void noreturn_failure(enum failure_type type, int error_code)
     {
-        if (failure_fptr)
+        if (failure_fptr != nullptr)
             failure_fptr(type, error_code);
 
         // Nothing to do if the runtime failed to load.
@@ -200,7 +199,7 @@ void* get_callable_managed_function(
     DWORD curr_error = GetLastError();
 
     // Check if the runtime has already been prepared.
-    if (!_host)
+    if (_host == nullptr)
     {
         prepare_runtime(nullptr);
         assert(_host != nullptr);

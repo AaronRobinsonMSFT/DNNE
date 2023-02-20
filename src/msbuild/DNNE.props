@@ -31,10 +31,10 @@ DNNE.props
     <DnneBuildExports>true</DnneBuildExports>
 
     <!-- The name of the resulting native binary. This should be the name of the binary
-        without an extension (e.g. 'MyName'). The extension will be computed based on the
+        without an extension (e.g., 'MyName'). The extension will be computed based on the
         current platform. If overridden, uniqueness of this name with extension is required
         as the generated binary and the existing managed assembly will collide on Windows
-        since managed and native binaries share the same extension (i.e. '.dll').
+        since managed and native binaries share the same extension (i.e., '.dll').
         If this property is left blank, the previous behavior of using '$(TargetName)NE'
         will occur on all platforms. -->
     <DnneNativeBinaryName></DnneNativeBinaryName>
