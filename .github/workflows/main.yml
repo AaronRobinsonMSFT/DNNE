@@ -35,7 +35,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: package.${{ matrix.flavor }}
-        path: src/dnne-pkg/bin/${{ matrix.flavor }}\DNNE.*.nupkg
+        path: src/dnne-pkg/bin/${{ matrix.flavor }}/DNNE.*.nupkg
 
   windows:
     runs-on: windows-latest
