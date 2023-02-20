@@ -46,8 +46,12 @@ jobs:
         include-prerelease: true
     - name: Build Product and Package
       run: dotnet build src\create_package.proj -c ${{ matrix.flavor }}
+    - name: Build ExportingAssembly (.NET Core and .NET Framework)
+      run: dotnet build test\ExportingAssembly -c ${{ matrix.flavor }}
     - name: Unit Test Product (cpp)
-      run: dotnet test test\DNNE.UnitTests -c ${{ matrix.flavor }} -p:BuildAsCPPWithMSVC=true
+      run: |
+        dotnet clean test\DNNE.UnitTests -c ${{ matrix.flavor }}
+        dotnet test test\DNNE.UnitTests -c ${{ matrix.flavor }} -p:BuildAsCPPWithMSVC=true
     - name: Unit Test Product
       run: |
         dotnet clean test\DNNE.UnitTests -c ${{ matrix.flavor }}
