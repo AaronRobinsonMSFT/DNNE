@@ -31,6 +31,11 @@ jobs:
       run: |
         dotnet clean test/DNNE.UnitTests -c ${{ matrix.flavor }}
         dotnet test test/DNNE.UnitTests -c ${{ matrix.flavor }} -p:BuildWithGPP=true
+    - name: Upload Package
+      uses: actions/upload-artifact@v2
+      with:
+        name: package.${{ matrix.flavor }}
+        path: src/dnne-pkg/bin/${{ matrix.flavor }}\DNNE.*.nupkg
 
   windows:
     runs-on: windows-latest
@@ -56,11 +61,6 @@ jobs:
       run: |
         dotnet clean test\DNNE.UnitTests -c ${{ matrix.flavor }}
         dotnet test test\DNNE.UnitTests -c ${{ matrix.flavor }}
-    - name: Upload Package
-      uses: actions/upload-artifact@v2
-      with:
-        name: package.${{ matrix.flavor }}
-        path: src\dnne-pkg\bin\${{ matrix.flavor }}\DNNE.*.nupkg
 
   macos:
     runs-on: macos-latest
