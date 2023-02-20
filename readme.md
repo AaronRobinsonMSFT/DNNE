@@ -1,5 +1,7 @@
 # Native Exports for .NET
 
+[![DNNE](https://github.com/AaronRobinsonMSFT/DNNE/actions/workflows/main.yml/badge.svg)](https://github.com/AaronRobinsonMSFT/DNNE/actions/workflows/main.yml)
+
 Prototype for a .NET managed assembly to expose a native export.
 
 This work is inspired by work in the [Xamarin][xamarin_embed_link], [CoreRT][corert_feature_link], and [DllExport][dllexport_link] projects.
