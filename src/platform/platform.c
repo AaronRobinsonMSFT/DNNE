@@ -302,7 +302,6 @@ static void exit_lock(dnne_lock_handle* lock)
 
 #endif // !DNNE_WINDOWS
 
-
 static failure_fn failure_fptr;
 
 DNNE_EXTERN_C DNNE_API void DNNE_CALLTYPE set_failure_callback(failure_fn cb)

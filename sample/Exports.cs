@@ -17,13 +17,31 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+using System;
 using System.Runtime.InteropServices;
 
 public class Exports
 {
+#if NETFRAMEWORK
+    [DNNE.Export(EntryPoint = "FancyName")]
+#else
     [UnmanagedCallersOnly(EntryPoint = "FancyName")]
+#endif // !NETFRAMEWORK
     public static int MyExport(int a)
     {
         return a;
     }
 }
+
+#if NETFRAMEWORK
+// The experimental DNNE attribute is needed when targeting
+// .NET Framework.
+namespace DNNE
+{
+    internal class ExportAttribute : Attribute
+    {
+        public ExportAttribute() { }
+        public string EntryPoint { get; set; }
+    }
+}
+#endif // NETFRAMEWORK

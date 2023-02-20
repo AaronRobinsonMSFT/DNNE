@@ -32,13 +32,15 @@ namespace DNNE.BuildTasks
     public class Windows
     {
         private static readonly Lazy<string> g_VsInstallPath = new Lazy<string>(GetLatestVSWithVCInstallPath, true);
-        private static readonly Lazy<WinSDK> g_WinSdk = new Lazy<WinSDK>(GetLatestWinSDK, true);
+        private static readonly Lazy<SDK> g_WinSdk = new Lazy<SDK>(GetLatestWinSDK, true);
+        private static readonly Lazy<SDK> g_NetFxSdk = new Lazy<SDK>(GetLatestNetFxSDK, true);
 
         public static void ConstructCommandLine(CreateCompileCommand export, out string command, out string commandArguments)
         {
             export.Report(MessageImportance.Low, $"Building for Windows");
 
-            WinSDK winSdk = g_WinSdk.Value;
+            SDK winSdk = g_WinSdk.Value;
+            SDK netFxSdk = default;
             string vsInstall = g_VsInstallPath.Value;
             string vcToolDir = GetVCToolsRootDir(vsInstall);
             export.Report(CreateCompileCommand.DevImportance, $"VS Install: {vsInstall}\nVC Tools: {vcToolDir}\nWinSDK Version: {winSdk.Version}");
@@ -54,13 +56,33 @@ namespace DNNE.BuildTasks
             // For now we assume building always happens on a x64 machine.
             var binDir = Path.Combine(vcToolDir, "bin\\Hostx64", archDir);
 
+            string compileAsFlag;
+            string hostLib;
+            string platformTU;
+            if (export.IsTargetingNetFramework)
+            {
+                netFxSdk = g_NetFxSdk.Value;
+                export.Report(CreateCompileCommand.DevImportance, $"NetFxSDK Version: {netFxSdk.Version}");
+
+                // Targeting .NET Framework means we compile everything as C++.
+                compileAsFlag = "/TP";
+                hostLib = "mscoree.lib";
+                platformTU = Path.Combine(export.PlatformPath, "platform_v4.cpp");
+            }
+            else
+            {
+                compileAsFlag = "/TC";
+                hostLib = $"\"{Path.Combine(export.NetHostPath, "libnethost.lib")}\"";
+                platformTU = Path.Combine(export.PlatformPath, "platform.c");
+            }
+
             // Create arguments
             var compilerFlags = new StringBuilder();
             var linkerFlags = new StringBuilder();
             SetConfigurationBasedFlags(isDebug, ref compilerFlags, ref linkerFlags);
 
             // Set compiler flags
-            compilerFlags.Append($"/TC /MT /GS /Zi ");
+            compilerFlags.Append($"{compileAsFlag} /MT /GS /Zi ");
             compilerFlags.Append($"/D DNNE_ASSEMBLY_NAME={export.AssemblyName} /D DNNE_COMPILE_AS_SOURCE ");
 
             // Check if user supplied a def file.
@@ -76,12 +98,26 @@ namespace DNNE.BuildTasks
                 compilerFlags.Append($"/D DNNE_SELF_CONTAINED_RUNTIME ");
             }
 
+            if (export.IsTargetingNetFramework)
+            {
+                compilerFlags.Append($"/D DNNE_TARGET_NET_FRAMEWORK ");
+            }
+
             compilerFlags.Append($"/I \"{vcIncDir}\" /I \"{export.PlatformPath}\" /I \"{export.NetHostPath}\" ");
 
             // Add WinSDK inc paths
             foreach (var incPath in winSdk.IncPaths)
             {
                 compilerFlags.Append($"/I \"{incPath}\" ");
+            }
+
+            if (export.IsTargetingNetFramework)
+            {
+                // Add NetFx inc paths
+                foreach (var incPath in netFxSdk.IncPaths)
+                {
+                    compilerFlags.Append($"/I \"{incPath}\" ");
+                }
             }
 
             // Add user defined inc paths last - these will be searched last on MSVC.
@@ -112,7 +148,16 @@ namespace DNNE.BuildTasks
                 linkerFlags.Append($"/LIBPATH:\"{Path.Combine(libPath, archDir)}\" ");
             }
 
-            linkerFlags.Append($"\"{Path.Combine(export.NetHostPath, "libnethost.lib")}\" Advapi32.lib ");
+            if (export.IsTargetingNetFramework)
+            {
+                // Add NetFx lib paths
+                foreach (var libPath in netFxSdk.LibPaths)
+                {
+                    linkerFlags.Append($"/LIBPATH:\"{Path.Combine(libPath, archDir)}\" ");
+                }
+            }
+
+            linkerFlags.Append($"{hostLib} Advapi32.lib ");
             linkerFlags.Append($"/IGNORE:4099 "); // libnethost.lib doesn't ship PDBs so linker warnings occur.
 
             // Define artifact names
@@ -126,7 +171,7 @@ namespace DNNE.BuildTasks
             }
 
             command = Path.Combine(binDir, "cl.exe");
-            commandArguments = $"{compilerFlags} \"{export.Source}\" \"{Path.Combine(export.PlatformPath, "platform.c")}\" /link {linkerFlags}";
+            commandArguments = $"{compilerFlags} \"{export.Source}\" \"{platformTU}\" /link {linkerFlags}";
         }
 
         private static string ConvertToVCArchSubDir(string arch, string rid)
@@ -238,7 +283,7 @@ namespace DNNE.BuildTasks
             return latestVsInstance.GetInstallationPath();
         }
 
-        private class WinSDK
+        private class SDK
         {
             public string Version;
             public IEnumerable<string> IncPaths;
@@ -253,12 +298,16 @@ namespace DNNE.BuildTasks
             }
         }
 
-        private static WinSDK GetLatestWinSDK()
+        private static SDK GetLatestWinSDK()
         {
             // Always use the 32-bit hive.
             // See https://developercommunity.visualstudio.com/t/ucrt-doesnt-work-in-x64-msbuild/1184283#T-N1201257
             using var key = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
             using var kits = key.OpenSubKey(@"SOFTWARE\Microsoft\Windows Kits\Installed Roots");
+            if (kits is null)
+            {
+                throw new Exception("No Win10 SDK found.");
+            }
 
             string win10sdkRoot = (string)kits.GetValue("KitsRoot10");
 
@@ -294,7 +343,7 @@ namespace DNNE.BuildTasks
                 var umLibDir = Path.Combine(libDir, "um");
                 var ucrtLibDir = Path.Combine(libDir, "ucrt");
 
-                return new WinSDK()
+                return new SDK()
                 {
                     Version = tgtVerMaybe.Value,
                     IncPaths = new[] { sharedIncDir, umIncDir, ucrtIncDir },
@@ -302,7 +351,65 @@ namespace DNNE.BuildTasks
                 };
             }
 
-            throw new Exception("No Win10 SDK version found.");
+            throw new Exception("No valid Win10 SDK version found.");
+        }
+
+        private static SDK GetLatestNetFxSDK()
+        {
+            // Always use the 32-bit hive.
+            using var key = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
+            using var sdks = key.OpenSubKey(@"SOFTWARE\Microsoft\Microsoft SDKs\NETFXSDK");
+            if (sdks is null)
+            {
+                throw new Exception("No .Net Framework SDK found.");
+            }
+
+            // Sort the entries in descending order as
+            // to defer to the latest version.
+            var versions = new SortedList<Version, string>(new VersionDescendingOrder());
+
+            // Collect the possible SDK versions.
+            foreach (var verMaybe in sdks.GetSubKeyNames())
+            {
+                if (!Version.TryParse(verMaybe, out Version versionMaybe))
+                {
+                    continue;
+                }
+
+                versions.Add(versionMaybe, verMaybe);
+            }
+
+            // Find the latest version of the SDK.
+            foreach (var tgtVerMaybe in versions)
+            {
+                using var sdk = key.OpenSubKey($@"SOFTWARE\Microsoft\Microsoft SDKs\NETFXSDK\{tgtVerMaybe.Value}");
+                if (sdk is null)
+                {
+                    continue;
+                }
+
+                string sdkRoot = (string)sdk.GetValue("KitsInstallationFolder");
+
+                // NetFxSDK inc and lib paths
+                var incDir = Path.Combine(sdkRoot, "Include");
+                var libDir = Path.Combine(sdkRoot, "Lib");
+                if (!Directory.Exists(incDir) || !Directory.Exists(libDir))
+                {
+                    continue;
+                }
+
+                var umIncDir = Path.Combine(incDir, "um");
+                var umLibDir = Path.Combine(libDir, "um");
+
+                return new SDK()
+                {
+                    Version = tgtVerMaybe.Value,
+                    IncPaths = new[] { umIncDir },
+                    LibPaths = new[] { umLibDir },
+                };
+            }
+
+            throw new Exception("No valid .Net Framework SDK version found.");
         }
     }
 }

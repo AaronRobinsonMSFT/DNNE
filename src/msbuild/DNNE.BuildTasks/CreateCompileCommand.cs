@@ -63,6 +63,9 @@ namespace DNNE.BuildTasks
         [Required]
         public string Configuration { get; set; }
 
+        [Required]
+        public string TargetFramework { get; set; }
+
         // Optional
         public string UserDefinedCompilerFlags { get; set; }
 
@@ -103,6 +106,13 @@ namespace DNNE.BuildTasks
             get => AdditionalIncludeDirectories ?? Enumerable.Empty<ITaskItem>();
         }
 
+        // Internal property used to help identify when the supplied TFM
+        // is targeting .NET Framework (i.e., has a 'net4' prefix).
+        internal bool IsTargetingNetFramework
+        {
+            get => TargetFramework.StartsWith("net4", StringComparison.OrdinalIgnoreCase);
+        }
+
         [Output]
         public string Command { get; set; }
 
@@ -126,6 +136,7 @@ Native Build:
     RuntimeID:      {RuntimeID}
     Architecture:   {Architecture}
     Configuration:  {Configuration}
+    TargetFramework:{TargetFramework}
     ");
 
             string command;
@@ -134,17 +145,25 @@ Native Build:
             {
                 Windows.ConstructCommandLine(this, out command, out commandArguments);
             }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                Linux.ConstructCommandLine(this, out command, out commandArguments);
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                macOS.ConstructCommandLine(this, out command, out commandArguments);
-            }
             else
             {
-                throw new NotSupportedException("Unknown native build environment");
+                if (IsTargetingNetFramework)
+                {
+                    throw new NotSupportedException(".NET Framework can only be targeted on Windows");
+                }
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    Linux.ConstructCommandLine(this, out command, out commandArguments);
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    macOS.ConstructCommandLine(this, out command, out commandArguments);
+                }
+                else
+                {
+                    throw new NotSupportedException("Unknown native build environment");
+                }
             }
 
             this.Command = command;

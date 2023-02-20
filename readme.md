@@ -1,5 +1,7 @@
 # Native Exports for .NET
 
+[![DNNE](https://github.com/AaronRobinsonMSFT/DNNE/actions/workflows/main.yml/badge.svg)](https://github.com/AaronRobinsonMSFT/DNNE/actions/workflows/main.yml)
+
 Prototype for a .NET managed assembly to expose a native export.
 
 This work is inspired by work in the [Xamarin][xamarin_embed_link], [CoreRT][corert_feature_link], and [DllExport][dllexport_link] projects.
@@ -8,7 +10,7 @@ This work is inspired by work in the [Xamarin][xamarin_embed_link], [CoreRT][cor
 
 ### Minimum
 
-* [.NET 5.0](https://dotnet.microsoft.com/download/dotnet/5.0) or greater.
+* [.NET 6.0](https://dotnet.microsoft.com/download) or greater.
 * [C99](https://en.cppreference.com/w/c/language/history) compatible compiler.
 
 ### DNNE NuPkg Requirements
@@ -18,6 +20,7 @@ This work is inspired by work in the [Xamarin][xamarin_embed_link], [CoreRT][cor
     - The x86_64 version of the .NET runtime is the default install.
     - In order to target x86, the x86 .NET runtime must be explicitly installed.
 * Windows 10 SDK - Installed with Visual Studio.
+* .NET Framework SDK - Installed with Visual Studio. Only required if targeting a .NET Framework TFM.
 * x86, x86_64, ARM64 compilation supported.
     - The Visual Studio package containing the desired compiler architecture must have been installed.
 
@@ -183,7 +186,7 @@ In addition to providing declaration code directly, users can also supply `#incl
 
     ```xml
     <ItemGroup>
-      <PackageReference Include="DNNE" Version="1.*" />
+      <PackageReference Include="DNNE" Version="2.*" />
     </ItemGroup>
     ```
 
@@ -251,9 +254,11 @@ public class Exports
 * How can I keep my project cross-platform and generate a native binary for other platforms than the one I am currently building on?
   * The managed assembly will remain cross-platform but the native component is difficult to produce due to native tool chain constraints. In order to accomplish this on the native side, there would need to exist a C99 tool chain that can target any platform from any other platform. For example, the native tool chain could run on Windows but would need to provide a macOS SDK, linux SDK, and produce a macOS `.dylib` (Mach-O image) and/or a linux `.so` (ELF image). If such a native tool chain exists, it would be possible.
 * How can I consume the resulting native binary?
-  * There are two primary options: (1) manually load the binary and discover its exports or (2) directly link against the binary. Both options are discussed in the [native sample](./sample/native/main.c).
+  * There are two options: (1) manually load the binary and discover its exports or (2) directly link against the binary. Both options are discussed in the [native sample](./sample/native/main.c).
 * Along with exporting a function, I would also like to export data. Is there a way to export a static variable defined in .NET?
   * There is no simple way to do this starting from .NET. DNNE could be updated to read static metadata and then generate the appropriate export in C code, but that approach is complicated by how static data can be defined during module load in .NET. It is recommended instead to define the desired static data in a separate translation unit (`.c` file) and include it in the native build through the `DnneCompilerUserFlags` property.
+* Does DNNE support targeting .NET Framework?
+  * Yes. DNNE has support for targeting .NET Framework v4.x TFMs&mdash;there is no support for v2.0 or v3.5. DNNE respects multi-targeting using the `TargetFrameworks` MSBuild property. For any .NET Framework v4.x TFM, DNNE will produce a native binary that will activate .NET Framework. Note there are assembly loading semantic differences between .NET Framework and .NET Core. Tools like [`fuslogvw.exe`](https://learn.microsoft.com/dotnet/framework/tools/fuslogvw-exe-assembly-binding-log-viewer) can help to understand loading failures in .NET Framework. Due to how .NET Framework is being activated, the managed DLL typically needs to be located next to the running EXE rather than the native DLL produced by DNNE. Alternatively, the EXE can define a [`.config` file](https://learn.microsoft.com/dotnet/framework/configure-apps/) that defines probing paths.
 
 # Additional References
 
