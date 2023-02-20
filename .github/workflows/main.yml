@@ -3,8 +3,14 @@ name: DNNE
 on:
   push:
     branches: [ master ]
+    paths:
+      - 'src/'
+      - 'test/'
   pull_request:
     branches: [ master ]
+    paths:
+      - 'src/'
+      - 'test/'
 
 jobs:
   linux:
