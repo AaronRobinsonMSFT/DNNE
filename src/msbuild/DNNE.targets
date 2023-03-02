@@ -111,7 +111,7 @@ DNNE.targets
 
   <Target
     Name="DnneBuildNativeExports"
-    Condition="'$(DnneBuildExports)' == 'true'"
+    Condition="('$(DesignTimeBuild)' != 'true' OR '$(BuildingProject)' == 'true') AND '$(DnneSupportedTFM)' == 'true' AND '$(DnneBuildExports)' == 'true'"
     Inputs="@(DnneGeneratedSourceFile)"
     Outputs="@(DnneNativeExportsOutputs)"
     AfterTargets="DnneGenerateNativeExports"
