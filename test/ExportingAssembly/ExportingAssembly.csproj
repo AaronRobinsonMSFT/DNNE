@@ -14,12 +14,6 @@
     <!-- Disable warnings about missing comments -->
     <NoWarn>1591</NoWarn>
 
-    <!--
-        Defining RID(s) in the project enable specifying the bitness of the native binary.
-        See repository readme.md for more details.
-    -->
-    <!-- <RuntimeIdentifier>win-x64</RuntimeIdentifier> -->
-    <!-- <RuntimeIdentifiers>win-x64;win-x86</RuntimeIdentifiers> -->
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <DnneAddGeneratedBinaryToProject>true</DnneAddGeneratedBinaryToProject>
     <DnneCompilerUserFlags Condition="'$(BuildAsCPPWithMSVC)'=='true'">/TP </DnneCompilerUserFlags>
