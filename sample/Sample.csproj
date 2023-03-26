@@ -3,6 +3,15 @@
   <PropertyGroup>
     <TargetFrameworks>net6.0;net472</TargetFrameworks>
     <EnableDynamicLoading>true</EnableDynamicLoading>
+    <DnneNativeBinaryName>sample_native</DnneNativeBinaryName>
+    <DnneAddGeneratedBinaryToProject>true</DnneAddGeneratedBinaryToProject>
+
+    <!--
+      Defining RID(s) in the project enable specifying the bitness of the native binary.
+      See repository readme.md for more details.
+    -->
+    <!-- <RuntimeIdentifier>win-x64</RuntimeIdentifier> -->
+    <!-- <RuntimeIdentifiers>win-x64;win-x86</RuntimeIdentifiers> -->
   </PropertyGroup>
 
   <ItemGroup>

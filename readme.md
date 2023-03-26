@@ -32,7 +32,9 @@ This work is inspired by work in the [Xamarin][xamarin_embed_link], [CoreRT][cor
 * [clang](https://clang.llvm.org/) compiler on the path.
 * Current platform and environment paths dictate native compilation support.
 
-## Exporting details
+<a name="exporting"></a>
+
+## Exporting a managed function
 
 - The exported function must be marked `static` and `public`. Note that enclosing class accessibility has no impact on exporting.
 
@@ -49,44 +51,20 @@ This work is inspired by work in the [Xamarin][xamarin_embed_link], [CoreRT][cor
     }
     ```
 
-- The manner in which native exports are exposed is largely a function of the compiler being used. On the Windows platform an option exists to provide a [`.def`](https://docs.microsoft.com/cpp/build/reference/exports) file that permits customization of native exports. Users can provide a path to a `.def` file using the [`DnneWindowsExportsDef`](./src/msbuild/DNNE.props) MSBuild property. Note that if a `.def` file is provided no user functions will be exported by default.
+- Optionally set the `EntryPoint` property to indicate the name of the native export. See below for discussion of influence by calling convention.
 
-<a name="nativeapi"></a>
+- If the `EntryPoint` property is `null`, the name of the mananged function is used. This default name will not include the namespace or class containing the function.
 
-## Native API
+- User supplied values in `EntryPoint` will not be modified or validated in any manner. This string will be consume by a C compiler and should therefore adhere to the [C language's restrictions on function names](https://en.cppreference.com/w/c/language/functions).
 
-The native API is defined in [`src/platform/dnne.h`](./src/platform/dnne.h).
+- On the x86 platform only, multiple calling conventions exist and these often influence exported symbols. For example, see MSVC [C export decoration documentation](https://docs.microsoft.com/cpp/build/reference/decorated-names#FormatC). DNNE does not attempt to mitigate symbol decoration - even through `EntryPoint`. If the consuming application requires a specific export symbol _and_ calling convention that is decorated in a customized way, it is recommended to manually compile the generated source - see [`DnneBuildExports`](./src/msbuild/DNNE.props) - or if on Windows supply a `.def` file - see [`DnneWindowsExportsDef`](./src/msbuild/DNNE.props). Typically, setting the calling convention to `cdecl` for the export will address issues on any x86 platform.
+    ```CSharp
+    [UnmanagedCallersOnly(CallConvs = new []{typeof(System.Runtime.CompilerServices.CallConvCdecl)})]
+    ```
 
-The `DNNE_ASSEMBLY_NAME` must be set during compilation to indicate the name of the managed assembly to load. The assembly name should not include the extension. For example, if the managed assembly on disk is called `ClassLib.dll`, the expected assembly name is `ClassLib`.
+- The manner in which native exports are exposed is largely a function of the compiler being used. On the Windows platform an option exists to provide a [`.def`](https://docs.microsoft.com/cpp/build/reference/exports) file that permits customization of native exports. Users can provide a path to a `.def` file using the [`DnneWindowsExportsDef`](./src/msbuild/DNNE.props) MSBuild property. Note that if a `.def` file is provided no user functions will be exported other than those defined in the `.def` file.
 
-The following defines are set based on the target OS platform:
-- `DNNE_WINDOWS`
-- `DNNE_OSX`
-- `DNNE_LINUX`
-- `DNNE_FREEBSD`
-
-The generated source will need to be linked against the [`nethost`](https://docs.microsoft.com/dotnet/core/tutorials/netcore-hosting#create-a-host-using-nethosth-and-hostfxrh) library as either a static lib (`libnethost.[lib|a]`) or dynamic/shared library (`nethost.lib`). If the latter linking is performed, the `nethost.[dll|so|dylib]` will need to be deployed with the export binary or be on the path at run time.
-
-The `set_failure_callback()` function can be used prior to calling an export to set a callback in the event runtime load or export discovery fails.
-
-Failure to load the runtime or find an export results in the native library calling [`abort()`](https://en.cppreference.com/w/c/program/abort). See FAQs for how this can be overridden.
-
-The `preload_runtime()` or `try_preload_runtime()` functions can be used to preload the runtime. This may be desirable prior to calling an export to avoid the cost of loading the runtime during the first export dispatch.
-
-## Exporting a managed function
-
-1) Adorn the desired managed function with `UnmanagedCallersOnlyAttribute`.
-    - Optionally set the `EntryPoint` property to indicate the name of the native export. See below for discussion of influence by calling convention.
-    - If the `EntryPoint` property is `null`, the name of the mananged function is used. This default name will not include the namespace or class containing the function.
-    - User supplied values in `EntryPoint` will not be modified or validated in any manner. This string will be consume by a C compiler and should therefore adhere to the [C language's restrictions on function names](https://en.cppreference.com/w/c/language/functions).
-    - On the x86 platform only, multiple calling conventions exist and these often influence exported symbols. For example, see MSVC [C export decoration documentation](https://docs.microsoft.com/cpp/build/reference/decorated-names#FormatC). DNNE does not attempt to mitigate symbol decoration - even through `EntryPoint`. If the consuming application requires a specific export symbol _and_ calling convention that is decorated in a customized way, it is recommended to manually compile the generated source - see [`DnneBuildExports`](./src/msbuild/DNNE.props) - or if on Windows supply a `.def` file - see [`DnneWindowsExportsDef`](./src/msbuild/DNNE.props). Typically, setting the calling convention to `cdecl` for the export will address issues on any x86 platform.
-        ```CSharp
-        [UnmanagedCallersOnly(CallConvs = new []{typeof(System.Runtime.CompilerServices.CallConvCdecl)})]
-        ```
-
-1) Set the `<EnableDynamicLoading>true</EnableDynamicLoading>` property in the managed project containing the methods to export. This will produce a `*.runtimeconfig.json` that is needed to activate the runtime during export dispatch.
-
-An example C# project can be found in [`Sample`](./sample). There is also a [native example](./sample/native/main.c), written in C, for consumption options.
+The [`Sample`](./sample) directory contains an example C# project consuming DNNE. There is also a [native example](./sample/native/main.c), written in C, for consumption options.
 
 ### Native code customization
 
@@ -178,40 +156,46 @@ In addition to providing declaration code directly, users can also supply `#incl
 
         `> dotnet build create_package.proj`
 
-1) Add the NuPkg to the target managed project.
+1) Add the NuPkg to the managed project that will be exporting functions.
 
-    * See [`DNNE.props`](./src/msbuild/DNNE.props) for the MSBuild properties used to configure the build process.
+    * See [`DNNE.props`](./src/msbuild/DNNE.props) for the MSBuild properties used to configure the DNNE process. For example, the [`Sample.csproj`](./sample/Sample.csproj) has some DNNE properties set.
 
-    * If NuPkg was built locally, remember to update the project's `nuget.config` to point at the local location of the recently built DNNE NuPkg.
+    * Visual Studio has a [NuGet package manager](https://learn.microsoft.com/nuget/quickstart/install-and-use-a-package-in-visual-studio) that can be used to add DNNE to a particular project. Alternatively, the following XML snippet can be manually added to the managed project.
 
-    ```xml
-    <ItemGroup>
-      <PackageReference Include="DNNE" Version="2.*" />
-    </ItemGroup>
-    ```
+        ```xml
+        <ItemGroup>
+          <PackageReference Include="DNNE" Version="2.*" />
+        </ItemGroup>
+        ```
 
-1) Build the managed project to generate the native binary. The native binary will have a `NE` suffix and the system extension for dynamic/shared native libraries (i.e., `.dll`, `.so`, `.dylib`).
-    * The [Runtime Identifier (RID)](https://docs.microsoft.com/dotnet/core/rid-catalog) is used to target a specific SDK.
-    * For example, on Windows the `--runtime` flag or MSBuild [`RuntimeIdentifier`](https://docs.microsoft.com/dotnet/core/project-sdk/msbuild-props#runtimeidentifier) property can be used to target `win-x86` or `win-x64`.
-    * The name of the native binary can be supplied by setting the MSBuild property `DnneNativeBinaryName`. It is incumbent on the setter of this property that it doesn't collide with the name of the managed assembly. Practially, this only impacts the Windows platform because managed and native binaries share the same extension (i.e., `.dll`).
+    * If the NuPkg is built locally, remember to update the project's `nuget.config` to point at the local disk location of the recently built DNNE NuPkg.
+
+1) Set the `<EnableDynamicLoading>true</EnableDynamicLoading>` property in the managed project containing the methods to export. This will produce a `.runtimeconfig.json` that is needed to activate the runtime when calling an export.
+
+1) Define at least one managed function to export. See the [Exporting a managed function](#exporting) section.
+
+1) Build the managed project to generate the native binary. The native binary will have a `NE` suffix, this is configurable, and the system extension for dynamic/shared native libraries (that is, `.dll`, `.so`, `.dylib`).
+    * The [Runtime Identifier (RID)](https://docs.microsoft.com/dotnet/core/rid-catalog) is used to target a specific platform architecture.
+    * Setting the RID for the project can be done using the `--runtime` flag via the command line or the MSBuild [`RuntimeIdentifier`](https://docs.microsoft.com/dotnet/core/project-sdk/msbuild-props#runtimeidentifier) property. The [`Sample.csproj`](./sample/Sample.csproj) project has commented out examples of how to set RID(s) via MSBuild properties in the project.
+    * The name of the native binary can be defined by setting the MSBuild property `DnneNativeBinaryName`. It is incumbent on the setter of this property that it doesn't collide with the name of the managed assembly. Practially, this only impacts the Windows platform because managed and native binaries share the same extension (that is, `.dll`).
     * A header file containing the exports will be placed in the output directory. The [`dnne.h`](./src/platform/dnne.h) will also be placed in the output directory.
     * On Windows an [import library (`.lib`)](https://docs.microsoft.com/windows/win32/dlls/dynamic-link-library-creation#using-an-import-library) will be placed in the output directory.
 
 1) Deploy the native binary, managed assembly and associated `*.json` files for consumption from a native process.
     * Although not technically needed, the exports header and import library (Windows only) can be deployed with the native binary to make consumption easier.
-    * Set the `DnneAddGeneratedBinaryToProject` MSBuild property to `true` in the project if it is desired to have the generated native binary flow with project references. Recall that the generated binary is bitness specific.
+    * Set the `DnneAddGeneratedBinaryToProject` MSBuild property to `true` in the managed project if it is desired to have the generated native binary flow with project references. Recall that the generated native binary is platform and architecture specific.
 
 ### Generate manually
 
-1) Run the [dnne-gen](./src/dnne-gen) tool on the managed assembly.
+1) Run the [`dnne-gen`](./src/dnne-gen) tool on the managed assembly.
 
-1) Take the generated source from `dnne-gen` and the DNNE [platform](./src/platform) source to compile a native binary with the desired native exports. See the [Native API](#nativeapi) section for build details.
+1) Use the generated source from `dnne-gen` along with the DNNE [platform](./src/platform) source to compile a native binary with the desired native exports. See the [Native API](#nativeapi) section for build details.
 
 1) Deploy the native binary, managed assembly and associated `*.json` files for consumption from a native process.
 
 ### Experimental attribute
 
-There are scenarios where updating `UnmanagedCallersOnlyAttribute` may take time. In order to enable independent development and experimentation, the `DNNE.ExportAttribute` is also respected. This type can be modified to suit one's needs and `dnne-gen` updated to respect those changes at code gen time. The user should define the following in their assembly. They can then modify the attribute and `dnne-gen` as needed.
+There are scenarios where updating `UnmanagedCallersOnlyAttribute` may take time. In order to enable independent development and experimentation, the `DNNE.ExportAttribute` is also respected. This type can be modified to suit one's needs and `dnne-gen` updated to respect those changes at source gen time. The user should define the following in their assembly. They can then modify the attribute and `dnne-gen` as needed.
 
 ``` CSharp
 namespace DNNE
@@ -240,6 +224,28 @@ public class Exports
     }
 }
 ```
+
+<a name="nativeapi"></a>
+
+## Native API
+
+The native API is defined in [`src/platform/dnne.h`](./src/platform/dnne.h).
+
+The `DNNE_ASSEMBLY_NAME` must be set during compilation to indicate the name of the managed assembly to load. The assembly name should not include the extension. For example, if the managed assembly on disk is called `ClassLib.dll`, the expected assembly name is `ClassLib`.
+
+The following defines are set based on the target OS platform:
+- `DNNE_WINDOWS`
+- `DNNE_OSX`
+- `DNNE_LINUX`
+- `DNNE_FREEBSD`
+
+The generated source will need to be linked against the [`nethost`](https://docs.microsoft.com/dotnet/core/tutorials/netcore-hosting#create-a-host-using-nethosth-and-hostfxrh) library as either a static lib (`libnethost.[lib|a]`) or dynamic/shared library (`nethost.lib`). If the latter linking is performed, the `nethost.[dll|so|dylib]` will need to be deployed with the export binary or be on the path at run time.
+
+The `set_failure_callback()` function can be used prior to calling an export to set a callback in the event runtime load or export discovery fails.
+
+Failure to load the runtime or find an export results in the native library calling [`abort()`](https://en.cppreference.com/w/c/program/abort). See FAQs for how this can be overridden.
+
+The `preload_runtime()` or `try_preload_runtime()` functions can be used to preload the runtime. This may be desirable prior to calling an export to avoid the cost of loading the runtime during the first export dispatch.
 
 # FAQs
 
