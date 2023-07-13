@@ -29,37 +29,25 @@ DNNE.targets
 
     <!-- If the user didn't define the name compute one using the legacy mechanism -->
     <DnneNativeBinarySuffix Condition="'$(DnneNativeBinarySuffix)'==''">NE</DnneNativeBinarySuffix>
-    <DnneNativeExportsBinaryName Condition="'$(DnneNativeExportsBinaryName)'==''">
-      $(TargetName)$(DnneNativeBinarySuffix)</DnneNativeExportsBinaryName>
+    <DnneNativeExportsBinaryName Condition="'$(DnneNativeExportsBinaryName)'==''">$(TargetName)$(DnneNativeBinarySuffix)</DnneNativeExportsBinaryName>
     <DnneNativeExportsBinaryPath>$(TargetDir)</DnneNativeExportsBinaryPath>
     <DnneGeneratedOutputPath>$(IntermediateOutputPath)dnne</DnneGeneratedOutputPath>
     <DnneGeneratedBinPath>$(DnneGeneratedOutputPath)/bin</DnneGeneratedBinPath>
 
     <!-- If build was disabled, change the generated output directory to
         where we would have put the compiled binary -->
-    <DnneGeneratedOutputPath Condition="'$(DnneBuildExports)' != 'true'">
-      $(DnneNativeExportsBinaryPath)</DnneGeneratedOutputPath>
+    <DnneGeneratedOutputPath Condition="'$(DnneBuildExports)' != 'true'">$(DnneNativeExportsBinaryPath)</DnneGeneratedOutputPath>
 
-    <DnneGenRollForwardFlag Condition="'$(DnneGenRollForward)' != ''">--roll-forward
-      $(DnneGenRollForward)</DnneGenRollForwardFlag>
+    <DnneGenRollForwardFlag Condition="'$(DnneGenRollForward)' != ''" >--roll-forward $(DnneGenRollForward)</DnneGenRollForwardFlag>
     <DnneGenExe>dotnet $(DnneGenRollForwardFlag) "$(MSBuildThisFileDirectory)../tools/dnne-gen.dll"</DnneGenExe>
     <DnnePlatformSourcePath>$(MSBuildThisFileDirectory)../tools/platform</DnnePlatformSourcePath>
 
     <!-- Compute the extension for the export binary. -->
     <DnneNativeBinaryExt Condition="$([MSBuild]::IsOsPlatform('Windows'))">.dll</DnneNativeBinaryExt>
     <DnneNativeBinaryExt Condition="$([MSBuild]::IsOsPlatform('OSX'))">.dylib</DnneNativeBinaryExt>
-    <DnneNativeBinaryExt
-      Condition="'$(DnneNativeBinaryExt)' == '' OR $([MSBuild]::IsOsPlatform('Linux'))">.so</DnneNativeBinaryExt>
+    <DnneNativeBinaryExt Condition="'$(DnneNativeBinaryExt)' == '' OR $([MSBuild]::IsOsPlatform('Linux'))">.so</DnneNativeBinaryExt>
 
-    <!-- Compute details about TFM -->
-    <DnneIsNetFramework>false</DnneIsNetFramework>
-    <DnneIsNetFramework Condition="$(TargetFramework.StartsWith('net4'))">true</DnneIsNetFramework>
-    <DnneSupportedTFM>true</DnneSupportedTFM>
-    <DnneSupportedTFM
-      Condition="!$([MSBuild]::IsOsPlatform('Windows')) AND '$(DnneIsNetFramework)' == 'true'">false</DnneSupportedTFM>
-
-    <DnneCompiledToBinPath>
-      $(DnneGeneratedBinPath)/$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt)</DnneCompiledToBinPath>
+    <DnneCompiledToBinPath>$(DnneGeneratedBinPath)/$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt)</DnneCompiledToBinPath>
     <DnneGeneratedSourceFileName>$(DnneGeneratedOutputPath)/$(TargetName).g.c</DnneGeneratedSourceFileName>
   </PropertyGroup>
 
@@ -70,24 +58,23 @@ DNNE.targets
       <OutputFileName>$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt)</OutputFileName>
     </DnneNativeExportsInput>
 
-    <DnneNativeExportsInput Include="$(DnneGeneratedSourceFileName)">
+    <DnneNativeExportsInput Include="$(DnneGeneratedSourceFileName)" >
       <OutputFileName>$(DnneNativeExportsBinaryName).h</OutputFileName>
     </DnneNativeExportsInput>
 
-    <DnneNativeExportsInput Include="$(DnnePlatformSourcePath)/dnne.h">
+    <DnneNativeExportsInput Include="$(DnnePlatformSourcePath)/dnne.h" >
       <OutputFileName>dnne.h</OutputFileName>
     </DnneNativeExportsInput>
 
     <!-- Import libs exist only on the Windows platform -->
     <DnneNativeExportsInput
-      Include="$(DnneGeneratedBinPath)/$(DnneNativeExportsBinaryName).lib"
-      Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+        Include="$(DnneGeneratedBinPath)/$(DnneNativeExportsBinaryName).lib"
+        Condition="$([MSBuild]::IsOsPlatform('Windows'))" >
       <OutputFileName>$(DnneNativeExportsBinaryName).lib</OutputFileName>
     </DnneNativeExportsInput>
 
     <!-- Add outputs and general glob to help with project cleanup -->
-    <Clean
-      Include="@(DnneNativeExportsInput->'$(DnneNativeExportsBinaryPath)%(OutputFileName)');$(DnneNativeExportsBinaryPath)$(DnneNativeExportsBinaryName).*" />
+    <Clean Include="@(DnneNativeExportsInput->'$(DnneNativeExportsBinaryPath)%(OutputFileName)');$(DnneNativeExportsBinaryPath)$(DnneNativeExportsBinaryName).*"/>
   </ItemGroup>
 
   <Target
@@ -96,8 +83,7 @@ DNNE.targets
     Inputs="@(IntermediateAssembly)"
     Outputs="@(DnneGeneratedSourceFile)"
     AfterTargets="CoreCompile">
-    <Message Text="Generating source for @(IntermediateAssembly) into @(DnneGeneratedSourceFile)"
-      Importance="$(DnneMSBuildLogging)" />
+    <Message Text="Generating source for @(IntermediateAssembly) into @(DnneGeneratedSourceFile)" Importance="$(DnneMSBuildLogging)" />
 
     <!-- Ensure the output directory exists -->
     <MakeDir Directories="$(DnneGeneratedOutputPath)" />
@@ -118,15 +104,13 @@ DNNE.targets
       Include all output artifacts in the project's None Items so
       they flow through project references.
   -->
-  <ItemGroup
-    Condition="'$(DnneBuildExports)' == 'true' AND '$(DnneAddGeneratedBinaryToProject)' == 'true'">
+  <ItemGroup Condition="'$(DnneBuildExports)' == 'true' AND '$(DnneAddGeneratedBinaryToProject)' == 'true'">
     <None Include="@(DnneNativeExportsOutputs->'%(FullPath)')">
       <Link>%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Visible>false</Visible>
     </None>
-    <None Include="$(DnneGeneratedBinPath)/$(DnneNativeExportsBinaryName).pdb"
-      Condition="$([MSBuild]::IsOsPlatform('Windows'))">
+    <None Include="$(DnneGeneratedBinPath)/$(DnneNativeExportsBinaryName).pdb" Condition="$([MSBuild]::IsOsPlatform('Windows'))">
       <Link>%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Visible>false</Visible>
@@ -135,7 +119,7 @@ DNNE.targets
 
   <UsingTask
     TaskName="DNNE.BuildTasks.CreateCompileCommand"
-    AssemblyFile="./$(DnneBuildTasksTFM)/DNNE.BuildTasks.dll"
+    AssemblyFile = "./$(DnneBuildTasksTFM)/DNNE.BuildTasks.dll"
     Condition="'$(DnneBuildExports)' == 'true'" />
 
   <Target
@@ -145,8 +129,7 @@ DNNE.targets
     Outputs="@(DnneNativeExportsInput->'$(DnneNativeExportsBinaryPath)%(OutputFileName)')"
     AfterTargets="DnneGenerateNativeExports"
     DependsOnTargets="ResolvePackageAssets;ResolveFrameworkReferences">
-    <Message Text="Building native exports binary from @(DnneGeneratedSourceFile)"
-      Importance="$(DnneMSBuildLogging)" />
+    <Message Text="Building native exports binary from @(DnneGeneratedSourceFile)" Importance="$(DnneMSBuildLogging)" />
 
     <Error
       Condition="!Exists(@(DnneGeneratedSourceFile))"
@@ -158,10 +141,8 @@ DNNE.targets
     <PropertyGroup>
       <DnneAssemblyName>$(TargetName)</DnneAssemblyName>
       <DnneRuntimeIdentifier Condition="'$(DnneRuntimeIdentifier)'==''">$(RuntimeIdentifier)</DnneRuntimeIdentifier>
-      <DnneRuntimeIdentifier Condition="'$(DnneRuntimeIdentifier)'==''">
-        $(NETCoreSdkRuntimeIdentifier)</DnneRuntimeIdentifier>
-      <DnneNetHostDir Condition="'$(DnneNetHostDir)' == ''">
-        $(NetCoreTargetingPackRoot)/Microsoft.NETCore.App.Host.$(DnneRuntimeIdentifier)/$(BundledNETCoreAppPackageVersion)/runtimes/$(DnneRuntimeIdentifier)/native</DnneNetHostDir>
+      <DnneRuntimeIdentifier Condition="'$(DnneRuntimeIdentifier)'==''">$(NETCoreSdkRuntimeIdentifier)</DnneRuntimeIdentifier>
+      <DnneNetHostDir Condition="'$(DnneNetHostDir)' == ''">$(NetCoreTargetingPackRoot)/Microsoft.NETCore.App.Host.$(DnneRuntimeIdentifier)/$(BundledNETCoreAppPackageVersion)/runtimes/$(DnneRuntimeIdentifier)/native</DnneNetHostDir>
       <__DnneGeneratedSourceFile>@(DnneGeneratedSourceFile)</__DnneGeneratedSourceFile>
     </PropertyGroup>
 
@@ -170,21 +151,21 @@ DNNE.targets
     </ItemGroup>
 
     <CreateCompileCommand
-      AssemblyName="$(DnneAssemblyName)"
-      NetHostPath="$([MSBuild]::NormalizePath($(DnneNetHostDir)))"
-      PlatformPath="$([MSBuild]::NormalizePath($(DnnePlatformSourcePath)))"
-      Source="$([MSBuild]::NormalizePath($(__DnneGeneratedSourceFile)))"
-      OutputName="$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt)"
-      OutputPath="$([MSBuild]::NormalizePath($(DnneGeneratedBinPath)))"
-      RuntimeID="$(DnneRuntimeIdentifier)"
-      Architecture="$(TargetedSDKArchitecture)"
-      Configuration="$(Configuration)"
-      TargetFramework="$(TargetFramework)"
-      ExportsDefFile="$(DnneWindowsExportsDef)"
-      IsSelfContained="$(DnneSelfContained_Experimental)"
-      UserDefinedCompilerFlags="$(DnneCompilerUserFlags)"
-      UserDefinedLinkerFlags="$(DnneLinkerUserFlags)"
-      AdditionalIncludeDirectories="@(__DnneAdditionalIncludeDirectories)">
+        AssemblyName="$(DnneAssemblyName)"
+        NetHostPath="$([MSBuild]::NormalizePath($(DnneNetHostDir)))"
+        PlatformPath="$([MSBuild]::NormalizePath($(DnnePlatformSourcePath)))"
+        Source="$([MSBuild]::NormalizePath($(__DnneGeneratedSourceFile)))"
+        OutputName="$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt)"
+        OutputPath="$([MSBuild]::NormalizePath($(DnneGeneratedBinPath)))"
+        RuntimeID="$(DnneRuntimeIdentifier)"
+        Architecture="$(TargetedSDKArchitecture)"
+        Configuration="$(Configuration)"
+        TargetFramework="$(TargetFramework)"
+        ExportsDefFile="$(DnneWindowsExportsDef)"
+        IsSelfContained="$(DnneSelfContained_Experimental)"
+        UserDefinedCompilerFlags="$(DnneCompilerUserFlags)"
+        UserDefinedLinkerFlags="$(DnneLinkerUserFlags)"
+        AdditionalIncludeDirectories="@(__DnneAdditionalIncludeDirectories)">
       <Output TaskParameter="Command" PropertyName="CompilerCmd" />
       <Output TaskParameter="CommandArguments" PropertyName="CompilerArgs" />
     </CreateCompileCommand>
@@ -193,12 +174,11 @@ DNNE.targets
       <CompilerCmd Condition="'$(DnneCompilerCommand)' != ''">$(DnneCompilerCommand)</CompilerCmd>
     </PropertyGroup>
 
-    <Message Text="Building native export: &quot;$(CompilerCmd)&quot; $(CompilerArgs)"
-      Importance="high" />
+    <Message Text="Building native export: &quot;$(CompilerCmd)&quot; $(CompilerArgs)" Importance="high" />
     <Exec Command="&quot;$(CompilerCmd)&quot; $(CompilerArgs)"
-      WorkingDirectory="$(DnneGeneratedOutputPath)"
-      Outputs="$(DnneCompiledToBinPath)"
-      ConsoleToMSBuild="true" />
+        WorkingDirectory="$(DnneGeneratedOutputPath)"
+        Outputs="$(DnneCompiledToBinPath)"
+        ConsoleToMSBuild="true" />
 
     <!--
         Copy the binary to the project output directory.
@@ -206,8 +186,8 @@ DNNE.targets
         Deploy the official 'dnne.h' header.
     -->
     <Copy
-      SourceFiles="@(DnneNativeExportsInput)"
-      DestinationFiles="@(DnneNativeExportsInput->'$(DnneNativeExportsBinaryPath)%(OutputFileName)')" />
+        SourceFiles="@(DnneNativeExportsInput)"
+        DestinationFiles="@(DnneNativeExportsInput->'$(DnneNativeExportsBinaryPath)%(OutputFileName)')" />
 
   </Target>
 
@@ -218,18 +198,18 @@ DNNE.targets
     See https://github.com/dotnet/sdk/issues/1675#issuecomment-658779827
   -->
   <Target Name="DnneAddRuntimeDependenciesToContent"
-    BeforeTargets="GetCopyToOutputDirectoryItems"
-    DependsOnTargets="GenerateBuildDependencyFile;GenerateBuildRuntimeConfigurationFiles"
-    Condition="'$(DnneBuildExports)' == 'true' AND '$(DnneAddGeneratedBinaryToProject)' == 'true' AND '$(DnneWorkAroundSdk1675)' == 'true'">
+        BeforeTargets="GetCopyToOutputDirectoryItems"
+        DependsOnTargets="GenerateBuildDependencyFile;GenerateBuildRuntimeConfigurationFiles"
+        Condition="'$(DnneBuildExports)' == 'true' AND '$(DnneAddGeneratedBinaryToProject)' == 'true' AND '$(DnneWorkAroundSdk1675)' == 'true'">
     <ItemGroup>
       <ContentWithTargetPath Include="$(ProjectDepsFilePath)"
-        Condition="'$(GenerateDependencyFile)' == 'true'"
-        CopyToOutputDirectory="PreserveNewest"
-        TargetPath="$(ProjectDepsFileName)" />
+                            Condition="'$(GenerateDependencyFile)' == 'true'"
+                            CopyToOutputDirectory="PreserveNewest"
+                            TargetPath="$(ProjectDepsFileName)" />
       <ContentWithTargetPath Include="$(ProjectRuntimeConfigFilePath)"
-        Condition="'$(GenerateRuntimeConfigurationFiles)' == 'true'"
-        CopyToOutputDirectory="PreserveNewest"
-        TargetPath="$(ProjectRuntimeConfigFileName)" />
+                            Condition="'$(GenerateRuntimeConfigurationFiles)' == 'true'"
+                            CopyToOutputDirectory="PreserveNewest"
+                            TargetPath="$(ProjectRuntimeConfigFileName)" />
     </ItemGroup>
   </Target>
 </Project>
