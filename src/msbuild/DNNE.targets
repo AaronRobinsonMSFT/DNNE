@@ -47,21 +47,34 @@ DNNE.targets
     <DnneNativeBinaryExt Condition="$([MSBuild]::IsOsPlatform('OSX'))">.dylib</DnneNativeBinaryExt>
     <DnneNativeBinaryExt Condition="'$(DnneNativeBinaryExt)' == '' OR $([MSBuild]::IsOsPlatform('Linux'))">.so</DnneNativeBinaryExt>
 
-    <!-- Compute details about TFM -->
-    <DnneIsNetFramework>false</DnneIsNetFramework>
-    <DnneIsNetFramework Condition="$(TargetFramework.StartsWith('net4'))">true</DnneIsNetFramework>
-    <DnneSupportedTFM>true</DnneSupportedTFM>
-    <DnneSupportedTFM Condition="!$([MSBuild]::IsOsPlatform('Windows')) AND '$(DnneIsNetFramework)' == 'true'">false</DnneSupportedTFM>
-
     <DnneCompiledToBinPath>$(DnneGeneratedBinPath)/$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt)</DnneCompiledToBinPath>
+    <DnneGeneratedSourceFileName>$(DnneGeneratedOutputPath)/$(TargetName).g.c</DnneGeneratedSourceFileName>
   </PropertyGroup>
 
   <ItemGroup>
-    <DnneGeneratedSourceFile Include="$(DnneGeneratedOutputPath)/$(TargetName).g.c" />
-    <DnneNativeExportsOutputs Include="$(DnneNativeExportsBinaryPath)$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt);$(DnneNativeExportsBinaryPath)$(DnneNativeExportsBinaryName).h;$(DnneNativeExportsBinaryPath)dnne.h" />
+    <DnneGeneratedSourceFile Include="$(DnneGeneratedSourceFileName)" />
+
+    <DnneNativeExportsInput Include="$(DnneCompiledToBinPath)">
+      <OutputFileName>$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt)</OutputFileName>
+    </DnneNativeExportsInput>
+
+    <DnneNativeExportsInput Include="$(DnneGeneratedSourceFileName)" >
+      <OutputFileName>$(DnneNativeExportsBinaryName).h</OutputFileName>
+    </DnneNativeExportsInput>
+
+    <DnneNativeExportsInput Include="$(DnnePlatformSourcePath)/dnne.h" >
+      <OutputFileName>dnne.h</OutputFileName>
+    </DnneNativeExportsInput>
+
+    <!-- Import libs exist only on the Windows platform -->
+    <DnneNativeExportsInput
+        Include="$(DnneGeneratedBinPath)/$(DnneNativeExportsBinaryName).lib"
+        Condition="$([MSBuild]::IsOsPlatform('Windows'))" >
+      <OutputFileName>$(DnneNativeExportsBinaryName).lib</OutputFileName>
+    </DnneNativeExportsInput>
 
     <!-- Add outputs and general glob to help with project cleanup -->
-    <Clean Include="@(DnneNativeExportsOutputs);$(DnneNativeExportsBinaryPath)$(DnneNativeExportsBinaryName).*"/>
+    <Clean Include="@(DnneNativeExportsInput->'$(DnneNativeExportsBinaryPath)%(OutputFileName)');$(DnneNativeExportsBinaryPath)$(DnneNativeExportsBinaryName).*"/>
   </ItemGroup>
 
   <Target
@@ -112,8 +125,8 @@ DNNE.targets
   <Target
     Name="DnneBuildNativeExports"
     Condition="('$(DesignTimeBuild)' != 'true' OR '$(BuildingProject)' == 'true') AND '$(DnneSupportedTFM)' == 'true' AND '$(DnneBuildExports)' == 'true'"
-    Inputs="@(DnneGeneratedSourceFile)"
-    Outputs="@(DnneNativeExportsOutputs)"
+    Inputs="@(DnneNativeExportsInput)"
+    Outputs="@(DnneNativeExportsInput->'$(DnneNativeExportsBinaryPath)%(OutputFileName)')"
     AfterTargets="DnneGenerateNativeExports"
     DependsOnTargets="ResolvePackageAssets;ResolveFrameworkReferences">
     <Message Text="Building native exports binary from @(DnneGeneratedSourceFile)" Importance="$(DnneMSBuildLogging)" />
@@ -173,14 +186,9 @@ DNNE.targets
         Deploy the official 'dnne.h' header.
     -->
     <Copy
-        SourceFiles="$(DnneCompiledToBinPath);$(__DnneGeneratedSourceFile);$(DnnePlatformSourcePath)/dnne.h"
-        DestinationFiles="@(DnneNativeExportsOutputs)" />
+        SourceFiles="@(DnneNativeExportsInput)"
+        DestinationFiles="@(DnneNativeExportsInput->'$(DnneNativeExportsBinaryPath)%(OutputFileName)')" />
 
-    <!-- Import libs exist only on the Windows platform -->
-    <Copy
-        Condition="$([MSBuild]::IsOsPlatform('Windows'))"
-        SourceFiles="$(DnneGeneratedBinPath)/$(DnneNativeExportsBinaryName).lib"
-        DestinationFolder="$(DnneNativeExportsBinaryPath)" />
   </Target>
 
   <!--
