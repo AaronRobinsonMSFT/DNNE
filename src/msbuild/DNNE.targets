@@ -47,6 +47,12 @@ DNNE.targets
     <DnneNativeBinaryExt Condition="$([MSBuild]::IsOsPlatform('OSX'))">.dylib</DnneNativeBinaryExt>
     <DnneNativeBinaryExt Condition="'$(DnneNativeBinaryExt)' == '' OR $([MSBuild]::IsOsPlatform('Linux'))">.so</DnneNativeBinaryExt>
 
+    <!-- Compute details about TFM -->
+    <DnneIsNetFramework>false</DnneIsNetFramework>
+    <DnneIsNetFramework Condition="$(TargetFramework.StartsWith('net4'))">true</DnneIsNetFramework>
+    <DnneSupportedTFM>true</DnneSupportedTFM>
+    <DnneSupportedTFM Condition="!$([MSBuild]::IsOsPlatform('Windows')) AND '$(DnneIsNetFramework)' == 'true'">false</DnneSupportedTFM>
+
     <DnneCompiledToBinPath>$(DnneGeneratedBinPath)/$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt)</DnneCompiledToBinPath>
     <DnneGeneratedSourceFileName>$(DnneGeneratedOutputPath)/$(TargetName).g.c</DnneGeneratedSourceFileName>
   </PropertyGroup>
