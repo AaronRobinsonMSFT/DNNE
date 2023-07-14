@@ -111,7 +111,7 @@ DNNE.targets
       they flow through project references.
   -->
   <ItemGroup Condition="'$(DnneBuildExports)' == 'true' AND '$(DnneAddGeneratedBinaryToProject)' == 'true'">
-    <None Include="@(DnneNativeExportsOutputs->'%(FullPath)')">
+    <None Include="@(DnneNativeExportsInput->'$(DnneNativeExportsBinaryPath)%(OutputFileName)')">
       <Link>%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Visible>false</Visible>
