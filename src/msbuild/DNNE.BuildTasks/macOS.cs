@@ -69,7 +69,8 @@ namespace DNNE.BuildTasks
             compilerFlags.Append($"\"{export.Source}\" \"{Path.Combine(export.PlatformPath, "platform.c")}\" ");
             compilerFlags.Append($"-lstdc++ ");
             compilerFlags.Append($"\"{Path.Combine(export.NetHostPath, "libnethost.a")}\" ");
-
+            compilerFlags.Append("-Wno-atomic-alignment");
+            
             if (!string.IsNullOrEmpty(export.UserDefinedLinkerFlags))
             {
                 compilerFlags.Append($"{export.UserDefinedLinkerFlags} ");
