@@ -7,7 +7,8 @@
   <Import Condition="'$(TestNuPkg)' != 'true'" Project="$(PseudoPackage)build/DNNE.props" />
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0;net472</TargetFrameworks>
+    <TargetFrameworks>net6.0</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('Windows'))">$(TargetFrameworks);net472</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RollForward>Major</RollForward>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -22,7 +23,7 @@
     <DnneCompilerCommand Condition="'$(BuildWithClangPP)'=='true'">clang++</DnneCompilerCommand>
 
     <!-- Include the override option for dnne_abort() -->
-    <DnneCompilerUserFlags>$(DnneCompilerUserFlags)$(MSBuildThisFileDirectory)override.c</DnneCompilerUserFlags>
+    <DnneCompilerUserFlags>$(DnneCompilerUserFlags) $(MSBuildThisFileDirectory)override.c</DnneCompilerUserFlags>
 
     <!-- When targeting .NET Framework we only use a subset of files -->
     <EnableDefaultCompileItems Condition="$(TargetFramework.StartsWith('net4'))">false</EnableDefaultCompileItems>

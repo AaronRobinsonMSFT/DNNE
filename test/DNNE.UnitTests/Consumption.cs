@@ -92,7 +92,7 @@ namespace DNNE.UnitTests
 
             Assert.Equal(num, ExportingAssembly.InstanceExports.MyClass_getNumber(inst));
 
-            ExportingAssembly.InstanceExports.MyClass_printNumber(inst);
+            Assert.Equal(num * 2, ExportingAssembly.InstanceExports.MyClass_doubleNumber(inst));
             ExportingAssembly.InstanceExports.MyClass_dtor(inst);
         }
 

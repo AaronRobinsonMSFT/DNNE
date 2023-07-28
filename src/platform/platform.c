@@ -287,18 +287,32 @@ static void set_current_error(int err)
     errno = err;
 }
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#ifdef __arm__
+// warning: large atomic operation may incur significant performance penalty; the access size (4 bytes) exceeds the max lock-free size (0  bytes)
+#pragma clang diagnostic ignored "-Watomic-alignment"
+#endif // __arm__
+#endif // __clang__
+
 static void enter_lock(dnne_lock_handle* lock)
 {
-    while (__sync_val_compare_and_swap(lock, DNNE_LOCK_OPEN, -1) != DNNE_LOCK_OPEN)
+    long tmp = DNNE_LOCK_OPEN;
+    while (!__atomic_compare_exchange_n(lock, &tmp, -1, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))
     {
         (void)sched_yield(); // Yield instead of sleeping.
+        tmp = DNNE_LOCK_OPEN;
     }
 }
 
 static void exit_lock(dnne_lock_handle* lock)
 {
-    __atomic_exchange_n(lock, DNNE_LOCK_OPEN, __ATOMIC_ACQ_REL);
+    __atomic_exchange_n(lock, DNNE_LOCK_OPEN, __ATOMIC_SEQ_CST);
 }
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif // __clang__
 
 #endif // !DNNE_WINDOWS
 
