@@ -38,7 +38,7 @@ namespace ExportingAssembly
     /// class MyClass
     /// {
     ///     intptr_t _inst;
-    /// 
+    ///
     /// public:
     ///     MyClass()
     ///     {
@@ -56,9 +56,9 @@ namespace ExportingAssembly
     ///     {
     ///         MyClass_setNumber(_inst, num);
     ///     }
-    ///     void printNumber()
+    ///     int32_t doubleNumber()
     ///     {
-    ///         MyClass_printNumber(_inst);
+    ///         return MyClass_doubleNumber(_inst);
     ///     }
     ///     // Delete copy functions since a copy export isn't defined.
     ///     MyClass(const MyClass&) = delete;
@@ -94,10 +94,10 @@ namespace ExportingAssembly
             As<MyClass>(inst).Number = number;
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "MyClass_printNumber")]
-        public static void MyClassPrintNumber(IntPtr inst)
+        [UnmanagedCallersOnly(EntryPoint = "MyClass_doubleNumber")]
+        public static int MyClassDoubleNumber(IntPtr inst)
         {
-            As<MyClass>(inst).PrintNumber();
+            return As<MyClass>(inst).DoubleNumber();
         }
 
         private static T As<T>(IntPtr ptr) where T : class
@@ -111,15 +111,12 @@ namespace ExportingAssembly
     /// </summary>
     public class MyClass
     {
-        private int number;
-
         public MyClass()
         {
-            this.number = 0;
         }
 
         public int Number { get; set; }
 
-        public void PrintNumber() => Console.WriteLine(this.number);
+        public int DoubleNumber() => 2 * this.Number;
     }
 }

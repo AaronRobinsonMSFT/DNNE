@@ -56,7 +56,7 @@ namespace DNNE.UnitTests
             public static extern void MyClass_setNumber(IntPtr inst, int number);
 
             [DllImport(nameof(ExportingAssemblyNE))]
-            public static extern void MyClass_printNumber(IntPtr inst);
+            public static extern int MyClass_doubleNumber(IntPtr inst);
         }
 
         public static class IntExports
