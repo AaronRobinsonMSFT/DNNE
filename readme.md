@@ -20,7 +20,8 @@ This work is inspired by work in the [Xamarin][xamarin_embed_link], [CoreRT][cor
     - The x86_64 version of the .NET runtime is the default install.
     - In order to target x86, the x86 .NET runtime must be explicitly installed.
 * Windows 10 SDK - Installed with Visual Studio.
-* .NET Framework SDK - Installed with Visual Studio. Only required if targeting a .NET Framework TFM.
+* .NET Framework 4.x SDK - Installed with Visual Studio. Only required if targeting a .NET Framework TFM.
+    - See [.NET Framework support](#netfx).
 * x86, x86_64, ARM64 compilation supported.
     - The Visual Studio package containing the desired compiler architecture must have been installed.
 
@@ -225,8 +226,6 @@ public class Exports
 }
 ```
 
-<a name="nativeapi"></a>
-
 ## Native API
 
 The native API is defined in [`src/platform/dnne.h`](./src/platform/dnne.h).
@@ -247,6 +246,19 @@ Failure to load the runtime or find an export results in the native library call
 
 The `preload_runtime()` or `try_preload_runtime()` functions can be used to preload the runtime. This may be desirable prior to calling an export to avoid the cost of loading the runtime during the first export dispatch.
 
+<a name="netfx"></a>
+
+## .NET Framework support
+
+.NET Framework support is limited to the Windows platform. This limitation is in place because .NET Framework only runs on the Windows platform.
+
+DNNE has support for targeting .NET Framework v4.x TFMs&mdash;there is no support for v2.0 or v3.5. DNNE respects multi-targeting using the `TargetFrameworks` MSBuild property. For any .NET Framework v4.x TFM, DNNE will produce a native binary that will activate .NET Framework.
+
+In non-.NET Framework scenarios, `.deps.json` files are generated during compilation that help, at run-time, to find assemblies. This is different than .NET Framework, which has a more complicated application model. One area where this difference can be particularly confusing is during initial load and activation of a managed assembly. Tools like [`fuslogvw.exe`](https://learn.microsoft.com/dotnet/framework/tools/fuslogvw-exe-assembly-binding-log-viewer) can help to understand loading failures in .NET Framework.
+
+Due to how .NET Framework is being activated in DNNE, the managed DLL typically needs to be located next to the running EXE rather than the native DLL produced by DNNE. Alternatively, the EXE loading the DNNE generated DLL can define a [`.config` file](https://learn.microsoft.com/dotnet/framework/configure-apps/) that defines probing paths.
+
+
 # FAQs
 
 * I am not using one of the supported compilers and hitting an issue of missing `intptr_t` type, what can I do?
@@ -264,7 +276,7 @@ The `preload_runtime()` or `try_preload_runtime()` functions can be used to prel
 * Along with exporting a function, I would also like to export data. Is there a way to export a static variable defined in .NET?
   * There is no simple way to do this starting from .NET. DNNE could be updated to read static metadata and then generate the appropriate export in C code, but that approach is complicated by how static data can be defined during module load in .NET. It is recommended instead to define the desired static data in a separate translation unit (`.c` file) and include it in the native build through the `DnneCompilerUserFlags` property.
 * Does DNNE support targeting .NET Framework?
-  * Yes. DNNE has support for targeting .NET Framework v4.x TFMs&mdash;there is no support for v2.0 or v3.5. DNNE respects multi-targeting using the `TargetFrameworks` MSBuild property. For any .NET Framework v4.x TFM, DNNE will produce a native binary that will activate .NET Framework. Note there are assembly loading semantic differences between .NET Framework and .NET Core. Tools like [`fuslogvw.exe`](https://learn.microsoft.com/dotnet/framework/tools/fuslogvw-exe-assembly-binding-log-viewer) can help to understand loading failures in .NET Framework. Due to how .NET Framework is being activated, the managed DLL typically needs to be located next to the running EXE rather than the native DLL produced by DNNE. Alternatively, the EXE can define a [`.config` file](https://learn.microsoft.com/dotnet/framework/configure-apps/) that defines probing paths.
+  * Yes, see [.NET Framework support](#netfx).
 
 # Additional References
 
