@@ -297,12 +297,21 @@ static void set_current_error(int err)
 
 static void enter_lock(dnne_lock_handle* lock)
 {
+#ifdef __arm__
+    // There are some arm32 platforms that don't provide __atomic_compare_exchange_n().
+    // Instead of trying to special case them, always use the compiler (gcc/clang) intrinsic.
+    while (__sync_val_compare_and_swap(lock, DNNE_LOCK_OPEN, -1) != DNNE_LOCK_OPEN)
+    {
+        (void)sched_yield(); // Yield instead of sleeping.
+    }
+#else
     long tmp = DNNE_LOCK_OPEN;
     while (!__atomic_compare_exchange_n(lock, &tmp, -1, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))
     {
         (void)sched_yield(); // Yield instead of sleeping.
         tmp = DNNE_LOCK_OPEN;
     }
+#endif // !__arm__
 }
 
 static void exit_lock(dnne_lock_handle* lock)
