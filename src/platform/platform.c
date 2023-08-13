@@ -154,6 +154,7 @@ typedef int (CORECLR_DELEGATE_CALLTYPE* component_entry_point_fn)(void* arg, int
 
 typedef volatile long dnne_lock_handle;
 #define DNNE_LOCK_OPEN (0)
+#define DNNE_LOCK_TAKEN (-1)
 
 #ifdef DNNE_WINDOWS
 
@@ -298,15 +299,15 @@ static void set_current_error(int err)
 static void enter_lock(dnne_lock_handle* lock)
 {
 #ifdef __arm__
-    // There are some arm32 platforms that don't provide __atomic_compare_exchange_n().
+    // Cross compiling for arm32 platforms can cause issues using __atomic_compare_exchange_n().
     // Instead of trying to special case them, always use the compiler (gcc/clang) intrinsic.
-    while (__sync_val_compare_and_swap(lock, DNNE_LOCK_OPEN, -1) != DNNE_LOCK_OPEN)
+    while (__sync_lock_test_and_set(lock, DNNE_LOCK_TAKEN) != DNNE_LOCK_OPEN)
     {
         (void)sched_yield(); // Yield instead of sleeping.
     }
 #else
     long tmp = DNNE_LOCK_OPEN;
-    while (!__atomic_compare_exchange_n(lock, &tmp, -1, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))
+    while (!__atomic_compare_exchange_n(lock, &tmp, DNNE_LOCK_TAKEN, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))
     {
         (void)sched_yield(); // Yield instead of sleeping.
         tmp = DNNE_LOCK_OPEN;
@@ -316,7 +317,14 @@ static void enter_lock(dnne_lock_handle* lock)
 
 static void exit_lock(dnne_lock_handle* lock)
 {
+#ifdef __arm__
+    // Cross compiling for arm32 platforms can cause issues using __atomic_exchange_n().
+    // Instead of trying to special case them, always use the compiler (gcc/clang) intrinsic.
+    __sync_lock_release(lock);
+    assert(*lock == DNNE_LOCK_OPEN);
+#else
     __atomic_exchange_n(lock, DNNE_LOCK_OPEN, __ATOMIC_SEQ_CST);
+#endif // !__arm__
 }
 
 #ifdef __clang__
