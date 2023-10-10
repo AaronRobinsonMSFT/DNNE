@@ -19,6 +19,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "platform", "platform", "{95
 	ProjectSection(SolutionItems) = preProject
 		src\platform\dnne.h = src\platform\dnne.h
 		src\platform\platform.c = src\platform\platform.c
+		src\platform\platform_v4.cpp = src\platform\platform_v4.cpp
 	EndProjectSection
 EndProject
 Global
