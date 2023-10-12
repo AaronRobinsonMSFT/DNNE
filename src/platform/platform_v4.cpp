@@ -163,6 +163,8 @@ namespace
             hr = runtimeHost->GetCurrentAppDomainId(&_appDomainId);
 	    if (hr != S_OK)
             {
+                // This is a fallback attempt if the runtime is already activated
+                // and this thread isn't the one that did that work.
                 ICorRuntimeHost* oldRuntimeHost;
                 hr = runtimeInfo->GetInterface(CLSID_CorRuntimeHost, IID_ICorRuntimeHost, (void**)&oldRuntimeHost);
                 IF_FAILURE_RETURN_OR_ABORT(ret, failure_load_runtime, hr, &_prepare_lock);
