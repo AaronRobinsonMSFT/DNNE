@@ -30,7 +30,6 @@
   </PropertyGroup>
 
   <ItemGroup Condition="'$(EnableDefaultCompileItems)' == 'false'">
-    <Compile Include="Dnne.Attributes.cs" />
     <Compile Include="IntExports.cs" />
   </ItemGroup>
 
