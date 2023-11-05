@@ -20,6 +20,24 @@ public sealed class AttributesGenerator : IIncrementalGenerator
                 namespace DNNE
                 {
                     /// <summary>
+                    /// Defines a C export. Can be used when updating to use <c>UnmanagedCallersOnlyAttribute</c> would take more time.
+                    /// </summary>
+                    internal sealed class ExportAttribute : global::System.Attribute
+                    {
+                        /// <summary>
+                        /// Creates a new <see cref="ExportAttribute"/> instance.
+                        /// </summary>
+                        public ExportAttribute()
+                        {
+                        }
+
+                        /// <summary>
+                        /// Gets or sets the entry point to use to produce the C export.
+                        /// </summary>
+                        public string EntryPoint { get; set; }
+                    }
+
+                    /// <summary>
                     /// Provides C code to be defined early in the generated C header file.
                     /// </summary>
                     /// <remarks>
