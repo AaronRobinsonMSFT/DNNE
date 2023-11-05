@@ -40,4 +40,9 @@
   <ItemGroup Condition="'$(TestNuPkg)' == 'true'">
     <PackageReference Include="DNNE" Version="2.*" />
   </ItemGroup>
+
+  <!-- If we're not using the NuGet package, we need to manually reference the analyzer project -->
+  <ItemGroup Condition="'$(TestNuPkg)' != 'true'">
+    <ProjectReference Include="$(SrcRoot)dnne-analyzers/dnne-analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="contentfiles;build" />
+  </ItemGroup>
 </Project>
