@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
@@ -37,6 +37,9 @@
 
   <!-- Reference the project to trigger build -->
   <ItemGroup>
+    <ProjectReference  Include="../dnne-analyzers/dnne-analyzers.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
     <ProjectReference Include="../dnne-gen/dnne-gen.csproj">
       <Properties>TargetFramework=$(TargetFramework)</Properties>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
@@ -66,6 +69,7 @@
     <ItemGroup>
       <BuildFiles Include="../msbuild/DNNE.props" />
       <BuildFiles Include="../msbuild/DNNE.targets" />
+      <BuildFiles Include="../dnne-analyzers/DNNE.Analyzers.targets" />
       <NetStandard21Task Include="../msbuild/DNNE.BuildTasks/bin/$(Configuration)/netstandard2.1/*" />
       <Net472Task Include="../msbuild/DNNE.BuildTasks/bin/$(Configuration)/net472/*" />
       <DnneGenFiles Include="../dnne-gen/bin/$(Configuration)/$(TargetFramework)/dnne-gen.dll;../dnne-gen/bin/$(Configuration)/$(TargetFramework)/dnne-gen.runtimeconfig.json" />
@@ -76,6 +80,15 @@
     <Copy SourceFiles="@(Net472Task)" DestinationFolder="$(Net472Dest)" />
     <Copy SourceFiles="@(DnneGenFiles)" DestinationFolder="$(ToolsDest)" />
     <Copy SourceFiles="@(PlatformFiles)" DestinationFolder="$(PlatformDest)" />
+      
+    <!-- Pack the source generator from its output directory (source generators always use .NET Standard 2.0) -->
+    <ItemGroup>
+      <None
+        Include="../dnne-analyzers/bin/$(Configuration)/netstandard2.0/dnne-analyzers.dll"
+        PackagePath="analyzers/dotnet/cs"
+        Pack="true"
+        Visible="false" />
+    </ItemGroup>
 
     <!-- Define the NuPkg content -->
     <ItemGroup>
