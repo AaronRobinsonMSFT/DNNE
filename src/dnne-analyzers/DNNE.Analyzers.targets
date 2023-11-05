@@ -1,0 +1,105 @@
+<Project>
+
+  <!-- Get the analyzer from the DNNE NuGet package -->
+  <Target Name="_DnneGatherAnalyzers">
+    <ItemGroup>
+      <_DnneAnalyzer Include="@(Analyzer)" Condition="'%(Analyzer.NuGetPackageId)' == 'DNNE'" />
+    </ItemGroup>
+  </Target>
+
+  <!-- Remove the analyzer if using Roslyn < 4.0 (DNNE's generators require Roslyn 4.0) -->
+  <Target Name="_DnneRemoveAnalyzersForRoslyn3"
+          Condition="'$(CSharpCoreTargetsPath)' != ''"
+          AfterTargets="ResolvePackageDependenciesForBuild;ResolveNuGetPackageAssets"
+          DependsOnTargets="_DnneGatherAnalyzers">
+
+    <!--
+      Use the CSharpCoreTargetsPath property to find the version of the compiler we are using. This is the same mechanism
+      MSBuild uses to find the compiler. We could check the assembly version for any compiler assembly (since they all have
+      the same version) but Microsoft.Build.Tasks.CodeAnalysis.dll is where MSBuild loads the compiler tasks from so if
+      someone is getting creative with msbuild tasks/targets this is the "most correct" assembly to check.
+    -->
+    <GetAssemblyIdentity AssemblyFiles="$([System.IO.Path]::Combine(`$([System.IO.Path]::GetDirectoryName($(CSharpCoreTargetsPath)))`,`Microsoft.Build.Tasks.CodeAnalysis.dll`))">
+      <Output TaskParameter="Assemblies" ItemName="DnneCurrentCompilerAssemblyIdentity"/>
+    </GetAssemblyIdentity>
+
+    <PropertyGroup>
+
+      <!-- Transform the resulting item from GetAssemblyIdentity into a property representing its assembly version -->
+      <DnneCurrentCompilerVersion>@(DnneCurrentCompilerAssemblyIdentity->'%(Version)')</DnneCurrentCompilerVersion>
+
+      <!-- The CurrentCompilerVersionIsNotNewEnough property can now be defined based on the Roslyn assembly version -->
+      <DnneCurrentCompilerVersionIsNotNewEnough Condition="$([MSBuild]::VersionLessThan($(DnneCurrentCompilerVersion), 4.0))">true</DnneCurrentCompilerVersionIsNotNewEnough>
+    </PropertyGroup>
+
+    <!-- If the Roslyn version is < 4.0, disable the source generators -->
+    <ItemGroup Condition ="'$(DnneCurrentCompilerVersionIsNotNewEnough)' == 'true'">
+      <Analyzer Remove="@(_DnneAnalyzer)"/>
+    </ItemGroup>
+
+    <!--
+      If the source generators are disabled, also emit a warning. This would've been produced by MSBuild itself as well, but
+      emitting this manually lets us customize the message to inform developers as to why exactly the generators have been
+      disabled, and that DNNE will not work at all unless a more up to date IDE or compiler version are used.
+    -->
+    <Warning Condition ="'$(DnneCurrentCompilerVersionIsNotNewEnough)' == 'true'"
+             Code="DNNECFG0001"
+             Text="The DNNE source generators have been disabled on the current configuration, as they need Roslyn 4.0 in order to work. DNNE requires the source generators to generate the additional supporting attribute types. To use them, a more up to date IDE (eg. VS 2022 17.0 or greater) or .NET SDK version (.NET 6.0.400 SDK or greater) is needed."/>  
+  </Target>
+  
+  <!-- Remove the analyzer if Roslyn is missing -->
+  <Target Name="_DnneRemoveAnalyzersForRosynNotFound"
+          Condition="'$(CSharpCoreTargetsPath)' == ''"
+          AfterTargets="ResolvePackageDependenciesForBuild;ResolveNuGetPackageAssets"
+          DependsOnTargets="_DnneGatherAnalyzers">
+
+    <!-- If no Roslyn assembly could be found, just remove the analyzer without emitting a warning -->
+    <ItemGroup>
+      <Analyzer Remove="@(_DnneAnalyzer)"/>
+    </ItemGroup>
+  </Target>
+
+  <!--
+    Inform the user if packages.config is used (as the analyzers and the source generators
+    won't work at all). Since packages.config can only be used with legacy-style projects,
+    the entire package can be skipped if an SDK-style project is used.
+  -->
+  <Target Name="_DnneWarnForPackagesConfigUse"
+          AfterTargets="ResolvePackageDependenciesForBuild;ResolveNuGetPackageAssets"
+          Condition="'$(UsingMicrosoftNetSDK)' != 'true'">
+
+    <!--
+      Check whether packages are being restored via packages.config, by reading the associated MSBuild property.
+      This happens when either the project style is using packages.config, or when explicitly requested.
+      See https://learn.microsoft.com/nuget/reference/msbuild-targets#restoring-packagereference-and-packagesconfig-projects-with-msbuild.
+    -->
+    <PropertyGroup>
+      <DnneIsTargetProjectUsingPackagesConfig Condition ="'$(RestorePackagesConfig)' == 'true' OR '$(RestoreProjectStyle)' == 'PackagesConfig'">true</DnneIsTargetProjectUsingPackagesConfig>
+    </PropertyGroup>
+
+    <!--
+      If no packages.config properties are set, also try to manually find the packages.config file.
+      This will be in the @(None) elements, if present. Doing so makes sure this works in builds as
+      well, since the implicit targets populating the properties above only run when restoring.
+      Since the packages.config file will always be in the root of the project, if present, we will
+      match with the full item spec (see https://learn.microsoft.com/nuget/reference/packages-config).
+    -->
+    <FindInList ItemSpecToFind="packages.config"
+                List="@(None)"
+                MatchFileNameOnly="false"
+                Condition="'$(DnneIsTargetProjectUsingPackagesConfig)' != 'true'">
+      <Output TaskParameter="ItemFound" PropertyName="DnnePackagesConfigFile"/>
+    </FindInList>
+
+    <!-- Make sure to update the MSBuild property if the above task did find something -->
+    <PropertyGroup>
+      <DnneIsTargetProjectUsingPackagesConfig Condition ="'$(DnnePackagesConfigFile)' == 'packages.config'">true</DnneIsTargetProjectUsingPackagesConfig>
+    </PropertyGroup>
+
+    <!-- Emit a warning in case packages.config is used -->
+    <Warning Condition ="'$(DnneIsTargetProjectUsingPackagesConfig)' == 'true'"
+             Code="DNNECFG0002"
+             Text="The DNNE source generators might not be loaded correctly, as the current project is using the packages.config setup to restore NuGet packages. Source generators require PackageReference to be used (either in a legacy-style or SDK-style .csproj project, both are supported as long as PackageReference is used)."/>
+  </Target>
+
+</Project>
