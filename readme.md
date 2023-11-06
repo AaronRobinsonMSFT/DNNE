@@ -83,7 +83,7 @@ struct some_data
 };
 ```
 
-The following attributes can be used to enable the above scenario. They are automatically generated into projects referencing DNNE, because DNNE provides no assembly to reference. If your build system or IDE does not support source generators (eg. you're using an older version than VS 2022, or .NET Framework with `packages.config`), you will have to define these types yourself:
+The following attributes can be used to enable the above scenario. They are automatically generated into projects referencing DNNE, because DNNE provides no assembly to reference. If your build system or IDE does not support source generators (e.g., you're using a version older than Visual Studio 2022, or .NET Framework with `packages.config`), you will have to define these types yourself:
 
 ```CSharp
 namespace DNNE
