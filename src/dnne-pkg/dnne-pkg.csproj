@@ -60,6 +60,8 @@
       <Net472Dest>$(BuildDest)net472/</Net472Dest>
       <ToolsDest>$(PseudoPackageRoot)tools/</ToolsDest>
       <PlatformDest>$(ToolsDest)platform/</PlatformDest>
+      <AnalyzersDest>$(PseudoPackageRoot)analyzers/</AnalyzersDest>
+      <CSAnalyzersDest>$(AnalyzersDest)dotnet/cs</CSAnalyzersDest>
     </PropertyGroup>
 
     <!-- Create the pseudo package directories -->
@@ -74,21 +76,14 @@
       <Net472Task Include="../msbuild/DNNE.BuildTasks/bin/$(Configuration)/net472/*" />
       <DnneGenFiles Include="../dnne-gen/bin/$(Configuration)/$(TargetFramework)/dnne-gen.dll;../dnne-gen/bin/$(Configuration)/$(TargetFramework)/dnne-gen.runtimeconfig.json" />
       <PlatformFiles Include="../platform/*" />
+      <CSAnalyzers Include="../dnne-analyzers/bin/$(Configuration)/netstandard2.0/dnne-analyzers.dll" />
     </ItemGroup>
     <Copy SourceFiles="@(BuildFiles)" DestinationFolder="$(BuildDest)" />
     <Copy SourceFiles="@(NetStandard21Task)" DestinationFolder="$(NetStandard21Dest)" />
     <Copy SourceFiles="@(Net472Task)" DestinationFolder="$(Net472Dest)" />
     <Copy SourceFiles="@(DnneGenFiles)" DestinationFolder="$(ToolsDest)" />
     <Copy SourceFiles="@(PlatformFiles)" DestinationFolder="$(PlatformDest)" />
-      
-    <!-- Pack the source generator from its output directory (source generators always use .NET Standard 2.0) -->
-    <ItemGroup>
-      <None
-        Include="../dnne-analyzers/bin/$(Configuration)/netstandard2.0/dnne-analyzers.dll"
-        PackagePath="analyzers/dotnet/cs"
-        Pack="true"
-        Visible="false" />
-    </ItemGroup>
+    <Copy SourceFiles="@(CSAnalyzers)" DestinationFolder="$(CSAnalyzersDest)" />
 
     <!-- Define the NuPkg content -->
     <ItemGroup>
