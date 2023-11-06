@@ -23,6 +23,8 @@ DNNE.targets
 
 -->
 <Project>
+  <Import Project="DNNE.Analyzers.targets"/>
+
   <PropertyGroup>
     <!-- Let the user define the name of the native binary -->
     <DnneNativeExportsBinaryName>$(DnneNativeBinaryName)</DnneNativeExportsBinaryName>

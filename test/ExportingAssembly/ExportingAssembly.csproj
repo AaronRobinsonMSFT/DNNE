@@ -4,6 +4,10 @@
     <AfterMicrosoftNETSdkTargets>$(PseudoPackage)build/DNNE.targets</AfterMicrosoftNETSdkTargets>
   </PropertyGroup>
 
+  <ItemGroup Condition="'$(TestNuPkg)' != 'true'">
+    <Analyzer Include="$(PseudoPackage)analyzers/dotnet/cs/dnne-analyzers.dll" />
+  </ItemGroup>
+
   <Import Condition="'$(TestNuPkg)' != 'true'" Project="$(PseudoPackage)build/DNNE.props" />
 
   <PropertyGroup>
@@ -14,6 +18,9 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!-- Disable warnings about missing comments -->
     <NoWarn>1591</NoWarn>
+
+    <!-- A source generator is supplying attributes, so always emit that asset. -->
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
 
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <DnneAddGeneratedBinaryToProject>true</DnneAddGeneratedBinaryToProject>
@@ -30,7 +37,6 @@
   </PropertyGroup>
 
   <ItemGroup Condition="'$(EnableDefaultCompileItems)' == 'false'">
-    <Compile Include="Dnne.Attributes.cs" />
     <Compile Include="IntExports.cs" />
   </ItemGroup>
 

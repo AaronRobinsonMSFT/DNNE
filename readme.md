@@ -83,7 +83,7 @@ struct some_data
 };
 ```
 
-The following attributes can be used to enable the above scenario. They must be defined by the project in order to be used - DNNE provides no assembly to reference. Refer to [`ExportingAssembly`](./test/ExportingAssembly/Dnne.Attributes.cs) for an example.
+The following attributes can be used to enable the above scenario. They are automatically generated into projects referencing DNNE, because DNNE provides no assembly to reference. If your build system or IDE does not support source generators (e.g., you're using a version older than Visual Studio 2022, or .NET Framework with `packages.config`), you will have to define these types yourself:
 
 ```CSharp
 namespace DNNE
@@ -98,7 +98,8 @@ namespace DNNE
     ///   - stdint.h
     ///   - dnne.h
     /// </remarks>
-    internal class C99DeclCodeAttribute : System.Attribute
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Parameter, Inherited = false)]
+    internal sealed class C99DeclCodeAttribute : System.Attribute
     {
         public C99DeclCodeAttribute(string code) { }
     }
@@ -109,7 +110,8 @@ namespace DNNE
     /// <remarks>
     /// The level of indirection should be included in the supplied string.
     /// </remarks>
-    internal class C99TypeAttribute : System.Attribute
+    [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.ReturnValue, Inherited = false)]
+    internal sealed class C99TypeAttribute : System.Attribute
     {
         public C99TypeAttribute(string code) { }
     }
@@ -196,12 +198,13 @@ In addition to providing declaration code directly, users can also supply `#incl
 
 ### Experimental attribute
 
-There are scenarios where updating `UnmanagedCallersOnlyAttribute` may take time. In order to enable independent development and experimentation, the `DNNE.ExportAttribute` is also respected. This type can be modified to suit one's needs and `dnne-gen` updated to respect those changes at source gen time. The user should define the following in their assembly. They can then modify the attribute and `dnne-gen` as needed.
+There are scenarios where updating `UnmanagedCallersOnlyAttribute` may take time. In order to enable independent development and experimentation, the `DNNE.ExportAttribute` is also respected. Like other DNNE attributes, this type is also automatically generated into projects referencing the DNNE package. This type can be modified to suit one's needs (by tweaking the generated source in `dnne-analyzers`) and `dnne-gen` updated as needed to respect those changes at source gen time.
 
 ``` CSharp
 namespace DNNE
 {
-    internal class ExportAttribute : Attribute
+    [AttributeUsage(AttributeTargets.Method, Inherited = false)]
+    internal sealed class ExportAttribute : Attribute
     {
         public ExportAttribute() { }
         public string EntryPoint { get; set; }

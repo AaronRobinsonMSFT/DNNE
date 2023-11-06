@@ -21,7 +21,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: '6.0.x'
+        dotnet-version: '7.0.x'
         include-prerelease: true
     - name: Build Product and Package
       run: dotnet build src/create_package.proj -c ${{ matrix.flavor }}
@@ -51,7 +51,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: '6.0.x'
+        dotnet-version: '7.0.x'
         include-prerelease: true
     - name: Build Product and Package
       run: dotnet build src\create_package.proj -c ${{ matrix.flavor }}
@@ -76,7 +76,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: '6.0.x'
+        dotnet-version: '7.0.x'
         include-prerelease: true
     - name: Build Product and Package
       run: dotnet build src/create_package.proj -c  ${{ matrix.flavor }}

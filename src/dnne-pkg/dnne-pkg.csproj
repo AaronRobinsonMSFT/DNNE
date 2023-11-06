@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
@@ -37,6 +37,9 @@
 
   <!-- Reference the project to trigger build -->
   <ItemGroup>
+    <ProjectReference  Include="../dnne-analyzers/dnne-analyzers.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
     <ProjectReference Include="../dnne-gen/dnne-gen.csproj">
       <Properties>TargetFramework=$(TargetFramework)</Properties>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
@@ -57,6 +60,8 @@
       <Net472Dest>$(BuildDest)net472/</Net472Dest>
       <ToolsDest>$(PseudoPackageRoot)tools/</ToolsDest>
       <PlatformDest>$(ToolsDest)platform/</PlatformDest>
+      <AnalyzersDest>$(PseudoPackageRoot)analyzers/</AnalyzersDest>
+      <CSAnalyzersDest>$(AnalyzersDest)dotnet/cs</CSAnalyzersDest>
     </PropertyGroup>
 
     <!-- Create the pseudo package directories -->
@@ -66,16 +71,19 @@
     <ItemGroup>
       <BuildFiles Include="../msbuild/DNNE.props" />
       <BuildFiles Include="../msbuild/DNNE.targets" />
+      <BuildFiles Include="../dnne-analyzers/DNNE.Analyzers.targets" />
       <NetStandard21Task Include="../msbuild/DNNE.BuildTasks/bin/$(Configuration)/netstandard2.1/*" />
       <Net472Task Include="../msbuild/DNNE.BuildTasks/bin/$(Configuration)/net472/*" />
       <DnneGenFiles Include="../dnne-gen/bin/$(Configuration)/$(TargetFramework)/dnne-gen.dll;../dnne-gen/bin/$(Configuration)/$(TargetFramework)/dnne-gen.runtimeconfig.json" />
       <PlatformFiles Include="../platform/*" />
+      <CSAnalyzers Include="../dnne-analyzers/bin/$(Configuration)/netstandard2.0/dnne-analyzers.dll" />
     </ItemGroup>
     <Copy SourceFiles="@(BuildFiles)" DestinationFolder="$(BuildDest)" />
     <Copy SourceFiles="@(NetStandard21Task)" DestinationFolder="$(NetStandard21Dest)" />
     <Copy SourceFiles="@(Net472Task)" DestinationFolder="$(Net472Dest)" />
     <Copy SourceFiles="@(DnneGenFiles)" DestinationFolder="$(ToolsDest)" />
     <Copy SourceFiles="@(PlatformFiles)" DestinationFolder="$(PlatformDest)" />
+    <Copy SourceFiles="@(CSAnalyzers)" DestinationFolder="$(CSAnalyzersDest)" />
 
     <!-- Define the NuPkg content -->
     <ItemGroup>
