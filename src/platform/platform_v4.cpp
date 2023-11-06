@@ -155,13 +155,32 @@ namespace
 
             // Release all other CLR resources
             (void)metahost->Release();
-            (void)runtimeInfo->Release();
 
             // Start the runtime
             hr = runtimeHost->Start();
             IF_FAILURE_RETURN_OR_ABORT(ret, failure_load_runtime, hr, &_prepare_lock);
 
-            (void)runtimeHost->GetCurrentAppDomainId(&_appDomainId);
+            hr = runtimeHost->GetCurrentAppDomainId(&_appDomainId);
+            if (hr != S_OK)
+            {
+                // This is a fallback attempt if the runtime is already activated
+                // and this thread isn't known to the runtime.
+                ICorRuntimeHost* oldRuntimeHost;
+                hr = runtimeInfo->GetInterface(CLSID_CorRuntimeHost, IID_ICorRuntimeHost, (void**)&oldRuntimeHost);
+                IF_FAILURE_RETURN_OR_ABORT(ret, failure_load_runtime, hr, &_prepare_lock);
+                IUnknown* pUnk2;
+                hr = oldRuntimeHost->GetDefaultDomain(&pUnk2);
+                IF_FAILURE_RETURN_OR_ABORT(ret, failure_load_runtime, hr, &_prepare_lock);
+
+                // Release resources.
+                (void)pUnk2->Release();
+                (void)oldRuntimeHost->Release();
+
+                hr = runtimeHost->GetCurrentAppDomainId(&_appDomainId);
+            }
+            (void)runtimeInfo->Release(); //can't release earlier incase backup failure
+
+            IF_FAILURE_RETURN_OR_ABORT(ret, failure_load_runtime, hr, &_prepare_lock);
             (void)runtimeHost->QueryInterface(__uuidof(ICLRPrivRuntime), (void**)&_host);
             (void)runtimeHost->Release();
             assert(_host != nullptr);
