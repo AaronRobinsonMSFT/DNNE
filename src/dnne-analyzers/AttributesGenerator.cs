@@ -22,6 +22,7 @@ public sealed class AttributesGenerator : IIncrementalGenerator
                     /// <summary>
                     /// Defines a C export. Can be used when updating to use <c>UnmanagedCallersOnlyAttribute</c> would take more time.
                     /// </summary>
+                    [global::System.AttributeUsage(global::System.AttributeTargets.Method, Inherited = false)]
                     internal sealed class ExportAttribute : global::System.Attribute
                     {
                         /// <summary>
@@ -49,6 +50,7 @@ public sealed class AttributesGenerator : IIncrementalGenerator
                     ///   <item><c>dnne.h</c></item>
                     /// </list>
                     /// </remarks>
+                    [global::System.AttributeUsage(global::System.AttributeTargets.Method | global::System.AttributeTargets.Parameter, Inherited = false)]
                     internal sealed class C99DeclCodeAttribute : global::System.Attribute
                     {
                         /// <summary>
@@ -66,6 +68,7 @@ public sealed class AttributesGenerator : IIncrementalGenerator
                     /// <remarks>
                     /// The level of indirection should be included in the supplied string.
                     /// </remarks>
+                    [global::System.AttributeUsage(global::System.AttributeTargets.Parameter | global::System.AttributeTargets.ReturnValue, Inherited = false)]
                     internal sealed class C99TypeAttribute : global::System.Attribute
                     {
                         /// <summary>
