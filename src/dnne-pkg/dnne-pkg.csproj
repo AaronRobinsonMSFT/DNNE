@@ -23,6 +23,7 @@
     <Description>Package used to generated native exports for .NET assemblies.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/AaronRobinsonMSFT/DNNE</PackageProjectUrl>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/AaronRobinsonMSFT/DNNE</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
     <PackageTags>pinvoke interop unmanagedcallersonly exports</PackageTags>
@@ -78,6 +79,7 @@
       <PlatformFiles Include="../platform/*" />
       <CSAnalyzers Include="../dnne-analyzers/bin/$(Configuration)/netstandard2.0/dnne-analyzers.dll" />
     </ItemGroup>
+    <Copy SourceFiles="../../$(PackageReadmeFile)" DestinationFolder="$(PseudoPackageRoot)" />
     <Copy SourceFiles="@(BuildFiles)" DestinationFolder="$(BuildDest)" />
     <Copy SourceFiles="@(NetStandard21Task)" DestinationFolder="$(NetStandard21Dest)" />
     <Copy SourceFiles="@(Net472Task)" DestinationFolder="$(Net472Dest)" />
