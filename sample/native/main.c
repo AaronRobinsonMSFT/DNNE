@@ -20,22 +20,22 @@
 //
 // This example demonstrates how to compile and consume a DNNE generated binary.
 // There are two broad categories.
-//   1) Load the generated native binary (for example, SampleNE.[dll|so|dylib]) via LoadLibrary()/dlopen()
+//   1) Load the generated native binary (for example, sample_native.[dll|so|dylib]) via LoadLibrary()/dlopen()
 //      and then lookup the export using GetProcAddress()/dlsym().
 //      See ./test/ImportingProcess for an example using CMake.
 //
-//   2) Include generated header file (for example, SampleNE.h) and link against the export lib on Windows
-//      (for example, SampleNE.lib) or the .so/dylib on Linux/macOS.
+//   2) Include generated header file (for example, sample_native.h) and link against the export lib on Windows
+//      (for example, sample_native.lib) or the .so/dylib on Linux/macOS.
 //      For example:
-//          Windows: cl.exe -I ..\bin\Debug\netX.0 main.c /link ..\bin\Debug\netX.0\SampleNE.lib /out:main.exe
-//          Linux/macOS: clang -I ../bin/Debug/netX.0 main.c -o main ../bin/Debug/netX.0/SampleNE.dylib
+//          Windows: cl.exe -I ..\bin\Debug\netX.0 main.c /link ..\bin\Debug\netX.0\sample_native.lib /out:main.exe
+//          Linux/macOS: clang -I ../bin/Debug/netX.0 main.c -o main ../bin/Debug/netX.0/sample_native.dylib
 //      The above commands will result in a compiled binary. The managed assembly and generated native binary
 //      will need to be copied locally in order to run the scenario.
 //
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <SampleNE.h>
+#include <sample_native.h>
 
 int main(int ac, char** av)
 {
