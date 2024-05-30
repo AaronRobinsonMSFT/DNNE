@@ -32,16 +32,3 @@ public class Exports
         return a;
     }
 }
-
-#if NETFRAMEWORK
-// The experimental DNNE attribute is needed when targeting
-// .NET Framework.
-namespace DNNE
-{
-    internal class ExportAttribute : Attribute
-    {
-        public ExportAttribute() { }
-        public string EntryPoint { get; set; }
-    }
-}
-#endif // NETFRAMEWORK
