@@ -19,7 +19,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '8.0.x'
         dotnet-quality: 'ga'
@@ -36,7 +36,7 @@ jobs:
         dotnet clean test/DNNE.UnitTests -c ${{ matrix.flavor }}
         dotnet test test/DNNE.UnitTests -c ${{ matrix.flavor }} -p:BuildWithGPP=true
     - name: Upload Package
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: package.${{ matrix.flavor }}
         path: src/dnne-pkg/bin/${{ matrix.flavor }}/DNNE.*.nupkg
@@ -49,7 +49,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '8.0.x'
         dotnet-quality: 'ga'
@@ -74,7 +74,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '8.0.x'
         dotnet-quality: 'ga'
