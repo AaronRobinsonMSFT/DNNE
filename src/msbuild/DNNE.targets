@@ -60,24 +60,32 @@ DNNE.targets
   </PropertyGroup>
 
   <ItemGroup>
-    <DnneGeneratedSourceFile Include="$(DnneGeneratedSourceFileName)" />
+    <DnneGeneratedSourceFile
+        Include="$(DnneGeneratedSourceFileName)"
+        Condition="'$(DnneGenerateExports)' == 'true'" />
 
-    <DnneNativeExportsInput Include="$(DnneCompiledToBinPath)">
-      <OutputFileName>$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt)</OutputFileName>
-    </DnneNativeExportsInput>
-
-    <DnneNativeExportsInput Include="$(DnneGeneratedSourceFileName)" >
+    <DnneNativeExportsInput
+        Include="$(DnneGeneratedSourceFileName)"
+        Condition="'$(DnneGenerateExports)' == 'true'" >
       <OutputFileName>$(DnneNativeExportsBinaryName).h</OutputFileName>
     </DnneNativeExportsInput>
 
-    <DnneNativeExportsInput Include="$(DnnePlatformSourcePath)/dnne.h" >
+    <DnneNativeExportsInput
+        Include="$(DnnePlatformSourcePath)/dnne.h"
+        Condition="'$(DnneGenerateExports)' == 'true'" >
       <OutputFileName>dnne.h</OutputFileName>
+    </DnneNativeExportsInput>
+
+    <DnneNativeExportsInput
+        Include="$(DnneCompiledToBinPath)"
+        Condition="'$(DnneBuildExports)' == 'true'" >
+      <OutputFileName>$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt)</OutputFileName>
     </DnneNativeExportsInput>
 
     <!-- Import libs exist only on the Windows platform -->
     <DnneNativeExportsInput
         Include="$(DnneGeneratedBinPath)/$(DnneNativeExportsBinaryName).lib"
-        Condition="$([MSBuild]::IsOsPlatform('Windows'))" >
+        Condition="$([MSBuild]::IsOsPlatform('Windows')) AND '$(DnneBuildExports)' == 'true'" >
       <OutputFileName>$(DnneNativeExportsBinaryName).lib</OutputFileName>
     </DnneNativeExportsInput>
 
@@ -87,7 +95,7 @@ DNNE.targets
 
   <Target
     Name="DnneGenerateNativeExports"
-    Condition="('$(DesignTimeBuild)' != 'true' OR '$(BuildingProject)' == 'true') AND '$(DnneSupportedTFM)' == 'true' AND '$(DnneBuildExports)' == 'true'"
+    Condition="('$(DesignTimeBuild)' != 'true' OR '$(BuildingProject)' == 'true') AND '$(DnneSupportedTFM)' == 'true' AND '$(DnneGenerateExports)' == 'true'"
     Inputs="@(IntermediateAssembly)"
     Outputs="@(DnneGeneratedSourceFile)"
     AfterTargets="CoreCompile">
@@ -190,6 +198,26 @@ DNNE.targets
 
     <!--
         Copy the binary to the project output directory.
+        The dnne-gen tool generates a C99 file that can act as both compilation unit and header.
+        Deploy the official 'dnne.h' header.
+    -->
+    <Copy
+        SourceFiles="@(DnneNativeExportsInput)"
+        DestinationFiles="@(DnneNativeExportsInput->'$(DnneNativeExportsBinaryPath)%(OutputFileName)')" />
+
+  </Target>
+
+  <!--
+      This target is used to deploy the header file assets when DNNE is _not_ building an export binary.
+  -->
+  <Target
+    Name="DnneCopyGeneratedHeaders"
+    Condition="('$(DesignTimeBuild)' != 'true' OR '$(BuildingProject)' == 'true') AND '$(DnneSupportedTFM)' == 'true' AND '$(DnneGenerateExports)' == 'true' AND '$(DnneBuildExports)' != 'true'"
+    Inputs="@(DnneNativeExportsInput)"
+    Outputs="@(DnneNativeExportsInput->'$(DnneNativeExportsBinaryPath)%(OutputFileName)')"
+    AfterTargets="DnneGenerateNativeExports" >
+
+    <!--
         The dnne-gen tool generates a C99 file that can act as both compilation unit and header.
         Deploy the official 'dnne.h' header.
     -->
