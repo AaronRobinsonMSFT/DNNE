@@ -10,7 +10,7 @@ This work is inspired by work in the [Xamarin][xamarin_embed_link], [CoreRT][cor
 
 ### Minimum
 
-* [.NET 6.0](https://dotnet.microsoft.com/download) or greater.
+* [.NET 8.0](https://dotnet.microsoft.com/download) or greater.
 * [C99](https://en.cppreference.com/w/c/language/history) compatible compiler.
 
 ### DNNE NuPkg Requirements
