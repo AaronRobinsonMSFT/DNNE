@@ -11,7 +11,7 @@
   <Import Condition="'$(TestNuPkg)' != 'true'" Project="$(PseudoPackage)build/DNNE.props" />
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0</TargetFrameworks>
+    <TargetFrameworks>net8.0</TargetFrameworks>
     <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('Windows'))">$(TargetFrameworks);net472</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RollForward>Major</RollForward>

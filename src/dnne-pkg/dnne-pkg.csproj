@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>dnne_pkg</RootNamespace>
     <IncludeBuildOutput>False</IncludeBuildOutput>
     <PseudoPackageDir>../pkg/</PseudoPackageDir>
