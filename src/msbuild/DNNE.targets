@@ -41,9 +41,10 @@ DNNE.targets
     <DnneGeneratedOutputPath Condition="'$(DnneBuildExports)' != 'true'">$(DnneNativeExportsBinaryPath)</DnneGeneratedOutputPath>
 
     <DnneGenRollForwardFlag Condition="'$(DnneGenRollForward)' != ''" >--roll-forward $(DnneGenRollForward)</DnneGenRollForwardFlag>
-    <_hostPath>$(DOTNET_HOST_PATH)</_hostPath>
-    <_hostPath Condition="'$(_hostPath)' == ''">dotnet</_hostPath> <!-- fallback when building with desktop msbuild -->
-    <DnneGenExe>"$(_hostPath)" $(DnneGenRollForwardFlag) "$(MSBuildThisFileDirectory)../tools/dnne-gen.dll"</DnneGenExe>
+    <!-- Provide a way to define the host path -->
+    <DnneDotnetHostPath>$(DOTNET_HOST_PATH)</DnneDotnetHostPath>
+    <DnneDotnetHostPath Condition="'$(DnneDotnetHostPath)' == ''">dotnet</DnneDotnetHostPath>
+    <DnneGenExe>"$(DnneDotnetHostPath)" $(DnneGenRollForwardFlag) "$(MSBuildThisFileDirectory)../tools/dnne-gen.dll"</DnneGenExe>
     <DnnePlatformSourcePath>$(MSBuildThisFileDirectory)../tools/platform</DnnePlatformSourcePath>
 
     <!-- Compute the extension for the export binary. -->
