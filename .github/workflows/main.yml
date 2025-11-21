@@ -26,7 +26,7 @@ jobs:
     - name: Build Product and Package
       run: dotnet build src/create_package.proj -c ${{ matrix.flavor }}
     - name: Unit Test Product
-      run: dotnet test test/DNNE.UnitTests -c ${{ matrix.flavor }}
+      run: dotnet test test/DNNE.UnitTests -bl:unittest.${{ matrix.flavor }}.binlog -c ${{ matrix.flavor }}
     - name: Unit Test Product (gcc)
       run: |
         dotnet clean test/DNNE.UnitTests -c ${{ matrix.flavor }}
@@ -35,6 +35,11 @@ jobs:
       run: |
         dotnet clean test/DNNE.UnitTests -c ${{ matrix.flavor }}
         dotnet test test/DNNE.UnitTests -c ${{ matrix.flavor }} -p:BuildWithGPP=true
+    - name: Upload Logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: unittest.${{ matrix.flavor }}.binlog
     - name: Upload Package
       uses: actions/upload-artifact@v4
       with:
