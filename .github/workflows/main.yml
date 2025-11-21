@@ -39,7 +39,7 @@ jobs:
       if: failure()
       uses: actions/upload-artifact@v4
       with:
-        name: unittest.${{ matrix.flavor }}.binlog
+        name: unittest.linux.${{ matrix.flavor }}.binlog
         path: unittest.${{ matrix.flavor }}.binlog
     - name: Upload Package
       uses: actions/upload-artifact@v4
@@ -75,7 +75,7 @@ jobs:
       if: failure()
       uses: actions/upload-artifact@v4
       with:
-        name: unittest.${{ matrix.flavor }}.binlog
+        name: unittest.windows.${{ matrix.flavor }}.binlog
         path: unittest.${{ matrix.flavor }}.binlog
 
   macos:
@@ -102,5 +102,5 @@ jobs:
       if: failure()
       uses: actions/upload-artifact@v4
       with:
-        name: unittest.${{ matrix.flavor }}.binlog
+        name: unittest.macos.${{ matrix.flavor }}.binlog
         path: unittest.${{ matrix.flavor }}.binlog
