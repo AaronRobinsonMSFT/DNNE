@@ -58,6 +58,14 @@ DNNE.targets
     <DnneSupportedTFM>true</DnneSupportedTFM>
     <DnneSupportedTFM Condition="!$([MSBuild]::IsOsPlatform('Windows')) AND '$(DnneIsNetFramework)' == 'true'">false</DnneSupportedTFM>
 
+    <!-- Define the target RID for the nethost needed during DNNE compilation -->
+    <DnneRuntimeIdentifier Condition="'$(DnneRuntimeIdentifier)'==''">$(RuntimeIdentifier)</DnneRuntimeIdentifier>
+    <DnneRuntimeIdentifier Condition="'$(DnneRuntimeIdentifier)'==''">$(NETCoreSdkRuntimeIdentifier)</DnneRuntimeIdentifier>
+
+    <!-- Explicitly define an AppHost RID to trigger AppHost package resolution and download
+      of the non SDK RID target. This is only set if build is needed. -->
+    <AppHostRuntimeIdentifier Condition="'$(DnneRuntimeIdentifier)'!='$(NETCoreSdkRuntimeIdentifier)' AND '$(DnneBuildExports)' == 'true'">$(DnneRuntimeIdentifier)</AppHostRuntimeIdentifier>
+
     <DnneCompiledToBinPath>$(DnneGeneratedBinPath)/$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt)</DnneCompiledToBinPath>
     <DnneGeneratedSourceFileName>$(DnneGeneratedOutputPath)/$(TargetName).g.c</DnneGeneratedSourceFileName>
   </PropertyGroup>
@@ -159,9 +167,7 @@ DNNE.targets
 
     <PropertyGroup>
       <DnneAssemblyName>$(TargetName)</DnneAssemblyName>
-      <DnneRuntimeIdentifier Condition="'$(DnneRuntimeIdentifier)'==''">$(RuntimeIdentifier)</DnneRuntimeIdentifier>
-      <DnneRuntimeIdentifier Condition="'$(DnneRuntimeIdentifier)'==''">$(NETCoreSdkRuntimeIdentifier)</DnneRuntimeIdentifier>
-      <DnneNetHostDir Condition="'$(DnneNetHostDir)' == ''">$(NetCoreTargetingPackRoot)/Microsoft.NETCore.App.Host.$(DnneRuntimeIdentifier)/$(BundledNETCoreAppPackageVersion)/runtimes/$(DnneRuntimeIdentifier)/native</DnneNetHostDir>
+      <DnneNetHostDir Condition="'$(DnneNetHostDir)' == ''">%(ResolvedAppHostPack.PackageDirectory)/runtimes/$(DnneRuntimeIdentifier)/native</DnneNetHostDir>
       <__DnneGeneratedSourceFile>@(DnneGeneratedSourceFile)</__DnneGeneratedSourceFile>
     </PropertyGroup>
 
