@@ -62,9 +62,9 @@ DNNE.targets
     <DnneRuntimeIdentifier Condition="'$(DnneRuntimeIdentifier)' == ''">$(RuntimeIdentifier)</DnneRuntimeIdentifier>
     <DnneRuntimeIdentifier Condition="'$(DnneRuntimeIdentifier)' == ''">$(NETCoreSdkRuntimeIdentifier)</DnneRuntimeIdentifier>
 
-    <!-- Explicitly define an AppHost RID to trigger AppHost package resolution and download
-      of the non SDK RID target. This is only set if build is needed. -->
-    <AppHostRuntimeIdentifier Condition="'$(DnneRuntimeIdentifier)' != '$(NETCoreSdkRuntimeIdentifier)' AND '$(DnneBuildExports)' == 'true'">$(DnneRuntimeIdentifier)</AppHostRuntimeIdentifier>
+    <!-- Explicitly define an AppHost RID to trigger AppHost package resolution and download.
+        This is only set if build is needed. -->
+    <AppHostRuntimeIdentifier Condition="'$(DnneBuildExports)' == 'true'">$(DnneRuntimeIdentifier)</AppHostRuntimeIdentifier>
 
     <DnneCompiledToBinPath>$(DnneGeneratedBinPath)/$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt)</DnneCompiledToBinPath>
     <DnneGeneratedSourceFileName>$(DnneGeneratedOutputPath)/$(TargetName).g.c</DnneGeneratedSourceFileName>
