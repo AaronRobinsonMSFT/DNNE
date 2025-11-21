@@ -35,8 +35,8 @@ jobs:
       run: |
         dotnet clean test/DNNE.UnitTests -c ${{ matrix.flavor }}
         dotnet test test/DNNE.UnitTests -c ${{ matrix.flavor }} -p:BuildWithGPP=true
-    - name: Upload Logs
-      if: always()
+    - name: Upload Build Logs
+      if: failure()
       uses: actions/upload-artifact@v4
       with:
         name: unittest.${{ matrix.flavor }}.binlog
@@ -66,11 +66,17 @@ jobs:
     - name: Unit Test Product (cpp)
       run: |
         dotnet clean test\DNNE.UnitTests -c ${{ matrix.flavor }}
-        dotnet test test\DNNE.UnitTests -c ${{ matrix.flavor }} -p:BuildAsCPPWithMSVC=true
+        dotnet test test\DNNE.UnitTests -bl:unittest.${{ matrix.flavor }}.binlog -c ${{ matrix.flavor }} -p:BuildAsCPPWithMSVC=true
     - name: Unit Test Product
       run: |
         dotnet clean test\DNNE.UnitTests -c ${{ matrix.flavor }}
         dotnet test test\DNNE.UnitTests -c ${{ matrix.flavor }}
+    - name: Upload Build Logs
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: unittest.${{ matrix.flavor }}.binlog
+        path: unittest.${{ matrix.flavor }}.binlog
 
   macos:
     runs-on: macos-latest
@@ -87,8 +93,14 @@ jobs:
     - name: Build Product and Package
       run: dotnet build src/create_package.proj -c  ${{ matrix.flavor }}
     - name: Unit Test Product
-      run: dotnet test test/DNNE.UnitTests -c  ${{ matrix.flavor }}
+      run: dotnet test test/DNNE.UnitTests -bl:unittest.${{ matrix.flavor }}.binlog -c  ${{ matrix.flavor }}
     - name: Unit Test Product (clang++)
       run: |
         dotnet clean test/DNNE.UnitTests -c ${{ matrix.flavor }}
         dotnet test test/DNNE.UnitTests -c  ${{ matrix.flavor }} -p:BuildWithClangPP=true
+    - name: Upload Build Logs
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: unittest.${{ matrix.flavor }}.binlog
+        path: unittest.${{ matrix.flavor }}.binlog
