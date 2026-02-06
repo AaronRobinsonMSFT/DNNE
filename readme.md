@@ -12,6 +12,7 @@ This work is inspired by work in the [Xamarin][xamarin_embed_link], [CoreRT][cor
 
 * [.NET 8.0](https://dotnet.microsoft.com/download) or greater.
 * [C99](https://en.cppreference.com/w/c/language/history) compatible compiler.
+* [Rust](https://www.rust-lang.org/tools/install) toolchain (optional, for Rust output).
 
 ### DNNE NuPkg Requirements
 
@@ -28,10 +29,12 @@ This work is inspired by work in the [Xamarin][xamarin_embed_link], [CoreRT][cor
 **macOS:**
 * [clang](https://clang.llvm.org/) compiler on the path.
 * Current platform and environment paths dictate native compilation support.
+* For Rust output: `cargo` and `rustc` on the path.
 
 **Linux:**
 * [clang](https://clang.llvm.org/) compiler on the path.
 * Current platform and environment paths dictate native compilation support.
+* For Rust output: `cargo` and `rustc` on the path.
 
 <a name="exporting"></a>
 
@@ -65,7 +68,7 @@ This work is inspired by work in the [Xamarin][xamarin_embed_link], [CoreRT][cor
 
 - The manner in which native exports are exposed is largely a function of the compiler being used. On the Windows platform an option exists to provide a [`.def`](https://docs.microsoft.com/cpp/build/reference/exports) file that permits customization of native exports. Users can provide a path to a `.def` file using the [`DnneWindowsExportsDef`](./src/msbuild/DNNE.props) MSBuild property. Note that if a `.def` file is provided no user functions will be exported other than those defined in the `.def` file.
 
-The [`Sample`](./sample) directory contains an example C# project consuming DNNE. There is also a [native example](./sample/native/main.c), written in C, for consumption options.
+The [`Sample`](./sample) directory contains an example C# project consuming DNNE. There is also a [native example](./sample/native/main.c), written in C, and a [Rust example](./test/ImportingProcess.Rust), for consumption options.
 
 ### Native code customization
 
@@ -151,6 +154,44 @@ In addition to providing declaration code directly, users can also supply `#incl
 [DNNE.C99DeclCode("#include <fancyapp.h>")]
 ```
 
+### Rust native code customization
+
+When targeting Rust output (`DnneLanguage=rust`), equivalent attributes are available for Rust type mappings. These are also automatically generated into projects referencing DNNE:
+
+```CSharp
+namespace DNNE
+{
+    /// <summary>
+    /// Provide Rust code to be defined in the generated Rust source file.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Parameter, Inherited = false)]
+    internal sealed class RustDeclCodeAttribute : System.Attribute
+    {
+        public RustDeclCodeAttribute(string code) { }
+    }
+
+    /// <summary>
+    /// Define the Rust type to be used.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.ReturnValue, Inherited = false)]
+    internal sealed class RustTypeAttribute : System.Attribute
+    {
+        public RustTypeAttribute(string code) { }
+    }
+}
+```
+
+For example:
+
+```CSharp
+[UnmanagedCallersOnly]
+[DNNE.RustDeclCode("#[repr(C)] pub struct Data { pub a: i32, pub b: i32, pub c: i32 }")]
+public static int ReturnDataMember([DNNE.RustType("Data")] Data d)
+{
+    return d.c;
+}
+```
+
 ## Generating a native binary using the DNNE NuPkg
 
 1) The DNNE NuPkg is published on [NuGet.org](https://www.nuget.org/packages/DNNE), but can also be built locally.
@@ -187,6 +228,54 @@ In addition to providing declaration code directly, users can also supply `#incl
 1) Deploy the native binary, managed assembly and associated `*.json` files for consumption from a native process.
     * Although not technically needed, the exports header and import library (Windows only) can be deployed with the native binary to make consumption easier.
     * Set the `DnneAddGeneratedBinaryToProject` MSBuild property to `true` in the managed project if it is desired to have the generated native binary flow with project references. Recall that the generated native binary is platform and architecture specific.
+
+### Generating a Rust crate
+
+DNNE can generate a [Cargo](https://doc.rust-lang.org/cargo/) crate instead of a compiled native binary. This allows Rust applications to consume .NET exports idiomatically as a crate dependency.
+
+1) Set the `DnneLanguage` MSBuild property to `rust`:
+
+    ```xml
+    <PropertyGroup>
+      <DnneLanguage>rust</DnneLanguage>
+    </PropertyGroup>
+    ```
+
+1) Build the managed project. Instead of compiling a native binary, DNNE generates a complete Cargo crate in the output directory under `dnne-rust-crate/`. The crate contains:
+    * `Cargo.toml` &mdash; package manifest with the assembly version and nethost link directives.
+    * `build.rs` &mdash; build script that configures library search paths and platform cfg flags.
+    * `lib.rs` &mdash; crate root that re-exports the `platform` and `exports` modules.
+    * `platform.rs` &mdash; Rust runtime hosting layer (equivalent of `platform.c`).
+    * `<AssemblyName>.g.rs` &mdash; generated export wrappers.
+
+1) In the consuming Rust project, add the generated crate as a path dependency in `Cargo.toml`:
+
+    ```toml
+    [dependencies]
+    # Update the path to match your build configuration and output directory.
+    myassembly-ne = { path = "../path/to/bin/Debug/net8.0/dnne-rust-crate" }
+    ```
+
+1) Use the exports from Rust:
+
+    ```rust
+    use myassembly_ne::platform;
+    use myassembly_ne::exports;
+
+    fn main() {
+        unsafe {
+            let result = platform::try_preload_runtime();
+            assert!(result.is_ok());
+
+            let value = exports::MyExport(27);
+            println!("Result: {}", value);
+        }
+    }
+    ```
+
+1) Build and run with `cargo build` / `cargo run`. The managed assembly and its `*.runtimeconfig.json` must be located next to the consuming binary at run time.
+
+See the [`ImportingProcess.Rust`](./test/ImportingProcess.Rust) project for a complete example.
 
 ### Generate manually
 
@@ -231,6 +320,8 @@ public class Exports
 
 ## Native API
 
+### C99
+
 The native API is defined in [`src/platform/dnne.h`](./src/platform/dnne.h).
 
 The `DNNE_ASSEMBLY_NAME` must be set during compilation to indicate the name of the managed assembly to load. The assembly name should not include the extension. For example, if the managed assembly on disk is called `ClassLib.dll`, the expected assembly name is `ClassLib`.
@@ -248,6 +339,21 @@ The `set_failure_callback()` function can be used prior to calling an export to 
 Failure to load the runtime or find an export results in the native library calling [`abort()`](https://en.cppreference.com/w/c/program/abort). See FAQs for how this can be overridden.
 
 The `preload_runtime()` or `try_preload_runtime()` functions can be used to preload the runtime. This may be desirable prior to calling an export to avoid the cost of loading the runtime during the first export dispatch.
+
+### Rust
+
+When targeting Rust output, the native API is provided by the `platform` module in the generated crate. See [`src/platform/platform.rs`](./src/platform/platform.rs).
+
+The `platform` module exposes the following public API:
+
+* `set_failure_callback(callback: Option<fn(FailureType, i32)>)` &mdash; Set a callback for runtime load or export discovery failures. Unlike the C99 API, the callback uses a safe `fn` pointer wrapped in `Option`.
+* `preload_runtime()` &mdash; Preload the .NET runtime. Calls `dnne_abort` on failure.
+* `try_preload_runtime() -> Result<(), i32>` &mdash; Preload the .NET runtime. Returns `Ok(())` on success or `Err(hresult)` on failure.
+* `get_callable_managed_function(...)` / `get_fast_callable_managed_function(...)` &mdash; Resolve managed method function pointers. Used internally by the generated export wrappers.
+
+The `FailureType` enum uses `#[repr(i32)]` with variants `Failure`, `HostFXRLoadFailure`, `HostFXRInitFailure`, `HostFXRGetDelegateFailure`, and `ManagedAssemblyLoadFailure`.
+
+Generated export functions are `pub unsafe fn` &mdash; idiomatic for Rust consumers (no `#[no_mangle]` or `extern "C"`).
 
 <a name="netfx"></a>
 
@@ -267,7 +373,7 @@ Due to how .NET Framework is being activated in DNNE, the managed DLL typically 
 * I am not using one of the supported compilers and hitting an issue of missing `intptr_t` type, what can I do?
   * The [C99 specification](https://en.cppreference.com/w/c/types/integer) indicates several types like `intptr_t` and `uintptr_t` are **optional**. It is recommended to override the computed type using `DNNE.C99TypeAttribute`. For example, `[DNNE.C99Type("void*")]` can be used to override an instance where `intptr_t` is generated by DNNE.
 * How can I use the same export name across platforms but with different implementations?
-  * The .NET platform provides [`SupportedOSPlatformAttribute`](https://docs.microsoft.com/dotnet/api/system.runtime.versioning.supportedosplatformattribute) and [`UnsupportedOSPlatformAttribute`](https://docs.microsoft.com/dotnet/api/system.runtime.versioning.unsupportedosplatformattribute) which are fully supported by DNNE. All .NET supplied platform names are recognized. It is also possible to define your own using `C99DeclCodeAttribute`. See [`MiscExport.cs`](./test/ExportingAssembly/MiscExports.cs) for an example.
+  * The .NET platform provides [`SupportedOSPlatformAttribute`](https://docs.microsoft.com/dotnet/api/system.runtime.versioning.supportedosplatformattribute) and [`UnsupportedOSPlatformAttribute`](https://docs.microsoft.com/dotnet/api/system.runtime.versioning.unsupportedosplatformattribute) which are fully supported by DNNE. All .NET supplied platform names are recognized. It is also possible to define your own using `C99DeclCodeAttribute` (or `RustDeclCodeAttribute` for Rust output). See [`MiscExport.cs`](./test/ExportingAssembly/MiscExports.cs) for an example. For C99 output, platform guards use `#ifdef`/`#ifndef` preprocessor directives. For Rust output, they use `#[cfg(...)]` attributes with flags passed via `build.rs`.
 * The consuming application for my .NET assembly fails catastrophically if .NET is not installed. How can I improve this UX?
   * For all non-recoverable scenarios, DNNE will call the standard C `abort()` function. This can be overridden by providing your own `dnne_abort()` function. See [`override.c`](./test/ExportingAssembly/override.c) in the [`ExportingAssembly`](./test/ExportingAssembly/ExportingAssembly.csproj) project for an example.
 * How can I add documentation to the exported function in the header file?
@@ -275,7 +381,8 @@ Due to how .NET Framework is being activated in DNNE, the managed DLL typically 
 * How can I keep my project cross-platform and generate a native binary for other platforms than the one I am currently building on?
   * The managed assembly will remain cross-platform but the native component is difficult to produce due to native tool chain constraints. In order to accomplish this on the native side, there would need to exist a C99 tool chain that can target any platform from any other platform. For example, the native tool chain could run on Windows but would need to provide a macOS SDK, linux SDK, and produce a macOS `.dylib` (Mach-O image) and/or a linux `.so` (ELF image). If such a native tool chain exists, it would be possible.
 * How can I consume the resulting native binary?
-  * There are two options: (1) manually load the binary and discover its exports or (2) directly link against the binary. Both options are discussed in the [native sample](./sample/native/main.c).
+  * For C99 output, there are two options: (1) manually load the binary and discover its exports or (2) directly link against the binary. Both options are discussed in the [native sample](./sample/native/main.c).
+  * For Rust output, add the generated crate as a path dependency in your `Cargo.toml` and call the exports directly. See [Generating a Rust crate](#generating-a-rust-crate) and the [Rust example](./test/ImportingProcess.Rust).
 * Along with exporting a function, I would also like to export data. Is there a way to export a static variable defined in .NET?
   * There is no simple way to do this starting from .NET. DNNE could be updated to read static metadata and then generate the appropriate export in C code, but that approach is complicated by how static data can be defined during module load in .NET. It is recommended instead to define the desired static data in a separate translation unit (`.c` file) and include it in the native build through the `DnneCompilerUserFlags` property.
 * Does DNNE support targeting .NET Framework?
