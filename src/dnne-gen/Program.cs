@@ -36,7 +36,7 @@ namespace DNNE
 
                 var parsed = Parse(args);
 
-                using (var g = new Generator(parsed.AssemblyPath, parsed.XmlDocFile))
+                using (var g = new Generator(parsed.AssemblyPath, parsed.XmlDocFile, parsed.Language))
                 {
                     if (string.IsNullOrWhiteSpace(parsed.OutputPath))
                     {
@@ -64,6 +64,7 @@ namespace DNNE
             public string AssemblyPath { get; set; }
             public string OutputPath { get; set; }
             public string XmlDocFile { get; set; }
+            public Generator.OutputLanguage Language { get; set; } = Generator.OutputLanguage.C99;
         }
 
         class ParseException : Exception
@@ -136,11 +137,26 @@ namespace DNNE
                         parsed.XmlDocFile = arg;
                         break;
                     }
+                    case "l":
+                    {
+                        if ((i + 1) == args.Length)
+                        {
+                            throw new ParseException(flag, "Missing language");
+                        }
+                        arg = args[++i];
+                        parsed.Language = arg.ToLowerInvariant() switch
+                        {
+                            "c99" => Generator.OutputLanguage.C99,
+                            "rust" => Generator.OutputLanguage.Rust,
+                            _ => throw new ParseException(arg, "Unsupported language."),
+                        };
+                        break;
+                    }
                     case "?":
                     case "help":
                     {
                         throw new ParseException(flag,
-@"Syntax: dnne-gen [-o <filepath> | -?]+ <path_to_assembly>
+@"Syntax: dnne-gen [-o <filepath> | -l <language> | -?]+ <path_to_assembly>
     -o <filepath>   : The output file for the generated source.
                         The last value is used. If file exists,
                         it will be overwritten.
@@ -150,6 +166,8 @@ namespace DNNE
                         This can be activated project properties.
                         If supplied the comments from the functions
                         are added to the output header file.
+    -l <language>   : The output language for generated source.
+                        Supported: c99 (default), rust.
     -?              : This message.
 ");
                     }

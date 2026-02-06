@@ -82,6 +82,44 @@ public sealed class AttributesGenerator : IIncrementalGenerator
                         {
                         }
                     }
+
+                    /// <summary>
+                    /// Provides Rust code to be defined early in the generated Rust source file.
+                    /// </summary>
+                    /// <remarks>
+                    /// This attribute is respected on an exported method declaration or on a parameter for the method.
+                    /// </remarks>
+                    [global::System.AttributeUsage(global::System.AttributeTargets.Method | global::System.AttributeTargets.Parameter, Inherited = false)]
+                    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+                    internal sealed class RustDeclCodeAttribute : global::System.Attribute
+                    {
+                        /// <summary>
+                        /// Creates a new <see cref="RustDeclCodeAttribute"/> instance with the specified parameters.
+                        /// </summary>
+                        /// <param name="code">The Rust code to be defined in the generated Rust source file.</param>
+                        public RustDeclCodeAttribute(string code)
+                        {
+                        }
+                    }
+
+                    /// <summary>
+                    /// Defines the Rust type to be used.
+                    /// </summary>
+                    /// <remarks>
+                    /// The level of indirection should be included in the supplied string.
+                    /// </remarks>
+                    [global::System.AttributeUsage(global::System.AttributeTargets.Parameter | global::System.AttributeTargets.ReturnValue, Inherited = false)]
+                    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+                    internal sealed class RustTypeAttribute : global::System.Attribute
+                    {
+                        /// <summary>
+                        /// Creates a new <see cref="RustTypeAttribute"/> instance with the specified parameters.
+                        /// </summary>
+                        /// <param name="code">The Rust type to be used.</param>
+                        public RustTypeAttribute(string code)
+                        {
+                        }
+                    }
                 }
                 """);
         });

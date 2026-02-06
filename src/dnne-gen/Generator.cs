@@ -48,6 +48,12 @@ namespace DNNE
 
     class Generator : IDisposable
     {
+        public enum OutputLanguage
+        {
+            C99,
+            Rust,
+        }
+
         private bool isDisposed = false;
 
         private readonly ICustomAttributeTypeProvider<KnownType> typeResolver = new TypeResolver();
@@ -58,9 +64,11 @@ namespace DNNE
         private readonly Scope moduleScope;
         private readonly IDictionary<TypeDefinitionHandle, Scope> typePlatformScenarios = new Dictionary<TypeDefinitionHandle, Scope>();
         private readonly Dictionary<string, string> loadedXmlDocumentation;
+        private readonly OutputLanguage language;
 
-        public Generator(string validAssemblyPath, string xmlDocFile)
+        public Generator(string validAssemblyPath, string xmlDocFile, OutputLanguage language)
         {
+            this.language = language;
             this.assemblyPath = validAssemblyPath;
             this.peReader = new PEReader(File.OpenRead(this.assemblyPath));
             this.mdReader = this.peReader.GetMetadataReader(MetadataReaderOptions.None);
@@ -120,9 +128,9 @@ namespace DNNE
                     if (currAttrType == ExportType.None)
                     {
                         // Check if method has other supported attributes.
-                        if (this.TryGetC99DeclCodeAttributeValue(customAttr, out string c99Decl))
+                        if (this.TryGetLanguageDeclCodeAttributeValue(customAttr, out string declCode))
                         {
-                            additionalCodeStatements.Add(c99Decl);
+                            additionalCodeStatements.Add(declCode);
                         }
                         else if (this.TryGetOSPlatformAttributeValue(customAttr, out bool isSupported, out OSPlatform scen))
                         {
@@ -219,11 +227,18 @@ namespace DNNE
                 MethodSignature<string> signature;
                 try
                 {
-                    var typeProvider = new C99TypeProvider();
-
-                    signature = methodDef.DecodeSignature(typeProvider, null);
-
-                    typeProvider.ThrowIfUnsupportedLastPrimitiveType();
+                    if (this.language == OutputLanguage.Rust)
+                    {
+                        var typeProvider = new RustTypeProvider();
+                        signature = methodDef.DecodeSignature(typeProvider, null);
+                        typeProvider.ThrowIfUnsupportedLastPrimitiveType();
+                    }
+                    else
+                    {
+                        var typeProvider = new C99TypeProvider();
+                        signature = methodDef.DecodeSignature(typeProvider, null);
+                        typeProvider.ThrowIfUnsupportedLastPrimitiveType();
+                    }
                 }
                 catch (NotSupportedTypeException nste)
                 {
@@ -255,27 +270,38 @@ namespace DNNE
                     foreach (var attr in param.GetCustomAttributes())
                     {
                         CustomAttribute custAttr = this.mdReader.GetCustomAttribute(attr);
-                        if (TryGetC99TypeAttributeValue(custAttr, out string c99Type))
+                        if (TryGetLanguageTypeAttributeValue(custAttr, out string typeOverride))
                         {
-                            // Overridden type defined.
                             if (argIndex == ReturnIndex)
                             {
-                                returnType = c99Type;
+                                returnType = typeOverride;
                             }
                             else
                             {
                                 Debug.Assert(argIndex >= 0);
-                                argumentTypes[argIndex] = c99Type;
+                                argumentTypes[argIndex] = typeOverride;
                             }
                         }
-                        else if (TryGetC99DeclCodeAttributeValue(custAttr, out string c99Decl))
+                        else if (TryGetLanguageDeclCodeAttributeValue(custAttr, out string declCode))
                         {
-                            additionalCodeStatements.Add(c99Decl);
+                            additionalCodeStatements.Add(declCode);
                         }
                     }
                 }
 
                 var xmlDoc = FindXmlDoc(enclosingTypeName.Replace('+', '.') + Type.Delimiter + managedMethodName, argumentTypes);
+
+                // In Rust mode, skip exports that have non-primitive value types
+                // without a type override (indicated by the "/* SUPPLY TYPE */" placeholder).
+                if (this.language == OutputLanguage.Rust)
+                {
+                    bool hasUnsuppliedType = returnType.Contains("/* SUPPLY TYPE */")
+                        || argumentTypes.Any(t => t.Contains("/* SUPPLY TYPE */"));
+                    if (hasUnsuppliedType)
+                    {
+                        continue;
+                    }
+                }
 
                 exportedMethods.Add(new ExportedMethod()
                 {
@@ -308,7 +334,14 @@ namespace DNNE
             }
 
             string assemblyName = this.mdReader.GetString(this.mdReader.GetAssemblyDefinition().Name);
-            EmitC99(outputStream, assemblyName, exportedMethods, additionalCodeStatements);
+            if (this.language == OutputLanguage.Rust)
+            {
+                EmitRust(outputStream, assemblyName, exportedMethods, additionalCodeStatements);
+            }
+            else
+            {
+                EmitC99(outputStream, assemblyName, exportedMethods, additionalCodeStatements);
+            }
         }
 
         private static Dictionary<string, string> LoadXmlDocumentation(string xmlDocumentation)
@@ -409,20 +442,22 @@ namespace DNNE
             return name;
         }
 
-        private bool TryGetC99TypeAttributeValue(CustomAttribute attribute, out string c99Type)
+        private bool TryGetLanguageTypeAttributeValue(CustomAttribute attribute, out string typeValue)
         {
-            c99Type = IsAttributeType(this.mdReader, attribute, "DNNE", "C99TypeAttribute")
+            string attrName = this.language == OutputLanguage.Rust ? "RustTypeAttribute" : "C99TypeAttribute";
+            typeValue = IsAttributeType(this.mdReader, attribute, "DNNE", attrName)
                 ? GetFirstFixedArgAsStringValue(this.typeResolver, attribute)
                 : null;
-            return !string.IsNullOrEmpty(c99Type);
+            return !string.IsNullOrEmpty(typeValue);
         }
 
-        private bool TryGetC99DeclCodeAttributeValue(CustomAttribute attribute, out string c99Decl)
+        private bool TryGetLanguageDeclCodeAttributeValue(CustomAttribute attribute, out string declCode)
         {
-            c99Decl = IsAttributeType(this.mdReader, attribute, "DNNE", "C99DeclCodeAttribute")
+            string attrName = this.language == OutputLanguage.Rust ? "RustDeclCodeAttribute" : "C99DeclCodeAttribute";
+            declCode = IsAttributeType(this.mdReader, attribute, "DNNE", attrName)
                 ? GetFirstFixedArgAsStringValue(this.typeResolver, attribute)
                 : null;
-            return !string.IsNullOrEmpty(c99Decl);
+            return !string.IsNullOrEmpty(declCode);
         }
 
         private Scope GetTypeOSPlatformScope(MethodDefinition methodDef)
@@ -758,6 +793,141 @@ $@"#endif // {generatedHeaderDefine}
 {implStream}");
         }
 
+        private static void EmitRust(TextWriter outputStream, string assemblyName, IEnumerable<ExportedMethod> exports, IEnumerable<string> additionalCodeStatements)
+        {
+            // Emit preamble
+            outputStream.WriteLine(
+$@"//
+// Auto-generated by dnne-gen
+//
+// .NET Assembly: {assemblyName}
+//
+
+#![allow(non_snake_case)]
+#![allow(non_upper_case_globals)]
+
+use core::ffi::c_void;
+use core::sync::atomic::{{AtomicPtr, Ordering}};
+
+//
+// Forward declarations
+//
+
+use crate::platform::get_callable_managed_function;
+use crate::platform::get_fast_callable_managed_function;");
+
+            // Emit additional code statements as comments
+            if (additionalCodeStatements.Any())
+            {
+                outputStream.WriteLine(
+$@"
+//
+// Additional code provided by user
+//");
+                foreach (var stmt in additionalCodeStatements)
+                {
+                    outputStream.WriteLine(stmt);
+                }
+            }
+
+            // Emit string table
+            outputStream.WriteLine(
+@"
+//
+// String constants
+//");
+            int count = 1;
+            var map = new StringDictionary();
+            foreach (var method in exports)
+            {
+                if (map.ContainsKey(method.EnclosingTypeName))
+                {
+                    continue;
+                }
+
+                string id = $"T{count++}_NAME";
+                var typeNameWithAssembly = $"{method.EnclosingTypeName}, {assemblyName}";
+                outputStream.WriteLine(
+$@"
+const {id}: &[u8] = b""{typeNameWithAssembly}\0"";");
+                map.Add(method.EnclosingTypeName, id);
+            }
+
+            // Emit exports
+            outputStream.WriteLine(
+@"
+//
+// Exports
+//");
+            foreach (var export in exports)
+            {
+                string cfgGuard = GetRustPlatformCfg(export.Platforms);
+                string cfgLine = string.IsNullOrEmpty(cfgGuard) ? "" : $"{cfgGuard}\n";
+
+                // Create declaration and call signatures.
+                string delim = "";
+                var declsig = new StringBuilder();
+                var callsig = new StringBuilder();
+                var typesig = new StringBuilder();
+                for (int i = 0; i < export.ArgumentTypes.Length; ++i)
+                {
+                    var argName = export.ArgumentNames[i] ?? $"arg{i}";
+                    declsig.AppendFormat("{0}{1}: {2}", delim, argName, export.ArgumentTypes[i]);
+                    callsig.AppendFormat("{0}{1}", delim, argName);
+                    typesig.AppendFormat("{0}{1}", delim, export.ArgumentTypes[i]);
+                    delim = ", ";
+                }
+
+                // Return type handling
+                bool isVoid = export.ReturnType == "c_void";
+                string returnAnnotation = isVoid ? "" : $" -> {export.ReturnType}";
+                string fnReturnAnnotation = isVoid ? "" : $" -> {export.ReturnType}";
+
+                string callConv = GetRustCallConv(export.CallingConvention);
+
+                string classNameConstant = map[export.EnclosingTypeName];
+                Debug.Assert(!string.IsNullOrEmpty(classNameConstant));
+
+                // Generate the acquire managed function based on the export type.
+                string acquireManagedFunction;
+                if (export.Type == ExportType.Export)
+                {
+                    var delegateType = $"{export.EnclosingTypeName}+{export.MethodName}Delegate, {assemblyName}";
+                    acquireManagedFunction =
+$@"        let method_name = b""{export.MethodName}\0"".as_ptr();
+        let delegate_type = b""{delegateType}\0"".as_ptr();
+        let new_ptr = get_callable_managed_function({classNameConstant}.as_ptr(), method_name, delegate_type);";
+                }
+                else
+                {
+                    Debug.Assert(export.Type == ExportType.UnmanagedCallersOnly);
+                    acquireManagedFunction =
+$@"        let method_name = b""{export.MethodName}\0"".as_ptr();
+        let new_ptr = get_fast_callable_managed_function({classNameConstant}.as_ptr(), method_name);";
+                }
+
+                string ptrName = $"{export.ExportName}_ptr";
+
+                // Emit export
+                outputStream.WriteLine(
+$@"
+// Computed from {export.EnclosingTypeName}{Type.Delimiter}{export.MethodName}{export.XmlDoc}
+{cfgLine}static {ptrName}: AtomicPtr<c_void> = AtomicPtr::new(core::ptr::null_mut());
+
+{cfgLine}pub unsafe fn {export.ExportName}({declsig}){returnAnnotation} {{
+    let ptr = {ptrName}.load(Ordering::Acquire);
+    let f: unsafe {callConv} fn({typesig}){fnReturnAnnotation} = if !ptr.is_null() {{
+        core::mem::transmute(ptr)
+    }} else {{
+{acquireManagedFunction}
+        {ptrName}.store(new_ptr, Ordering::Release);
+        core::mem::transmute(new_ptr)
+    }};
+    f({callsig})
+}}");
+            }
+        }
+
         private static (string preguard, string postguard) GetC99PlatformGuards(in PlatformSupport platformSupport)
         {
             var pre = new StringBuilder();
@@ -839,6 +1009,77 @@ $@"#endif // {generatedHeaderDefine}
             }
         }
 
+        private static string GetRustPlatformCfg(in PlatformSupport platformSupport)
+        {
+            var conditions = new List<string>();
+            AddRustCfgConditions(platformSupport.Assembly, conditions);
+            AddRustCfgConditions(platformSupport.Module, conditions);
+            AddRustCfgConditions(platformSupport.Type, conditions);
+            AddRustCfgConditions(platformSupport.Method, conditions);
+
+            if (conditions.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            if (conditions.Count == 1)
+            {
+                return $"#[cfg({conditions[0]})]";
+            }
+
+            return $"#[cfg(all({string.Join(", ", conditions)}))]";
+        }
+
+        private static void AddRustCfgConditions(in Scope scope, List<string> conditions)
+        {
+            var supportList = scope.Support?.ToList() ?? new List<OSPlatform>();
+            var noSupportList = scope.NoSupport?.ToList() ?? new List<OSPlatform>();
+
+            if (supportList.Count > 0)
+            {
+                var supported = supportList.Select(MapOSPlatformToRustCfg).ToList();
+                if (supported.Count == 1)
+                {
+                    conditions.Add(supported[0]);
+                }
+                else
+                {
+                    conditions.Add($"any({string.Join(", ", supported)})");
+                }
+            }
+
+            if (noSupportList.Count > 0)
+            {
+                var unsupported = noSupportList.Select(MapOSPlatformToRustCfg).ToList();
+                if (unsupported.Count == 1)
+                {
+                    conditions.Add($"not({unsupported[0]})");
+                }
+                else
+                {
+                    conditions.Add($"not(any({string.Join(", ", unsupported)}))");
+                }
+            }
+        }
+
+        private static string MapOSPlatformToRustCfg(OSPlatform os)
+        {
+            var name = os.ToString();
+            if (name.StartsWith("DNNE_"))
+            {
+                name = name.Substring(5);
+            }
+
+            return name.ToUpperInvariant() switch
+            {
+                "WINDOWS" => @"target_os = ""windows""",
+                "OSX" => @"target_os = ""macos""",
+                "LINUX" => @"target_os = ""linux""",
+                "FREEBSD" => @"target_os = ""freebsd""",
+                _ => $@"target_os = ""{name.ToLowerInvariant()}""",
+            };
+        }
+
         private static string GetC99CallConv(SignatureCallingConvention callConv)
         {
             return callConv switch
@@ -848,6 +1089,19 @@ $@"#endif // {generatedHeaderDefine}
                 SignatureCallingConvention.ThisCall => "DNNE_CALLTYPE_THISCALL",
                 SignatureCallingConvention.FastCall => "DNNE_CALLTYPE_FASTCALL",
                 SignatureCallingConvention.Unmanaged => "DNNE_CALLTYPE",
+                _ => throw new NotSupportedException($"Unknown CallingConvention: {callConv}"),
+            };
+        }
+
+        private static string GetRustCallConv(SignatureCallingConvention callConv)
+        {
+            return callConv switch
+            {
+                SignatureCallingConvention.CDecl => @"extern ""C""",
+                SignatureCallingConvention.StdCall => @"extern ""stdcall""",
+                SignatureCallingConvention.ThisCall => @"extern ""thiscall""",
+                SignatureCallingConvention.FastCall => @"extern ""fastcall""",
+                SignatureCallingConvention.Unmanaged => @"extern ""C""",
                 _ => throw new NotSupportedException($"Unknown CallingConvention: {callConv}"),
             };
         }
@@ -1108,6 +1362,144 @@ $@"#endif // {generatedHeaderDefine}
             private static string SupportNonPrimitiveTypes(byte rawTypeKind)
             {
                 // See https://docs.microsoft.com/dotnet/framework/unmanaged-api/metadata/corelementtype-enumeration
+                const byte ELEMENT_TYPE_VALUETYPE = 0x11;
+                if (rawTypeKind == ELEMENT_TYPE_VALUETYPE)
+                {
+                    return "/* SUPPLY TYPE */";
+                }
+
+                throw new NotSupportedTypeException("Non-primitive");
+            }
+        }
+
+        private class RustTypeProvider : ISignatureTypeProvider<string, UnusedGenericContext>
+        {
+            PrimitiveTypeCode? lastUnsupportedPrimitiveType;
+
+            public string GetArrayType(string elementType, ArrayShape shape)
+            {
+                throw new NotSupportedTypeException(elementType);
+            }
+
+            public string GetByReferenceType(string elementType)
+            {
+                throw new NotSupportedTypeException(elementType);
+            }
+
+            public string GetFunctionPointerType(MethodSignature<string> signature)
+            {
+                // Define the native function pointer type in a comment.
+                string args = this.GetPrimitiveType(PrimitiveTypeCode.Void);
+                if (signature.ParameterTypes.Length != 0)
+                {
+                    var argsBuffer = new StringBuilder();
+                    var delim = "";
+                    foreach (var type in signature.ParameterTypes)
+                    {
+                        argsBuffer.Append(delim);
+                        argsBuffer.Append(type);
+                        delim = ", ";
+                    }
+
+                    args = argsBuffer.ToString();
+                }
+
+                var callingConvention = GetRustCallConv(signature.Header.CallingConvention);
+                var retType = signature.ReturnType == "c_void" ? "()" : signature.ReturnType;
+                var typeComment = $"/* unsafe {callingConvention} fn({args}) -> {retType} */ ";
+                return typeComment + this.GetPrimitiveType(PrimitiveTypeCode.IntPtr);
+            }
+
+            public string GetGenericInstantiation(string genericType, ImmutableArray<string> typeArguments)
+            {
+                throw new NotSupportedTypeException($"Generic - {genericType}");
+            }
+
+            public string GetGenericMethodParameter(UnusedGenericContext genericContext, int index)
+            {
+                throw new NotSupportedTypeException($"Generic - {index}");
+            }
+
+            public string GetGenericTypeParameter(UnusedGenericContext genericContext, int index)
+            {
+                throw new NotSupportedTypeException($"Generic - {index}");
+            }
+
+            public string GetModifiedType(string modifier, string unmodifiedType, bool isRequired)
+            {
+                throw new NotSupportedTypeException($"{modifier} {unmodifiedType}");
+            }
+
+            public string GetPinnedType(string elementType)
+            {
+                throw new NotSupportedTypeException($"Pinned - {elementType}");
+            }
+
+            public string GetPointerType(string elementType)
+            {
+                this.lastUnsupportedPrimitiveType = null;
+                return "*mut " + elementType;
+            }
+
+            public string GetPrimitiveType(PrimitiveTypeCode typeCode)
+            {
+                ThrowIfUnsupportedLastPrimitiveType();
+
+                if (typeCode == PrimitiveTypeCode.Char)
+                {
+                    this.lastUnsupportedPrimitiveType = typeCode;
+                    return "u16";
+                }
+
+                return typeCode switch
+                {
+                    PrimitiveTypeCode.SByte => "i8",
+                    PrimitiveTypeCode.Byte => "u8",
+                    PrimitiveTypeCode.Int16 => "i16",
+                    PrimitiveTypeCode.UInt16 => "u16",
+                    PrimitiveTypeCode.Int32 => "i32",
+                    PrimitiveTypeCode.UInt32 => "u32",
+                    PrimitiveTypeCode.Int64 => "i64",
+                    PrimitiveTypeCode.UInt64 => "u64",
+                    PrimitiveTypeCode.IntPtr => "isize",
+                    PrimitiveTypeCode.UIntPtr => "usize",
+                    PrimitiveTypeCode.Single => "f32",
+                    PrimitiveTypeCode.Double => "f64",
+                    PrimitiveTypeCode.Void => "c_void",
+                    _ => throw new NotSupportedTypeException(typeCode.ToString())
+                };
+            }
+
+            public void ThrowIfUnsupportedLastPrimitiveType()
+            {
+                if (this.lastUnsupportedPrimitiveType.HasValue)
+                {
+                    throw new NotSupportedTypeException(this.lastUnsupportedPrimitiveType.Value.ToString());
+                }
+            }
+
+            public string GetSZArrayType(string elementType)
+            {
+                throw new NotSupportedTypeException($"Array - {elementType}");
+            }
+
+            public string GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
+            {
+                return SupportNonPrimitiveTypes(rawTypeKind);
+            }
+
+            public string GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
+            {
+                return SupportNonPrimitiveTypes(rawTypeKind);
+            }
+
+            public string GetTypeFromSpecification(MetadataReader reader, UnusedGenericContext genericContext, TypeSpecificationHandle handle, byte rawTypeKind)
+            {
+                return SupportNonPrimitiveTypes(rawTypeKind);
+            }
+
+            private static string SupportNonPrimitiveTypes(byte rawTypeKind)
+            {
                 const byte ELEMENT_TYPE_VALUETYPE = 0x11;
                 if (rawTypeKind == ELEMENT_TYPE_VALUETYPE)
                 {

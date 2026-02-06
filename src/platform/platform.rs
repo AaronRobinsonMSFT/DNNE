@@ -1,0 +1,653 @@
+// Copyright 2026 Aaron R Robinson
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is furnished
+// to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+// INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+// PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+// HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+// SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+//! DNNE Platform Layer for Rust
+//!
+//! Provides .NET runtime hosting via nethost/hostfxr.
+//! This is the Rust equivalent of platform.c, targeting .NET (Core) only.
+//!
+//! The assembly name must be provided at compile time via the
+//! `DNNE_ASSEMBLY_NAME` environment variable:
+//!   DNNE_ASSEMBLY_NAME=MyAssembly rustc --crate-type cdylib platform.rs ...
+
+#![allow(non_snake_case)]
+#![allow(non_upper_case_globals)]
+#![allow(non_camel_case_types)]
+
+use core::ffi::c_void;
+use std::sync::atomic::{AtomicPtr, Ordering};
+use std::sync::Mutex;
+
+// -----------------------------------------------------------------------
+// Constants
+// -----------------------------------------------------------------------
+
+const DNNE_SUCCESS: i32 = 0;
+const MAX_PATH: usize = 512;
+
+// Assembly name — set at compile time via environment variable.
+const ASSEMBLY_NAME: &str = env!("DNNE_ASSEMBLY_NAME");
+
+// -----------------------------------------------------------------------
+// Public types
+// -----------------------------------------------------------------------
+
+#[derive(Clone, Copy, Debug)]
+#[repr(i32)]
+pub enum FailureType {
+    LoadRuntime = 1,
+    LoadExport = 2,
+}
+
+pub type FailureFn = Option<fn(FailureType, i32)>;
+
+// -----------------------------------------------------------------------
+// Platform character type
+//
+// On Windows the hosting APIs use wchar_t (u16).
+// On Unix they use char (u8).
+// -----------------------------------------------------------------------
+
+#[cfg(windows)]
+type CharT = u16;
+#[cfg(not(windows))]
+type CharT = u8;
+
+// -----------------------------------------------------------------------
+// hostfxr / coreclr types (mirrors the C headers)
+// -----------------------------------------------------------------------
+
+type HostfxrHandle = *mut c_void;
+
+#[repr(C)]
+enum HostfxrDelegateType {
+    _ComActivation,
+    _LoadInMemoryAssembly,
+    _WinrtActivation,
+    _ComRegister,
+    _ComUnregister,
+    LoadAssemblyAndGetFunctionPointer,
+}
+
+#[repr(C)]
+struct GetHostfxrParameters {
+    size: usize,
+    assembly_path: *const CharT,
+    dotnet_root: *const CharT,
+}
+
+type HostfxrInitializeForRuntimeConfigFn = unsafe extern "C" fn(
+    runtime_config_path: *const CharT,
+    parameters: *const c_void, // nullable
+    host_context_handle: *mut HostfxrHandle,
+) -> i32;
+
+type HostfxrGetRuntimeDelegateFn = unsafe extern "C" fn(
+    host_context_handle: HostfxrHandle,
+    r#type: HostfxrDelegateType,
+    delegate: *mut *mut c_void,
+) -> i32;
+
+type HostfxrCloseFn = unsafe extern "C" fn(
+    host_context_handle: HostfxrHandle,
+) -> i32;
+
+/// Sentinel value indicating an [UnmanagedCallersOnly] method.
+const UNMANAGEDCALLERSONLY_METHOD: usize = usize::MAX;
+
+type LoadAssemblyAndGetFunctionPointerFn = unsafe extern "C" fn(
+    assembly_path: *const CharT,
+    type_name: *const CharT,
+    method_name: *const CharT,
+    delegate_type_name: *const CharT,
+    reserved: *mut c_void,
+    delegate: *mut *mut c_void,
+) -> i32;
+
+// -----------------------------------------------------------------------
+// nethost extern
+// -----------------------------------------------------------------------
+
+extern "C" {
+    fn get_hostfxr_path(
+        buffer: *mut CharT,
+        buffer_size: *mut usize,
+        parameters: *const GetHostfxrParameters,
+    ) -> i32;
+}
+
+// -----------------------------------------------------------------------
+// Platform-specific: library loading, image path, error state
+// -----------------------------------------------------------------------
+
+#[cfg(not(windows))]
+mod sys {
+    use core::ffi::c_void;
+
+    const RTLD_LAZY: i32 = 0x1;
+
+    extern "C" {
+        fn dlopen(filename: *const u8, flags: i32) -> *mut c_void;
+        fn dlsym(handle: *mut c_void, symbol: *const u8) -> *mut c_void;
+        fn dladdr(addr: *const c_void, info: *mut DlInfo) -> i32;
+        fn strlen(s: *const u8) -> usize;
+
+        // errno access
+        #[cfg(target_os = "linux")]
+        fn __errno_location() -> *mut i32;
+        #[cfg(target_os = "macos")]
+        fn __error() -> *mut i32;
+        #[cfg(target_os = "freebsd")]
+        fn __error() -> *mut i32;
+    }
+
+    #[repr(C)]
+    struct DlInfo {
+        dli_fname: *const u8,
+        dli_fbase: *mut c_void,
+        dli_sname: *const u8,
+        dli_saddr: *mut c_void,
+    }
+
+    pub unsafe fn load_library(path: *const u8) -> *mut c_void {
+        dlopen(path, RTLD_LAZY)
+    }
+
+    pub unsafe fn get_export(handle: *mut c_void, name: *const u8) -> *mut c_void {
+        dlsym(handle, name)
+    }
+
+    /// Returns the filesystem path of the shared library containing this function.
+    pub unsafe fn get_this_image_path(buffer: &mut [u8]) -> Result<usize, i32> {
+        let mut info = core::mem::zeroed::<DlInfo>();
+        if dladdr(get_this_image_path as *const c_void, &mut info) == 0 {
+            return Err(-1);
+        }
+        if info.dli_fname.is_null() {
+            return Err(-2);
+        }
+        let len = strlen(info.dli_fname);
+        if buffer.len() <= len {
+            return Err(-3);
+        }
+        core::ptr::copy_nonoverlapping(info.dli_fname, buffer.as_mut_ptr(), len + 1);
+        Ok(len)
+    }
+
+    fn errno_ptr() -> *mut i32 {
+        unsafe {
+            #[cfg(target_os = "linux")]
+            { __errno_location() }
+            #[cfg(target_os = "macos")]
+            { __error() }
+            #[cfg(target_os = "freebsd")]
+            { __error() }
+        }
+    }
+
+    pub fn get_current_error() -> i32 {
+        unsafe { *errno_ptr() }
+    }
+
+    pub fn set_current_error(err: i32) {
+        unsafe { *errno_ptr() = err; }
+    }
+}
+
+#[cfg(windows)]
+mod sys {
+    use core::ffi::c_void;
+
+    type HMODULE = *mut c_void;
+    type DWORD = u32;
+    type BOOL = i32;
+    type LPCWSTR = *const u16;
+
+    const GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS: DWORD = 0x00000004;
+    const GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT: DWORD = 0x00000002;
+
+    extern "system" {
+        fn LoadLibraryW(lpLibFileName: LPCWSTR) -> HMODULE;
+        fn GetProcAddress(hModule: HMODULE, lpProcName: *const u8) -> *mut c_void;
+        fn GetModuleHandleExW(dwFlags: DWORD, lpModuleName: LPCWSTR, phModule: *mut HMODULE) -> BOOL;
+        fn GetModuleFileNameW(hModule: HMODULE, lpFilename: *mut u16, nSize: DWORD) -> DWORD;
+        fn GetLastError() -> DWORD;
+        fn SetLastError(dwErrCode: DWORD);
+    }
+
+    pub unsafe fn load_library(path: *const u16) -> *mut c_void {
+        LoadLibraryW(path) as *mut c_void
+    }
+
+    pub unsafe fn get_export(handle: *mut c_void, name: *const u8) -> *mut c_void {
+        GetProcAddress(handle as HMODULE, name)
+    }
+
+    /// Returns the filesystem path of the DLL containing this function.
+    pub unsafe fn get_this_image_path(buffer: &mut [u16]) -> Result<usize, i32> {
+        let mut hmod: HMODULE = core::ptr::null_mut();
+        if GetModuleHandleExW(
+            GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+            get_this_image_path as LPCWSTR,
+            &mut hmod,
+        ) == 0
+        {
+            return Err(GetLastError() as i32);
+        }
+        let len = GetModuleFileNameW(hmod, buffer.as_mut_ptr(), buffer.len() as DWORD);
+        if len == 0 {
+            return Err(GetLastError() as i32);
+        }
+        if len as usize == buffer.len() {
+            return Err(0x7A); // ERROR_INSUFFICIENT_BUFFER
+        }
+        Ok(len as usize)
+    }
+
+    pub fn get_current_error() -> i32 {
+        unsafe { GetLastError() as i32 }
+    }
+
+    pub fn set_current_error(err: i32) {
+        unsafe { SetLastError(err as DWORD); }
+    }
+}
+
+// -----------------------------------------------------------------------
+// Path helpers
+// -----------------------------------------------------------------------
+
+/// Given an image path in `buffer` of length `written`, strips the filename
+/// and appends `filename`, returning the total length (excluding null).
+fn build_sibling_path(
+    buffer: &mut [CharT],
+    written: usize,
+    filename: &[CharT],
+) -> Result<usize, i32> {
+    // Find the last directory separator.
+    #[cfg(windows)]
+    const DIR_SEP: CharT = b'\\' as CharT;
+    #[cfg(not(windows))]
+    const DIR_SEP: CharT = b'/' as CharT;
+
+    let mut dir_end = written;
+    while dir_end > 0 {
+        if buffer[dir_end] == DIR_SEP {
+            dir_end += 1; // keep the separator
+            break;
+        }
+        dir_end -= 1;
+    }
+
+    let needed = dir_end + filename.len();
+    if needed > buffer.len() {
+        return Err(-1);
+    }
+
+    buffer[dir_end..dir_end + filename.len()].copy_from_slice(filename);
+    Ok(needed - 1) // exclude null terminator from length
+}
+
+/// Encodes an ASCII &str into a null-terminated CharT buffer and returns the slice.
+fn encode_ascii(s: &str, buffer: &mut [CharT]) -> usize {
+    let bytes = s.as_bytes();
+    for (i, &b) in bytes.iter().enumerate() {
+        buffer[i] = b as CharT;
+    }
+    buffer[bytes.len()] = 0;
+    bytes.len()
+}
+
+// -----------------------------------------------------------------------
+// Globals
+// -----------------------------------------------------------------------
+
+static FAILURE_CALLBACK: AtomicPtr<c_void> = AtomicPtr::new(core::ptr::null_mut());
+static MANAGED_EXPORT_FPTR: AtomicPtr<c_void> = AtomicPtr::new(core::ptr::null_mut());
+static PREPARE_LOCK: Mutex<()> = Mutex::new(());
+
+// -----------------------------------------------------------------------
+// Core runtime logic
+// -----------------------------------------------------------------------
+
+struct HostfxrFunctions {
+    init: HostfxrInitializeForRuntimeConfigFn,
+    get_delegate: HostfxrGetRuntimeDelegateFn,
+    close: HostfxrCloseFn,
+}
+
+unsafe fn load_hostfxr(assembly_path: *const CharT) -> Result<HostfxrFunctions, i32> {
+    let mut buffer = [0 as CharT; MAX_PATH];
+    let mut buffer_size = buffer.len();
+
+    let params = GetHostfxrParameters {
+        size: core::mem::size_of::<GetHostfxrParameters>(),
+        assembly_path,
+        dotnet_root: core::ptr::null(),
+    };
+
+    let rc = get_hostfxr_path(buffer.as_mut_ptr(), &mut buffer_size, &params);
+    if is_failure(rc) {
+        return Err(rc);
+    }
+
+    let lib = sys::load_library(buffer.as_ptr());
+    if lib.is_null() {
+        return Err(-1);
+    }
+
+    let init = sys::get_export(lib, b"hostfxr_initialize_for_runtime_config\0".as_ptr());
+    let get_delegate = sys::get_export(lib, b"hostfxr_get_runtime_delegate\0".as_ptr());
+    let close = sys::get_export(lib, b"hostfxr_close\0".as_ptr());
+
+    if init.is_null() || get_delegate.is_null() || close.is_null() {
+        return Err(-1);
+    }
+
+    Ok(HostfxrFunctions {
+        init: core::mem::transmute(init),
+        get_delegate: core::mem::transmute(get_delegate),
+        close: core::mem::transmute(close),
+    })
+}
+
+unsafe fn init_dotnet(
+    _assembly_path: *const CharT,
+    hostfxr: &HostfxrFunctions,
+) -> Result<LoadAssemblyAndGetFunctionPointerFn, i32> {
+    // Build the runtimeconfig.json path next to the assembly.
+    let mut config_path_buf = [0 as CharT; MAX_PATH];
+    let mut config_filename_buf = [0 as CharT; MAX_PATH];
+    let config_suffix = ".runtimeconfig.json\0";
+    let name_len = encode_ascii(ASSEMBLY_NAME, &mut config_filename_buf);
+    encode_ascii(config_suffix, &mut config_filename_buf[name_len..]);
+
+    // Copy image path to get the directory, then append config filename.
+    let written = sys::get_this_image_path(&mut config_path_buf).map_err(|e| e)?;
+    let config_filename_total = name_len + config_suffix.len();
+    build_sibling_path(
+        &mut config_path_buf,
+        written,
+        &config_filename_buf[..config_filename_total],
+    )?;
+    let config_path = config_path_buf.as_ptr();
+
+    // Initialize the runtime.
+    let mut cxt: HostfxrHandle = core::ptr::null_mut();
+    let rc = (hostfxr.init)(config_path, core::ptr::null(), &mut cxt);
+    if is_failure(rc) {
+        (hostfxr.close)(cxt);
+        return Err(rc);
+    }
+
+    // Get the load_assembly_and_get_function_pointer delegate.
+    let mut load_assembly_fptr: *mut c_void = core::ptr::null_mut();
+    let rc = (hostfxr.get_delegate)(
+        cxt,
+        HostfxrDelegateType::LoadAssemblyAndGetFunctionPointer,
+        &mut load_assembly_fptr,
+    );
+    if is_failure(rc) {
+        (hostfxr.close)(cxt);
+        return Err(rc);
+    }
+
+    Ok(core::mem::transmute(load_assembly_fptr))
+}
+
+fn prepare_runtime() -> i32 {
+    let _guard = PREPARE_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+
+    if !MANAGED_EXPORT_FPTR.load(Ordering::Acquire).is_null() {
+        return DNNE_SUCCESS;
+    }
+
+    unsafe {
+        // Build assembly path.
+        let mut path_buf = [0 as CharT; MAX_PATH];
+        let written = match sys::get_this_image_path(&mut path_buf) {
+            Ok(w) => w,
+            Err(rc) => return rc,
+        };
+
+        let mut asm_filename_buf = [0 as CharT; MAX_PATH];
+        let name_len = encode_ascii(ASSEMBLY_NAME, &mut asm_filename_buf);
+        encode_ascii(".dll\0", &mut asm_filename_buf[name_len..]);
+        let asm_filename_total = name_len + 5; // ".dll\0" = 5
+
+        if let Err(rc) = build_sibling_path(&mut path_buf, written, &asm_filename_buf[..asm_filename_total]) {
+            return rc;
+        }
+        let assembly_path = path_buf.as_ptr();
+
+        // Load hostfxr.
+        let hostfxr = match load_hostfxr(assembly_path) {
+            Ok(h) => h,
+            Err(rc) => return rc,
+        };
+
+        // Initialize .NET and get the managed export resolver.
+        let fptr = match init_dotnet(assembly_path, &hostfxr) {
+            Ok(f) => f,
+            Err(rc) => return rc,
+        };
+
+        MANAGED_EXPORT_FPTR.store(fptr as *mut c_void, Ordering::Release);
+    }
+
+    DNNE_SUCCESS
+}
+
+// -----------------------------------------------------------------------
+// Failure handling
+// -----------------------------------------------------------------------
+
+fn is_failure(rc: i32) -> bool {
+    rc < DNNE_SUCCESS
+}
+
+fn noreturn_failure(r#type: FailureType, error_code: i32) -> ! {
+    let cb = FAILURE_CALLBACK.load(Ordering::Acquire);
+    if !cb.is_null() {
+        let f: fn(FailureType, i32) = unsafe { core::mem::transmute(cb) };
+        f(r#type, error_code);
+    }
+
+    unsafe { dnne_abort(r#type, error_code); }
+
+    // Don't trust anything the user can override.
+    std::process::abort();
+}
+
+// -----------------------------------------------------------------------
+// Public API
+// -----------------------------------------------------------------------
+
+/// Default abort handler. Users can override by providing their own `dnne_abort` at link time.
+/// On Unix, the weak symbol attribute allows overriding. On Windows, use /alternatename.
+#[cfg(not(windows))]
+#[no_mangle]
+pub unsafe extern "C" fn dnne_abort(_type: FailureType, _error_code: i32) {
+    std::process::abort();
+}
+
+#[cfg(windows)]
+extern "C" {
+    fn dnne_abort(_type: FailureType, _error_code: i32);
+}
+
+/// Provide a callback for any catastrophic failures.
+/// The provided callback will be the last call prior to a rude-abort of the process.
+pub fn set_failure_callback(cb: FailureFn) {
+    let ptr = match cb {
+        Some(f) => f as *mut c_void,
+        None => core::ptr::null_mut(),
+    };
+    FAILURE_CALLBACK.store(ptr, Ordering::Release);
+}
+
+/// Preload the runtime.
+/// If the runtime fails to load, `dnne_abort()` will be called.
+pub unsafe fn preload_runtime() {
+    let rc = prepare_runtime();
+    if is_failure(rc) {
+        noreturn_failure(FailureType::LoadRuntime, rc);
+    }
+}
+
+/// Attempt to preload the runtime.
+/// If the runtime fails to load, an error code will be returned.
+pub unsafe fn try_preload_runtime() -> Result<(), i32> {
+    let rc = prepare_runtime();
+    if is_failure(rc) {
+        Err(rc)
+    } else {
+        Ok(())
+    }
+}
+
+/// Resolve a managed method via its delegate type and return a callable function pointer.
+/// Used for methods marked with `[DNNE.Export]`.
+pub unsafe fn get_callable_managed_function(
+    dotnet_type: *const u8,
+    dotnet_type_method: *const u8,
+    dotnet_delegate_type: *const u8,
+) -> *mut c_void {
+    assert!(!dotnet_type.is_null() && !dotnet_type_method.is_null());
+
+    // Save current error state — this function is an implementation detail
+    // and should not affect the caller's error state.
+    let saved_error = sys::get_current_error();
+
+    // Ensure the runtime is loaded.
+    if MANAGED_EXPORT_FPTR.load(Ordering::Acquire).is_null() {
+        let rc = prepare_runtime();
+        if is_failure(rc) {
+            noreturn_failure(FailureType::LoadExport, rc);
+        }
+    }
+
+    let get_managed_export: LoadAssemblyAndGetFunctionPointerFn =
+        core::mem::transmute(MANAGED_EXPORT_FPTR.load(Ordering::Acquire));
+
+    // Build assembly path.
+    let mut path_buf = [0 as CharT; MAX_PATH];
+    let written = match sys::get_this_image_path(&mut path_buf) {
+        Ok(w) => w,
+        Err(rc) => noreturn_failure(FailureType::LoadExport, rc),
+    };
+
+    let mut asm_filename_buf = [0 as CharT; MAX_PATH];
+    let name_len = encode_ascii(ASSEMBLY_NAME, &mut asm_filename_buf);
+    encode_ascii(".dll\0", &mut asm_filename_buf[name_len..]);
+    let asm_filename_total = name_len + 5;
+
+    if let Err(rc) = build_sibling_path(&mut path_buf, written, &asm_filename_buf[..asm_filename_total]) {
+        noreturn_failure(FailureType::LoadExport, rc);
+    }
+
+    // Convert UTF-8 string arguments to CharT.
+    // On Unix, CharT = u8 so this is a direct cast.
+    // On Windows, CharT = u16 so we convert from UTF-8 to UTF-16.
+    let type_ptr = utf8_to_chart(dotnet_type);
+    let method_ptr = utf8_to_chart(dotnet_type_method);
+
+    // For delegate type, check if it's the UNMANAGEDCALLERSONLY_METHOD sentinel.
+    let delegate_holder;
+    let delegate_ptr = if dotnet_delegate_type as usize == UNMANAGEDCALLERSONLY_METHOD {
+        UNMANAGEDCALLERSONLY_METHOD as *const CharT
+    } else {
+        delegate_holder = utf8_to_chart(dotnet_delegate_type);
+        delegate_holder.as_ptr()
+    };
+
+    let mut func: *mut c_void = core::ptr::null_mut();
+    let rc = get_managed_export(
+        path_buf.as_ptr(),
+        type_ptr.as_ptr(),
+        method_ptr.as_ptr(),
+        delegate_ptr,
+        core::ptr::null_mut(),
+        &mut func,
+    );
+
+    if is_failure(rc) {
+        noreturn_failure(FailureType::LoadExport, rc);
+    }
+
+    // Restore saved error state.
+    sys::set_current_error(saved_error);
+    func
+}
+
+/// Resolve a managed method marked with `[UnmanagedCallersOnly]`.
+pub unsafe fn get_fast_callable_managed_function(
+    dotnet_type: *const u8,
+    dotnet_type_method: *const u8,
+) -> *mut c_void {
+    get_callable_managed_function(
+        dotnet_type,
+        dotnet_type_method,
+        UNMANAGEDCALLERSONLY_METHOD as *const u8,
+    )
+}
+
+// -----------------------------------------------------------------------
+// String conversion helpers
+// -----------------------------------------------------------------------
+
+/// Wrapper around a CharT string that may be heap-allocated (Windows)
+/// or a direct pointer (Unix).
+struct ChartString {
+    #[cfg(not(windows))]
+    ptr: *const u8,
+    #[cfg(windows)]
+    data: Vec<u16>,
+}
+
+impl ChartString {
+    fn as_ptr(&self) -> *const CharT {
+        #[cfg(not(windows))]
+        { self.ptr }
+        #[cfg(windows)]
+        { self.data.as_ptr() }
+    }
+}
+
+/// Convert a null-terminated UTF-8 string to a CharT string.
+/// On Unix this is a no-op cast. On Windows it converts to UTF-16.
+unsafe fn utf8_to_chart(s: *const u8) -> ChartString {
+    #[cfg(not(windows))]
+    {
+        ChartString { ptr: s }
+    }
+    #[cfg(windows)]
+    {
+        // Find string length.
+        let mut len = 0usize;
+        while *s.add(len) != 0 {
+            len += 1;
+        }
+        let slice = core::slice::from_raw_parts(s, len);
+        let utf8 = core::str::from_utf8_unchecked(slice);
+        let mut wide: Vec<u16> = utf8.encode_utf16().collect();
+        wide.push(0);
+        ChartString { data: wide }
+    }
+}
