@@ -1,0 +1,8 @@
+[package]
+name = "importing-process-rust"
+version = "0.1.0"
+edition = "2021"
+
+# Remember to update when targeting a new build flavor or TFM.
+[dependencies]
+exportingassemblyne = { path = "../ExportingAssembly/bin/Debug/net8.0/dnne-rust-crate" }

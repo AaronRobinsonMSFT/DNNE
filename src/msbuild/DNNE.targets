@@ -29,6 +29,8 @@ DNNE.targets
     <!-- Let the user define the name of the native binary -->
     <DnneNativeExportsBinaryName>$(DnneNativeBinaryName)</DnneNativeExportsBinaryName>
 
+    <DnneLanguage Condition="'$(DnneLanguage)' == ''">c99</DnneLanguage>
+
     <!-- If the user didn't define the name compute one using the legacy mechanism -->
     <DnneNativeBinarySuffix Condition="'$(DnneNativeBinarySuffix)'==''">NE</DnneNativeBinarySuffix>
     <DnneNativeExportsBinaryName Condition="'$(DnneNativeExportsBinaryName)'==''">$(TargetName)$(DnneNativeBinarySuffix)</DnneNativeExportsBinaryName>
@@ -52,6 +54,9 @@ DNNE.targets
     <DnneNativeBinaryExt Condition="$([MSBuild]::IsOsPlatform('OSX'))">.dylib</DnneNativeBinaryExt>
     <DnneNativeBinaryExt Condition="'$(DnneNativeBinaryExt)' == '' OR $([MSBuild]::IsOsPlatform('Linux'))">.so</DnneNativeBinaryExt>
 
+    <!-- Rust export binary extension -->
+    <DnneNativeBinaryExt Condition="'$(DnneLanguage)' == 'rust'"></DnneNativeBinaryExt>
+
     <!-- Compute details about TFM -->
     <DnneIsNetFramework>false</DnneIsNetFramework>
     <DnneIsNetFramework Condition="$(TargetFramework.StartsWith('net4'))">true</DnneIsNetFramework>
@@ -67,7 +72,11 @@ DNNE.targets
     <AppHostRuntimeIdentifier Condition="'$(DnneBuildExports)' == 'true'">$(DnneRuntimeIdentifier)</AppHostRuntimeIdentifier>
 
     <DnneCompiledToBinPath>$(DnneGeneratedBinPath)/$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt)</DnneCompiledToBinPath>
-    <DnneGeneratedSourceFileName>$(DnneGeneratedOutputPath)/$(TargetName).g.c</DnneGeneratedSourceFileName>
+
+    <!-- Compute generated source file extension based on language -->
+    <DnneGeneratedSourceFileExt Condition="'$(DnneLanguage)' == 'rust'">.g.rs</DnneGeneratedSourceFileExt>
+    <DnneGeneratedSourceFileExt Condition="'$(DnneGeneratedSourceFileExt)' == ''">.g.c</DnneGeneratedSourceFileExt>
+    <DnneGeneratedSourceFileName>$(DnneGeneratedOutputPath)/$(TargetName)$(DnneGeneratedSourceFileExt)</DnneGeneratedSourceFileName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -75,33 +84,42 @@ DNNE.targets
         Include="$(DnneGeneratedSourceFileName)"
         Condition="'$(DnneGenerateExports)' == 'true'" />
 
+    <!-- C99: generated .g.c acts as header, deploy with .h extension -->
     <DnneNativeExportsInput
         Include="$(DnneGeneratedSourceFileName)"
-        Condition="'$(DnneGenerateExports)' == 'true'" >
+        Condition="'$(DnneGenerateExports)' == 'true' AND '$(DnneLanguage)' == 'c99'" >
       <OutputFileName>$(DnneNativeExportsBinaryName).h</OutputFileName>
     </DnneNativeExportsInput>
 
     <DnneNativeExportsInput
         Include="$(DnnePlatformSourcePath)/dnne.h"
-        Condition="'$(DnneGenerateExports)' == 'true'" >
+        Condition="'$(DnneGenerateExports)' == 'true' AND '$(DnneLanguage)' == 'c99'" >
       <OutputFileName>dnne.h</OutputFileName>
     </DnneNativeExportsInput>
 
     <DnneNativeExportsInput
         Include="$(DnneCompiledToBinPath)"
-        Condition="'$(DnneBuildExports)' == 'true'" >
+        Condition="'$(DnneBuildExports)' == 'true' AND '$(DnneLanguage)' != 'rust'" >
       <OutputFileName>$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt)</OutputFileName>
     </DnneNativeExportsInput>
 
-    <!-- Import libs exist only on the Windows platform -->
+    <!-- Rust: the generated Cargo.toml serves as the output marker -->
+    <DnneNativeExportsInput
+        Include="$(DnneGeneratedOutputPath)/Cargo.toml"
+        Condition="'$(DnneBuildExports)' == 'true' AND '$(DnneLanguage)' == 'rust'" >
+      <OutputFileName>Cargo.toml</OutputFileName>
+    </DnneNativeExportsInput>
+
+    <!-- Import libs exist only on the Windows platform for C99 builds -->
     <DnneNativeExportsInput
         Include="$(DnneGeneratedBinPath)/$(DnneNativeExportsBinaryName).lib"
-        Condition="$([MSBuild]::IsOsPlatform('Windows')) AND '$(DnneBuildExports)' == 'true'" >
+        Condition="$([MSBuild]::IsOsPlatform('Windows')) AND '$(DnneBuildExports)' == 'true' AND '$(DnneLanguage)' == 'c99'" >
       <OutputFileName>$(DnneNativeExportsBinaryName).lib</OutputFileName>
     </DnneNativeExportsInput>
 
     <!-- Add outputs and general glob to help with project cleanup -->
     <Clean Include="@(DnneNativeExportsInput->'$(DnneNativeExportsBinaryPath)%(OutputFileName)');$(DnneNativeExportsBinaryPath)$(DnneNativeExportsBinaryName).*"/>
+    <Clean Include="$(DnneNativeExportsBinaryPath)dnne-rust-crate" />
   </ItemGroup>
 
   <Target
@@ -119,7 +137,7 @@ DNNE.targets
       <DocFlag Condition="Exists($(DocumentationFile))">-d &quot;$(DocumentationFile)&quot;</DocFlag>
     </PropertyGroup>
 
-    <Exec Command="$(DnneGenExe) @(IntermediateAssembly) $(DocFlag) -o @(DnneGeneratedSourceFile)" />
+    <Exec Command="$(DnneGenExe) @(IntermediateAssembly) $(DocFlag) -l $(DnneLanguage) -o @(DnneGeneratedSourceFile)" />
   </Target>
 
   <PropertyGroup>
@@ -165,6 +183,17 @@ DNNE.targets
     <!-- Ensure the output directory exists -->
     <MakeDir Directories="$(DnneGeneratedBinPath)" />
 
+    <!-- Rust: Generate crate files (lib.rs, platform.rs, Cargo.toml, build.rs) -->
+    <WriteLinesToFile
+        Condition="'$(DnneLanguage)' == 'rust'"
+        File="$(DnneGeneratedOutputPath)/lib.rs"
+        Lines="pub(crate) const DNNE_ASSEMBLY_NAME: &amp;str = &quot;$(TargetName)&quot;%3B;pub mod platform%3B;#[path = &quot;$(TargetName).g.rs&quot;];pub mod exports%3B"
+        Overwrite="true" />
+    <Copy
+        Condition="'$(DnneLanguage)' == 'rust'"
+        SourceFiles="$(DnnePlatformSourcePath)/platform.rs"
+        DestinationFolder="$(DnneGeneratedOutputPath)" />
+
     <PropertyGroup>
       <DnneAssemblyName>$(TargetName)</DnneAssemblyName>
       <DnneNetHostDir Condition="'$(DnneNetHostDir)' == ''">%(ResolvedAppHostPack.PackageDirectory)/runtimes/$(DnneRuntimeIdentifier)/native</DnneNetHostDir>
@@ -176,7 +205,9 @@ DNNE.targets
     </ItemGroup>
 
     <CreateCompileCommand
+        Language="$(DnneLanguage)"
         AssemblyName="$(DnneAssemblyName)"
+        AssemblyVersion="$(Version)"
         NetHostPath="$([MSBuild]::NormalizePath($(DnneNetHostDir)))"
         PlatformPath="$([MSBuild]::NormalizePath($(DnnePlatformSourcePath)))"
         Source="$([MSBuild]::NormalizePath($(__DnneGeneratedSourceFile)))"
@@ -194,27 +225,46 @@ DNNE.targets
       <Output TaskParameter="Command" PropertyName="CompilerCmd" />
       <Output TaskParameter="CommandArguments" PropertyName="CompilerArgs" />
     </CreateCompileCommand>
+  </Target>
+
+<Target
+  Condition="'$(DnneLanguage)' == 'c99'"
+  Name="DnneBuildC99Exports"
+  AfterTargets="DnneBuildNativeExports">
 
     <PropertyGroup>
       <CompilerCmd Condition="'$(DnneCompilerCommand)' != ''">$(DnneCompilerCommand)</CompilerCmd>
     </PropertyGroup>
 
     <Message Text="Building native export: &quot;$(CompilerCmd)&quot; $(CompilerArgs)" Importance="high" />
-    <Exec Command="&quot;$(CompilerCmd)&quot; $(CompilerArgs)"
+    <Exec Condition="'$(DnneLanguage)' != 'rust'"
+        Command="&quot;$(CompilerCmd)&quot; $(CompilerArgs)"
         WorkingDirectory="$(DnneGeneratedOutputPath)"
         Outputs="$(DnneCompiledToBinPath)"
         ConsoleToMSBuild="true" />
 
-    <!--
-        Copy the binary to the project output directory.
-        The dnne-gen tool generates a C99 file that can act as both compilation unit and header.
-        Deploy the official 'dnne.h' header.
-    -->
-    <Copy
-        SourceFiles="@(DnneNativeExportsInput)"
+    <Copy SourceFiles="@(DnneNativeExportsInput)"
         DestinationFiles="@(DnneNativeExportsInput->'$(DnneNativeExportsBinaryPath)%(OutputFileName)')" />
+</Target>
 
-  </Target>
+<Target
+  Condition="'$(DnneLanguage)' == 'rust'"
+  Name="DnneBuildRustExports"
+  AfterTargets="DnneBuildNativeExports">
+
+    <Message Text="Generated Rust crate at $(DnneGeneratedOutputPath)" Importance="high" />
+
+    <ItemGroup >
+      <DnneRustCrateFiles Include="$(DnneGeneratedOutputPath)/Cargo.toml" />
+      <DnneRustCrateFiles Include="$(DnneGeneratedOutputPath)/build.rs" />
+      <DnneRustCrateFiles Include="$(DnneGeneratedOutputPath)/lib.rs" />
+      <DnneRustCrateFiles Include="$(DnneGeneratedOutputPath)/platform.rs" />
+      <DnneRustCrateFiles Include="$(DnneGeneratedOutputPath)/$(TargetName)$(DnneGeneratedSourceFileExt)" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(DnneRustCrateFiles)"
+        DestinationFolder="$(DnneNativeExportsBinaryPath)dnne-rust-crate" />
+</Target>
 
   <!--
       This target is used to deploy the header file assets when DNNE is _not_ building an export binary.

@@ -66,6 +66,9 @@ namespace DNNE.BuildTasks
         [Required]
         public string TargetFramework { get; set; }
 
+        [Required]
+        public string Language { get; set; }
+
         // Optional
         public string UserDefinedCompilerFlags { get; set; }
 
@@ -77,6 +80,9 @@ namespace DNNE.BuildTasks
 
         // Optional
         public bool IsSelfContained { get; set; } = false;
+
+        // Optional
+        public string AssemblyVersion { get; set; }
 
         // Used to ensure the supplied path is absolute and
         // can be supplied as-is in a command line scenario.
@@ -141,6 +147,15 @@ Native Build:
 
             string command;
             string commandArguments;
+            if (Language.Equals("rust", StringComparison.OrdinalIgnoreCase))
+            {
+                // Rust: generate a Cargo crate instead of compiling.
+                Rust.GenerateCrate(this);
+                this.Command = string.Empty;
+                this.CommandArguments = string.Empty;
+                return true;
+            }
+
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 Windows.ConstructCommandLine(this, out command, out commandArguments);

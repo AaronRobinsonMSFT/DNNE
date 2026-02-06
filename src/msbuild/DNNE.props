@@ -26,6 +26,10 @@ DNNE.props
   <PropertyGroup>
     <DnneGenerateExports>true</DnneGenerateExports>
 
+    <!-- The output language for native code generation.
+         Supported values: 'c99' (default), 'rust'. -->
+    <DnneLanguage></DnneLanguage>
+
     <!-- If the build is disabled, the generated source is considered the output
         and emitted in the output directory as if it were a binary. -->
     <DnneBuildExports>true</DnneBuildExports>

@@ -30,7 +30,10 @@
     <DnneCompilerCommand Condition="'$(BuildWithClangPP)'=='true'">clang++</DnneCompilerCommand>
 
     <!-- Include the override option for dnne_abort() -->
-    <DnneCompilerUserFlags>$(DnneCompilerUserFlags) $(MSBuildThisFileDirectory)override.c</DnneCompilerUserFlags>
+    <DnneCompilerUserFlags Condition="'$(DnneLanguage)' != 'rust'">$(DnneCompilerUserFlags) $(MSBuildThisFileDirectory)override.c</DnneCompilerUserFlags>
+
+    <!-- Rust: pass cfg flags for custom platform guards used in the test assembly -->
+    <DnneCompilerUserFlags Condition="'$(DnneLanguage)' == 'rust'">--cfg set_assembly_platform --cfg set_module_platform --cfg set_type_platform --cfg __set_platform__ --cfg set_method_platform</DnneCompilerUserFlags>
 
     <!-- When targeting .NET Framework we only use a subset of files -->
     <EnableDefaultCompileItems Condition="$(TargetFramework.StartsWith('net4'))">false</EnableDefaultCompileItems>

@@ -1076,7 +1076,7 @@ $@"
                 "OSX" => @"target_os = ""macos""",
                 "LINUX" => @"target_os = ""linux""",
                 "FREEBSD" => @"target_os = ""freebsd""",
-                _ => $@"target_os = ""{name.ToLowerInvariant()}""",
+                _ => name.ToLowerInvariant(),
             };
         }
 

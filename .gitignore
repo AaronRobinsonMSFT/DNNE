@@ -2,6 +2,7 @@
 
 **/bin/
 **/obj/
+**/target/
 **/*.user
 **/launchSettings.json
 
