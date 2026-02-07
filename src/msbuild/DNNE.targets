@@ -119,7 +119,7 @@ DNNE.targets
 
     <!-- Add outputs and general glob to help with project cleanup -->
     <Clean Include="@(DnneNativeExportsInput->'$(DnneNativeExportsBinaryPath)%(OutputFileName)');$(DnneNativeExportsBinaryPath)$(DnneNativeExportsBinaryName).*"/>
-    <Clean Include="$(DnneNativeExportsBinaryPath)dnne-rust-crate" />
+    <Clean Include="$(DnneNativeExportsBinaryPath)dnne-rust-crate/**" />
   </ItemGroup>
 
   <Target
@@ -183,17 +183,6 @@ DNNE.targets
     <!-- Ensure the output directory exists -->
     <MakeDir Directories="$(DnneGeneratedBinPath)" />
 
-    <!-- Rust: Generate crate files (lib.rs, platform.rs, Cargo.toml, build.rs) -->
-    <WriteLinesToFile
-        Condition="'$(DnneLanguage)' == 'rust'"
-        File="$(DnneGeneratedOutputPath)/lib.rs"
-        Lines="pub(crate) const DNNE_ASSEMBLY_NAME: &amp;str = &quot;$(TargetName)&quot;%3B;pub mod platform%3B;#[path = &quot;$(TargetName).g.rs&quot;] pub mod exports%3B"
-        Overwrite="true" />
-    <Copy
-        Condition="'$(DnneLanguage)' == 'rust'"
-        SourceFiles="$(DnnePlatformSourcePath)/platform.rs"
-        DestinationFolder="$(DnneGeneratedOutputPath)" />
-
     <PropertyGroup>
       <DnneAssemblyName>$(TargetName)</DnneAssemblyName>
       <DnneNetHostDir Condition="'$(DnneNetHostDir)' == ''">%(ResolvedAppHostPack.PackageDirectory)/runtimes/$(DnneRuntimeIdentifier)/native</DnneNetHostDir>
@@ -225,6 +214,8 @@ DNNE.targets
       <Output TaskParameter="Command" PropertyName="CompilerCmd" />
       <Output TaskParameter="CommandArguments" PropertyName="CompilerArgs" />
     </CreateCompileCommand>
+
+    <!-- The next target should be DnneBuildXXXXExports -->
   </Target>
 
 <Target
@@ -251,6 +242,22 @@ DNNE.targets
   Condition="'$(DnneLanguage)' == 'rust'"
   Name="DnneBuildRustExports"
   AfterTargets="DnneBuildNativeExports">
+
+    <PropertyGroup>
+      <Lib_rs>
+pub(crate) const DNNE_ASSEMBLY_NAME: &amp;str = "$(TargetName)"%3B;
+pub mod platform%3B;
+#[path = "$(TargetName).g.rs"]
+pub mod exports%3B;
+      </Lib_rs>
+    </PropertyGroup>
+
+    <!-- Rust: Generate crate files (lib.rs, platform.rs, Cargo.toml, build.rs) -->
+    <WriteLinesToFile File="$(DnneGeneratedOutputPath)/lib.rs"
+        Lines="$(Lib_rs)"
+        Overwrite="true" />
+    <Copy SourceFiles="$(DnnePlatformSourcePath)/platform.rs"
+        DestinationFolder="$(DnneGeneratedOutputPath)" />
 
     <Message Text="Generated Rust crate at $(DnneGeneratedOutputPath)" Importance="high" />
 

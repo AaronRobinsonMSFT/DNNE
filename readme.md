@@ -248,6 +248,8 @@ DNNE can generate a [Cargo](https://doc.rust-lang.org/cargo/) crate instead of a
     * `platform.rs` &mdash; Rust runtime hosting layer (equivalent of `platform.c`).
     * `<AssemblyName>.g.rs` &mdash; generated export wrappers.
 
+    **Note** The generated `build.rs` will contain an absolute path on the build machine. The crate is only valid on the machine on which it was generated.
+
 1) In the consuming Rust project, add the generated crate as a path dependency in `Cargo.toml`:
 
     ```toml
@@ -353,13 +355,13 @@ The `platform` module exposes the following public API:
 
 The `FailureType` enum uses `#[repr(i32)]` with variants `LoadRuntime` and `LoadExport`.
 
-Generated export functions are `pub unsafe fn` &mdash; idiomatic for Rust consumers (no `#[no_mangle]` or `extern "C"`).
+Generated export functions are `pub unsafe fn`.
 
 <a name="netfx"></a>
 
 ## .NET Framework support
 
-.NET Framework support is limited to the Windows platform. This limitation is in place because .NET Framework only runs on the Windows platform.
+.NET Framework support is limited to the Windows platform and C99. This limitation is in place because .NET Framework only runs on the Windows platform.
 
 DNNE has support for targeting .NET Framework v4.x TFMs&mdash;there is no support for v2.0 or v3.5. DNNE respects multi-targeting using the `TargetFrameworks` MSBuild property. For any .NET Framework v4.x TFM, DNNE will produce a native binary that will activate .NET Framework.
 
