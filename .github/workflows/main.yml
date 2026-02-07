@@ -35,6 +35,9 @@ jobs:
       run: |
         dotnet clean test/DNNE.UnitTests -c ${{ matrix.flavor }}
         dotnet test test/DNNE.UnitTests -c ${{ matrix.flavor }} -p:BuildWithGPP=true
+    - name: Build test.proj
+      run: |
+        dotnet build test\test.proj -c  ${{ matrix.flavor }}
     - name: Upload Build Logs
       if: failure()
       uses: actions/upload-artifact@v4
@@ -71,6 +74,9 @@ jobs:
       run: |
         dotnet clean test\DNNE.UnitTests -c ${{ matrix.flavor }}
         dotnet test test\DNNE.UnitTests -c ${{ matrix.flavor }}
+    - name: Build test.proj
+      run: |
+        dotnet build test\test.proj -c  ${{ matrix.flavor }}
     - name: Upload Build Logs
       if: failure()
       uses: actions/upload-artifact@v4
@@ -98,6 +104,9 @@ jobs:
       run: |
         dotnet clean test/DNNE.UnitTests -c ${{ matrix.flavor }}
         dotnet test test/DNNE.UnitTests -c  ${{ matrix.flavor }} -p:BuildWithClangPP=true
+    - name: Build test.proj
+      run: |
+        dotnet build test/test.proj -c  ${{ matrix.flavor }}
     - name: Upload Build Logs
       if: failure()
       uses: actions/upload-artifact@v4
