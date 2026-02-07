@@ -1,24 +1,37 @@
 <Project DefaultTargets="Build">
+  <Import Project="../Directory.Build.props" />
+
+  <PropertyGroup>
+    <Configuration Condition="'$(Configuration)'==''">Debug</Configuration>
+  </PropertyGroup>
 
   <PropertyGroup>
     <NativeBuildDir>$(MSBuildThisFileDirectory)build</NativeBuildDir>
     <DnnePkgDir>$(MSBuildThisFileDirectory)../src/dnne-pkg</DnnePkgDir>
     <ExportingAssemblyDir>$(MSBuildThisFileDirectory)ExportingAssembly</ExportingAssemblyDir>
     <ImportingProcessDir>$(MSBuildThisFileDirectory)ImportingProcess</ImportingProcessDir>
+    <ImportingProcessRustDir>$(MSBuildThisFileDirectory)ImportingProcess.Rust</ImportingProcessRustDir>
   </PropertyGroup>
 
   <Target Name="Build">
     <Message Text="Building dnne-pkg" Importance="high" />
     <Exec Command="dotnet build $([MSBuild]::NormalizePath($(DnnePkgDir))) -c $(Configuration)" />
 
-    <Message Text="Building ExportingAssembly" Importance="high" />
-    <Exec Command="dotnet build $([MSBuild]::NormalizePath($(ExportingAssemblyDir))) -c $(Configuration)" />
+    <Message Text="Building ExportingAssembly (C99)" Importance="high" />
+    <Exec Command="dotnet build $([MSBuild]::NormalizePath($(ExportingAssemblyDir))) -c $(Configuration) -p:DNNELanguage=c99" />
+
+    <Message Text="Building ExportingAssembly (Rust)" Importance="high" />
+    <Exec Command="dotnet build $([MSBuild]::NormalizePath($(ExportingAssemblyDir))) -c $(Configuration) -p:DNNELanguage=rust" />
 
     <Message Text="Generating ImportingProcess" Importance="high" />
     <Exec Command="cmake -S &quot;$([MSBuild]::NormalizePath($(ImportingProcessDir)))&quot; -B &quot;$([MSBuild]::NormalizePath($(NativeBuildDir)))&quot;" />
 
     <Message Text="Building ImportingProcess" Importance="high" />
     <Exec Command="cmake --build &quot;$([MSBuild]::NormalizePath($(NativeBuildDir)))&quot;" />
+
+    <Message Text="Building ImportingProcess.Rust" Importance="high" />
+    <Exec Command="cargo add --manifest-path $([MSBuild]::NormalizePath($(ImportingProcessRustDir)))/Cargo.toml --path $([MSBuild]::NormalizePath($(ExportingAssemblyDir)))/bin/$(Configuration)/$(DnneTargetFramework)/dnne-rust-crate" />
+    <Exec Command="cargo build --manifest-path $([MSBuild]::NormalizePath($(ImportingProcessRustDir)))/Cargo.toml" />
   </Target>
 
 </Project>

@@ -1,0 +1,9 @@
+<Project>
+  <PropertyGroup>
+    <DnneTargetFramework>net8.0</DnneTargetFramework>
+    <DnneVersion>2.0.8</DnneVersion>
+
+    <RepoRoot>$(MSBuildThisFileDirectory)/</RepoRoot>
+    <SrcRoot>$(RepoRoot)src/</SrcRoot>
+  </PropertyGroup>
+</Project>

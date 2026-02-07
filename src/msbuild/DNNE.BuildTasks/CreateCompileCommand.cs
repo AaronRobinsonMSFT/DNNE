@@ -145,40 +145,43 @@ Native Build:
     TargetFramework:{TargetFramework}
     ");
 
-            string command;
-            string commandArguments;
+            string command = string.Empty;
+            string commandArguments = string.Empty;
             if (Language.Equals("rust", StringComparison.OrdinalIgnoreCase))
             {
                 // Rust: generate a Cargo crate instead of compiling.
                 Rust.GenerateCrate(this);
-                this.Command = string.Empty;
-                this.CommandArguments = string.Empty;
-                return true;
             }
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            else if (Language.Equals("c99", StringComparison.OrdinalIgnoreCase))
             {
-                Windows.ConstructCommandLine(this, out command, out commandArguments);
-            }
-            else
-            {
-                if (IsTargetingNetFramework)
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    throw new NotSupportedException(".NET Framework can only be targeted on Windows");
-                }
-
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                {
-                    Linux.ConstructCommandLine(this, out command, out commandArguments);
-                }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                {
-                    macOS.ConstructCommandLine(this, out command, out commandArguments);
+                    Windows.ConstructCommandLine(this, out command, out commandArguments);
                 }
                 else
                 {
-                    throw new NotSupportedException("Unknown native build environment");
+                    if (IsTargetingNetFramework)
+                    {
+                        throw new NotSupportedException(".NET Framework can only be targeted on Windows");
+                    }
+
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                    {
+                        Linux.ConstructCommandLine(this, out command, out commandArguments);
+                    }
+                    else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                    {
+                        macOS.ConstructCommandLine(this, out command, out commandArguments);
+                    }
+                    else
+                    {
+                        throw new NotSupportedException("Unknown native build environment");
+                    }
                 }
+            }
+            else
+            {
+                throw new NotSupportedException($"Language '{Language}' is not supported");
             }
 
             this.Command = command;

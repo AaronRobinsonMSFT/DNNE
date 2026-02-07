@@ -103,18 +103,30 @@ DNNE.targets
       <OutputFileName>$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt)</OutputFileName>
     </DnneNativeExportsInput>
 
-    <!-- Rust: the generated Cargo.toml serves as the output marker -->
+    <!-- Import libs exist only on the Windows platform for C99 builds -->
+    <DnneNativeExportsInput
+        Include="$(DnneGeneratedBinPath)/$(DnneNativeExportsBinaryName).lib"
+        Condition="$([MSBuild]::IsOsPlatform('Windows')) AND '$(DnneBuildExports)' == 'true' AND '$(DnneLanguage)' == 'c99'" >
+      <OutputFileName>$(DnneNativeExportsBinaryName).lib</OutputFileName>
+    </DnneNativeExportsInput>
+
+    <!-- Rust: the generated Cargo.toml, lib.rs and build.rs files -->
     <DnneNativeExportsInput
         Include="$(DnneNativeExportsBinaryPath)dnne-rust-crate/Cargo.toml"
         Condition="'$(DnneBuildExports)' == 'true' AND '$(DnneLanguage)' == 'rust'" >
       <OutputFileName>Cargo.toml</OutputFileName>
     </DnneNativeExportsInput>
 
-    <!-- Import libs exist only on the Windows platform for C99 builds -->
     <DnneNativeExportsInput
-        Include="$(DnneGeneratedBinPath)/$(DnneNativeExportsBinaryName).lib"
-        Condition="$([MSBuild]::IsOsPlatform('Windows')) AND '$(DnneBuildExports)' == 'true' AND '$(DnneLanguage)' == 'c99'" >
-      <OutputFileName>$(DnneNativeExportsBinaryName).lib</OutputFileName>
+        Include="$(DnneNativeExportsBinaryPath)dnne-rust-crate/lib.rs"
+        Condition="'$(DnneBuildExports)' == 'true' AND '$(DnneLanguage)' == 'rust'" >
+      <OutputFileName>lib.rs</OutputFileName>
+    </DnneNativeExportsInput>
+
+    <DnneNativeExportsInput
+        Include="$(DnneNativeExportsBinaryPath)dnne-rust-crate/build.rs"
+        Condition="'$(DnneBuildExports)' == 'true' AND '$(DnneLanguage)' == 'rust'" >
+      <OutputFileName>build.rs</OutputFileName>
     </DnneNativeExportsInput>
 
     <!-- Add outputs and general glob to help with project cleanup -->
@@ -221,6 +233,8 @@ DNNE.targets
 <Target
   Condition="'$(DnneLanguage)' == 'c99'"
   Name="DnneBuildC99Exports"
+  Inputs="@(DnneNativeExportsInput)"
+  Outputs="@(DnneNativeExportsInput->'$(DnneNativeExportsBinaryPath)%(OutputFileName)')"
   AfterTargets="DnneBuildNativeExports">
 
     <PropertyGroup>
@@ -244,21 +258,11 @@ DNNE.targets
 <Target
   Condition="'$(DnneLanguage)' == 'rust'"
   Name="DnneBuildRustExports"
+  Inputs="@(DnneNativeExportsInput)"
+  Outputs="@(DnneNativeExportsInput->'$(DnneNativeExportsBinaryPath)%(OutputFileName)')"
   AfterTargets="DnneBuildNativeExports">
 
-    <PropertyGroup>
-      <Lib_rs>
-pub(crate) const DNNE_ASSEMBLY_NAME: &amp;str = "$(TargetName)"%3B;
-pub mod platform%3B;
-#[path = "$(TargetName).g.rs"]
-pub mod exports%3B;
-      </Lib_rs>
-    </PropertyGroup>
-
-    <!-- Rust: Generate crate files (lib.rs, platform.rs, Cargo.toml, build.rs) -->
-    <WriteLinesToFile File="$(DnneGeneratedOutputPath)/lib.rs"
-        Lines="$(Lib_rs)"
-        Overwrite="true" />
+    <!-- Rust: Copy over platform.rs to crate, other files were emitted by dnne-gen or CreateCompileCommand -->
     <Copy SourceFiles="$(DnnePlatformSourcePath)/platform.rs"
         DestinationFolder="$(DnneGeneratedOutputPath)" />
 

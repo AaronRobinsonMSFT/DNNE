@@ -55,8 +55,19 @@ edition = ""2021""
 path = ""lib.rs""
 
 [lints.rust]
-unexpected_cfgs = ""allow""");
+unexpected_cfgs = ""allow""
+");
             File.WriteAllText(Path.Combine(crateDir, "Cargo.toml"), cargoToml.ToString());
+
+            // Generate lib.rs
+            var libRs = new StringBuilder();
+            libRs.AppendLine(@$"
+pub(crate) const DNNE_ASSEMBLY_NAME: &str = ""{export.AssemblyName}"";
+pub mod platform;
+#[path = ""{export.AssemblyName}.g.rs""]
+pub mod exports;
+");
+            File.WriteAllText(Path.Combine(crateDir, "lib.rs"), libRs.ToString());
 
             // Generate build.rs
             var buildRs = new StringBuilder();
