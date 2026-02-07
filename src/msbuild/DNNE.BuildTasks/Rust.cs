@@ -35,18 +35,13 @@ namespace DNNE.BuildTasks
             var crateDir = Path.GetDirectoryName(export.Source);
 
             // Cargo requires semver (major.minor.patch).
-            var version = "0.1.0";
+            var version = "1.0.0";
             if (!string.IsNullOrEmpty(export.AssemblyVersion))
             {
                 var parts = export.AssemblyVersion.Split('.');
-                if (parts.Length >= 3)
-                {
-                    version = $"{parts[0]}.{parts[1]}.{parts[2]}";
-                }
-                else
-                {
-                    version = export.AssemblyVersion;
-                }
+                version = parts.Length >= 3
+                    ? $"{parts[0]}.{parts[1]}.{parts[2]}"
+                    : export.AssemblyVersion;
             }
 
             // Generate Cargo.toml
@@ -81,14 +76,41 @@ unexpected_cfgs = ""allow""");
             // Emit user-defined --cfg flags
             if (!string.IsNullOrEmpty(export.UserDefinedCompilerFlags))
             {
-                foreach (var flag in export.UserDefinedCompilerFlags.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
+                var tokens = export.UserDefinedCompilerFlags.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+                for (int i = 0; i < tokens.Length; i++)
                 {
-                    if (flag.StartsWith("--cfg"))
+                    var token = tokens[i];
+
+                    // Handle `--cfg <name>`
+                    if (string.Equals(token, "--cfg", StringComparison.Ordinal))
                     {
+                        if (i + 1 < tokens.Length)
+                        {
+                            var cfgName = tokens[++i];
+                            if (!string.IsNullOrEmpty(cfgName))
+                            {
+                                buildRs.AppendLine($"    println!(\"cargo:rustc-cfg={cfgName}\");");
+                            }
+                        }
+
                         continue;
                     }
 
-                    buildRs.AppendLine($"    println!(\"cargo:rustc-cfg={flag}\");");
+                    // Handle `--cfg=<name>`
+                    const string cfgPrefix = "--cfg=";
+                    if (token.StartsWith(cfgPrefix, StringComparison.Ordinal))
+                    {
+                        var cfgName = token.Substring(cfgPrefix.Length);
+                        if (!string.IsNullOrEmpty(cfgName))
+                        {
+                            buildRs.AppendLine($"    println!(\"cargo:rustc-cfg={cfgName}\");");
+                        }
+
+                        continue;
+                    }
+
+                    // Ignore any other flags; only --cfg options are translated to cargo:rustc-cfg
                 }
             }
 

@@ -859,16 +859,19 @@ const {id}: &[u8] = b""{typeNameWithAssembly}\0"";");
 //
 // Exports
 //");
+            var declsig = new StringBuilder();
+            var callsig = new StringBuilder();
+            var typesig = new StringBuilder();
             foreach (var export in exports)
             {
                 string cfgGuard = GetRustPlatformCfg(export.Platforms);
                 string cfgLine = string.IsNullOrEmpty(cfgGuard) ? "" : $"{cfgGuard}\n";
 
                 // Create declaration and call signatures.
+                declsig.Clear();
+                callsig.Clear();
+                typesig.Clear();
                 string delim = "";
-                var declsig = new StringBuilder();
-                var callsig = new StringBuilder();
-                var typesig = new StringBuilder();
                 for (int i = 0; i < export.ArgumentTypes.Length; ++i)
                 {
                     var argName = export.ArgumentNames[i] ?? $"arg{i}";

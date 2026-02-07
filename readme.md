@@ -351,7 +351,7 @@ The `platform` module exposes the following public API:
 * `try_preload_runtime() -> Result<(), i32>` &mdash; Preload the .NET runtime. Returns `Ok(())` on success or `Err(hresult)` on failure.
 * `get_callable_managed_function(...)` / `get_fast_callable_managed_function(...)` &mdash; Resolve managed method function pointers. Used internally by the generated export wrappers.
 
-The `FailureType` enum uses `#[repr(i32)]` with variants `Failure`, `HostFXRLoadFailure`, `HostFXRInitFailure`, `HostFXRGetDelegateFailure`, and `ManagedAssemblyLoadFailure`.
+The `FailureType` enum uses `#[repr(i32)]` with variants `LoadRuntime` and `LoadExport`.
 
 Generated export functions are `pub unsafe fn` &mdash; idiomatic for Rust consumers (no `#[no_mangle]` or `extern "C"`).
 

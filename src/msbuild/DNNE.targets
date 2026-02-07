@@ -105,7 +105,7 @@ DNNE.targets
 
     <!-- Rust: the generated Cargo.toml serves as the output marker -->
     <DnneNativeExportsInput
-        Include="$(DnneGeneratedOutputPath)/Cargo.toml"
+        Include="$(DnneNativeExportsBinaryPath)dnne-rust-crate/Cargo.toml"
         Condition="'$(DnneBuildExports)' == 'true' AND '$(DnneLanguage)' == 'rust'" >
       <OutputFileName>Cargo.toml</OutputFileName>
     </DnneNativeExportsInput>
@@ -187,7 +187,7 @@ DNNE.targets
     <WriteLinesToFile
         Condition="'$(DnneLanguage)' == 'rust'"
         File="$(DnneGeneratedOutputPath)/lib.rs"
-        Lines="pub(crate) const DNNE_ASSEMBLY_NAME: &amp;str = &quot;$(TargetName)&quot;%3B;pub mod platform%3B;#[path = &quot;$(TargetName).g.rs&quot;];pub mod exports%3B"
+        Lines="pub(crate) const DNNE_ASSEMBLY_NAME: &amp;str = &quot;$(TargetName)&quot;%3B;pub mod platform%3B;#[path = &quot;$(TargetName).g.rs&quot;] pub mod exports%3B"
         Overwrite="true" />
     <Copy
         Condition="'$(DnneLanguage)' == 'rust'"

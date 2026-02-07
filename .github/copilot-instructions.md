@@ -32,7 +32,7 @@ The project has a pipeline architecture where each component feeds into the next
 
 2. **dnne-gen** (`src/dnne-gen/`) — CLI tool (.NET 8.0) that reads a compiled managed assembly via reflection, finds methods marked with `[UnmanagedCallersOnly]` or `[DNNE.Export]`, and generates native source code with the corresponding export signatures. Supports two output languages selected via `-l`:
    - `c99` (default) — generates C99 source with `DNNE_API` macros, C preprocessor platform guards, and lazy-init function pointer wrappers.
-   - `rust` — generates Rust source with `#[no_mangle] pub unsafe extern "C"` exports, `AtomicPtr` lazy initialization, `#[cfg(target_os)]` platform guards, and `core::ffi` types.
+   - `rust` — generates Rust source with `pub unsafe fn` wrappers intended for Rust callers (no `extern "C"` / `#[no_mangle]`), `AtomicPtr` lazy initialization, `#[cfg(target_os)]` platform guards, and `core::ffi` types.
 
    The `Generator` class uses language-specific type providers (`C99TypeProvider` / `RustTypeProvider`) and emitters (`EmitC99` / `EmitRust`). Attribute detection is unified through `TryGetLanguageTypeAttributeValue` and `TryGetLanguageDeclCodeAttributeValue`, which select C99 or Rust attributes based on the output language. Exports with non-primitive value types that lack a type override are skipped in Rust mode.
 
@@ -41,7 +41,7 @@ The project has a pipeline architecture where each component feeds into the next
 4. **Platform layer** (`src/platform/`) — Native source that bootstraps the .NET runtime via `nethost` and dispatches calls to managed exports.
    - `platform.c` / `dnne.h` — C implementation with platform-conditional code (`#ifdef DNNE_WINDOWS` etc.) for library loading, path resolution, error state preservation, and thread-safe runtime initialization via spinlock.
    - `platform_v4.cpp` — .NET Framework v4.x activation (C++ only).
-   - `platform.rs` — Rust implementation targeting .NET (Core) only. Uses `std::sync::Mutex` for thread-safe initialization, platform-specific `sys` modules for Unix/Windows, and a UTF-8 public API (`*const u8`) with internal wide-string conversion on Windows. Requires `DNNE_ASSEMBLY_NAME` environment variable at compile time.
+   - `platform.rs` — Rust implementation targeting .NET (Core) only. Uses `std::sync::Mutex` for thread-safe initialization, platform-specific `sys` modules for Unix/Windows, and a UTF-8 public API (`*const u8`) with internal wide-string conversion on Windows. Expects a crate-root constant `DNNE_ASSEMBLY_NAME` (for example, generated into `lib.rs` by `DNNE.targets`).
 
 5. **dnne-pkg** (`src/dnne-pkg/`) — Orchestrates NuGet package creation, bundling analyzers, gen tool, build tasks, and platform source into the published package.
 
