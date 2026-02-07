@@ -232,7 +232,11 @@ DNNE.targets
         WorkingDirectory="$(DnneGeneratedOutputPath)"
         Outputs="$(DnneCompiledToBinPath)"
         ConsoleToMSBuild="true" />
-
+    <!--
+        Copy the binary to the project output directory.
+        The dnne-gen tool generates a C99 file that can act as both compilation unit and header.
+        Deploy the official 'dnne.h' header.
+    -->
     <Copy SourceFiles="@(DnneNativeExportsInput)"
         DestinationFiles="@(DnneNativeExportsInput->'$(DnneNativeExportsBinaryPath)%(OutputFileName)')" />
 </Target>
