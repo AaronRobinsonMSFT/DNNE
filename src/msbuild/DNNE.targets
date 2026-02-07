@@ -99,7 +99,7 @@ DNNE.targets
 
     <DnneNativeExportsInput
         Include="$(DnneCompiledToBinPath)"
-        Condition="'$(DnneBuildExports)' == 'true' AND '$(DnneLanguage)' != 'rust'" >
+        Condition="'$(DnneBuildExports)' == 'true' AND '$(DnneLanguage)' == 'c99'" >
       <OutputFileName>$(DnneNativeExportsBinaryName)$(DnneNativeBinaryExt)</OutputFileName>
     </DnneNativeExportsInput>
 
@@ -228,8 +228,7 @@ DNNE.targets
     </PropertyGroup>
 
     <Message Text="Building native export: &quot;$(CompilerCmd)&quot; $(CompilerArgs)" Importance="high" />
-    <Exec Condition="'$(DnneLanguage)' != 'rust'"
-        Command="&quot;$(CompilerCmd)&quot; $(CompilerArgs)"
+    <Exec Command="&quot;$(CompilerCmd)&quot; $(CompilerArgs)"
         WorkingDirectory="$(DnneGeneratedOutputPath)"
         Outputs="$(DnneCompiledToBinPath)"
         ConsoleToMSBuild="true" />
