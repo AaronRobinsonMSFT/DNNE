@@ -76,6 +76,7 @@ jobs:
         dotnet test test\DNNE.UnitTests -c ${{ matrix.flavor }}
     - name: Build test.proj
       run: |
+        taskkill /F /IM dotnet.exe
         dotnet build test\test.proj -c  ${{ matrix.flavor }}
     - name: Upload Build Logs
       if: failure()
