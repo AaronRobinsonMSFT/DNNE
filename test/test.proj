@@ -12,6 +12,7 @@
     <ExportingAssemblyDir>$(MSBuildThisFileDirectory)ExportingAssembly</ExportingAssemblyDir>
     <ImportingProcessDir>$(MSBuildThisFileDirectory)ImportingProcess</ImportingProcessDir>
     <ImportingProcessRustDir>$(MSBuildThisFileDirectory)ImportingProcess.Rust</ImportingProcessRustDir>
+    <CargoFlags Condition="'$(Configuration)'=='Release'">--release</CargoFlags>
   </PropertyGroup>
 
   <Target Name="Build">
@@ -32,7 +33,7 @@
 
     <Message Text="Building ImportingProcess.Rust" Importance="high" />
     <Exec Command="cargo add --manifest-path $([MSBuild]::NormalizePath($(ImportingProcessRustDir)))/Cargo.toml --path $([MSBuild]::NormalizePath($(ExportingAssemblyDir)))/bin/$(Configuration)/$(DnneTargetFramework)/dnne-rust-crate" />
-    <Exec Command="cargo build --manifest-path $([MSBuild]::NormalizePath($(ImportingProcessRustDir)))/Cargo.toml" />
+    <Exec Command="cargo build $(CargoFlags) --manifest-path $([MSBuild]::NormalizePath($(ImportingProcessRustDir)))/Cargo.toml" />
   </Target>
 
 </Project>
