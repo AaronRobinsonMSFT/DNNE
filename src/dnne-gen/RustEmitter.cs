@@ -33,6 +33,27 @@ namespace DNNE
     {
         private static readonly RustTypeProvider s_typeProvider = new RustTypeProvider();
 
+        // Rust keywords that are valid C# identifiers but reserved in Rust.
+        // C# reserved keywords (for example, 'if', 'for', 'return') are excluded
+        // because they cannot appear as parameter names in managed assemblies.
+        // See https://doc.rust-lang.org/reference/keywords.html
+        private static readonly HashSet<string> s_rustKeywords = new(StringComparer.Ordinal)
+        {
+            "async", "await", "crate", "dyn", "fn", "impl", "let", "loop",
+            "match", "mod", "move", "mut", "pub", "self", "Self", "super",
+            "trait", "type", "use", "where", "yield",
+            // Reserved for future use
+            "become", "box", "final", "macro", "priv", "unsized",
+        };
+
+        /// <summary>
+        /// Returns a safe Rust identifier for the given name. If the name is a
+        /// Rust keyword it is prefixed with <c>r#</c>; otherwise it is returned
+        /// unchanged.
+        /// </summary>
+        private static string SafeRustIdentifier(string name)
+            => s_rustKeywords.Contains(name) ? $"r#{name}" : name;
+
         public static void Emit(TextWriter outputStream, string assemblyName, IEnumerable<ExportedMethod> exports, IEnumerable<string> additionalCodeStatements)
         {
             // Emit preamble
@@ -114,7 +135,7 @@ const {id}: &[u8] = b""{typeNameWithAssembly}\0"";");
                 string delim = "";
                 for (int i = 0; i < export.ArgumentTypes.Length; ++i)
                 {
-                    var argName = export.ArgumentNames[i] ?? $"arg{i}";
+                    var argName = SafeRustIdentifier(export.ArgumentNames[i] ?? $"arg{i}");
                     declsig.AppendFormat("{0}{1}: {2}", delim, argName, export.ArgumentTypes[i]);
                     callsig.AppendFormat("{0}{1}", delim, argName);
                     typesig.AppendFormat("{0}{1}", delim, export.ArgumentTypes[i]);
