@@ -26,7 +26,7 @@ jobs:
     - name: Setup Rust
       uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
-        rust-toolchain: 'stable'
+        toolchain: 'stable'
     - name: Build Product and Package
       run: dotnet build src/create_package.proj -c ${{ matrix.flavor }}
     - name: Unit Test Product
@@ -69,7 +69,7 @@ jobs:
     - name: Setup Rust
       uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
-        rust-toolchain: 'stable'
+        toolchain: 'stable'
     - name: Build Product and Package
       run: dotnet build src\create_package.proj -c ${{ matrix.flavor }}
     - name: Build ExportingAssembly (.NET Core and .NET Framework)
@@ -107,7 +107,7 @@ jobs:
     - name: Setup Rust
       uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
-        rust-toolchain: 'stable'
+        toolchain: 'stable'
     - name: Build Product and Package
       run: dotnet build src/create_package.proj -c  ${{ matrix.flavor }}
     - name: Unit Test Product
