@@ -12,7 +12,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>$(DnneTargetFramework)</TargetFrameworks>
-    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('Windows')) AND '$(DnneLanguage)' == 'c99'">$(TargetFrameworks);net472</TargetFramework>
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('Windows')) AND '$(DnneLanguage)' == 'c99'">$(TargetFrameworks);net472</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RollForward>Major</RollForward>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
