@@ -149,6 +149,11 @@ Native Build:
             string commandArguments = string.Empty;
             if (Language.Equals("rust", StringComparison.OrdinalIgnoreCase))
             {
+                if (IsTargetingNetFramework)
+                {
+                    throw new NotSupportedException("Rust language is not supported when targeting .NET Framework. Use a .NET (Core) target framework instead.");
+                }
+
                 // Rust: generate a Cargo crate instead of compiling.
                 Rust.GenerateCrate(this);
             }
