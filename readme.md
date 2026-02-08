@@ -68,7 +68,7 @@ This work is inspired by work in the [Xamarin][xamarin_embed_link], [CoreRT][cor
 
 - The manner in which native exports are exposed is largely a function of the compiler being used. On the Windows platform an option exists to provide a [`.def`](https://docs.microsoft.com/cpp/build/reference/exports) file that permits customization of native exports. Users can provide a path to a `.def` file using the [`DnneWindowsExportsDef`](./src/msbuild/DNNE.props) MSBuild property. Note that if a `.def` file is provided no user functions will be exported other than those defined in the `.def` file.
 
-The [`Sample`](./sample) directory contains an example C# project consuming DNNE. There is also a [native example](./sample/native/main.c), written in C, and a [Rust example](./test/ImportingProcess.Rust), for consumption options.
+The [`Sample`](./sample) directory contains an example C# project consuming DNNE and a sub-directory consuming the export via C. There is also a [Rust example](./test/ImportingProcess.Rust), for consumption options.
 
 ### Native code customization
 
