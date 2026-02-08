@@ -110,23 +110,35 @@ DNNE.targets
       <OutputFileName>$(DnneNativeExportsBinaryName).lib</OutputFileName>
     </DnneNativeExportsInput>
 
-    <!-- Rust: the generated Cargo.toml, lib.rs and build.rs files -->
+    <!-- Rust: intermediate generated crate files used as inputs for incremental builds -->
     <DnneNativeExportsInput
-        Include="$(DnneNativeExportsBinaryPath)dnne-rust-crate/Cargo.toml"
+        Include="$(DnneGeneratedOutputPath)/Cargo.toml"
         Condition="'$(DnneBuildExports)' == 'true' AND '$(DnneLanguage)' == 'rust'" >
       <OutputFileName>Cargo.toml</OutputFileName>
     </DnneNativeExportsInput>
 
     <DnneNativeExportsInput
-        Include="$(DnneNativeExportsBinaryPath)dnne-rust-crate/lib.rs"
+        Include="$(DnneGeneratedOutputPath)/lib.rs"
         Condition="'$(DnneBuildExports)' == 'true' AND '$(DnneLanguage)' == 'rust'" >
       <OutputFileName>lib.rs</OutputFileName>
     </DnneNativeExportsInput>
 
     <DnneNativeExportsInput
-        Include="$(DnneNativeExportsBinaryPath)dnne-rust-crate/build.rs"
+        Include="$(DnneGeneratedOutputPath)/build.rs"
         Condition="'$(DnneBuildExports)' == 'true' AND '$(DnneLanguage)' == 'rust'" >
       <OutputFileName>build.rs</OutputFileName>
+    </DnneNativeExportsInput>
+
+    <DnneNativeExportsInput
+        Include="$(DnneGeneratedOutputPath)/platform.rs"
+        Condition="'$(DnneBuildExports)' == 'true' AND '$(DnneLanguage)' == 'rust'" >
+      <OutputFileName>platform.rs</OutputFileName>
+    </DnneNativeExportsInput>
+
+    <DnneNativeExportsInput
+        Include="$(DnneGeneratedSourceFileName)"
+        Condition="'$(DnneBuildExports)' == 'true' AND '$(DnneLanguage)' == 'rust'" >
+      <OutputFileName>$(TargetName)$(DnneGeneratedSourceFileExt)</OutputFileName>
     </DnneNativeExportsInput>
 
     <!-- Add outputs and general glob to help with project cleanup -->
@@ -259,7 +271,7 @@ DNNE.targets
   Condition="'$(DnneLanguage)' == 'rust'"
   Name="DnneBuildRustExports"
   Inputs="@(DnneNativeExportsInput)"
-  Outputs="@(DnneNativeExportsInput->'$(DnneNativeExportsBinaryPath)%(OutputFileName)')"
+  Outputs="@(DnneNativeExportsInput->'$(DnneNativeExportsBinaryPath)dnne-rust-crate/%(OutputFileName)')"
   AfterTargets="DnneBuildNativeExports">
 
     <!-- Rust: Copy over platform.rs to crate, other files were emitted by dnne-gen or CreateCompileCommand -->
