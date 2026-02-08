@@ -286,6 +286,10 @@ fn build_sibling_path(
     const DIR_SEP: CharT = b'/' as CharT;
 
     let mut dir_end = written;
+    // Start scanning from the last character, not past the string end.
+    if dir_end > 0 {
+        dir_end -= 1;
+    }
     while dir_end > 0 {
         if buffer[dir_end] == DIR_SEP {
             dir_end += 1; // keep the separator
@@ -513,7 +517,9 @@ pub unsafe fn get_callable_managed_function(
     dotnet_type_method: *const u8,
     dotnet_delegate_type: *const u8,
 ) -> *mut c_void {
-    assert!(!dotnet_type.is_null() && !dotnet_type_method.is_null());
+    if dotnet_type.is_null() || dotnet_type_method.is_null() {
+        noreturn_failure(FailureType::LoadExport, -1);
+    }
 
     // Save current error state — this function is an implementation detail
     // and should not affect the caller's error state.
@@ -623,13 +629,19 @@ unsafe fn utf8_to_chart(s: *const u8) -> ChartString {
     }
     #[cfg(windows)]
     {
-        // Find string length.
+        // Find string length (with upper bound to guard against missing null terminator).
         let mut len = 0usize;
-        while *s.add(len) != 0 {
+        while len < MAX_PATH && *s.add(len) != 0 {
             len += 1;
         }
         let slice = core::slice::from_raw_parts(s, len);
-        let utf8 = core::str::from_utf8_unchecked(slice);
+        let utf8 = match core::str::from_utf8(slice) {
+            Ok(s) => s,
+            Err(_) => {
+                // Invalid UTF-8 — return an empty null-terminated string.
+                return ChartString { data: vec![0u16] };
+            }
+        };
         let mut wide: Vec<u16> = utf8.encode_utf16().collect();
         wide.push(0);
         ChartString { data: wide }
