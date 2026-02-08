@@ -349,7 +349,7 @@ When targeting Rust output, the native API is provided by the `platform` module 
 The `platform` module exposes the following public API:
 
 * `set_failure_callback(callback: Option<fn(FailureType, i32)>)` &mdash; Set a callback for runtime load or export discovery failures. Unlike the C99 API, the callback uses a safe `fn` pointer wrapped in `Option`.
-* `preload_runtime()` &mdash; Preload the .NET runtime. Calls `dnne_abort` on failure.
+* `preload_runtime()` &mdash; Preload the .NET runtime. Calls `abort()` on failure.
 * `try_preload_runtime() -> Result<(), i32>` &mdash; Preload the .NET runtime. Returns `Ok(())` on success or `Err(hresult)` on failure.
 * `get_callable_managed_function(...)` / `get_fast_callable_managed_function(...)` &mdash; Resolve managed method function pointers. Used internally by the generated export wrappers.
 
@@ -377,7 +377,7 @@ Due to how .NET Framework is being activated in DNNE, the managed DLL typically 
 * How can I use the same export name across platforms but with different implementations?
   * The .NET platform provides [`SupportedOSPlatformAttribute`](https://docs.microsoft.com/dotnet/api/system.runtime.versioning.supportedosplatformattribute) and [`UnsupportedOSPlatformAttribute`](https://docs.microsoft.com/dotnet/api/system.runtime.versioning.unsupportedosplatformattribute) which are fully supported by DNNE. All .NET supplied platform names are recognized. It is also possible to define your own using `C99DeclCodeAttribute` (or `RustDeclCodeAttribute` for Rust output). See [`MiscExport.cs`](./test/ExportingAssembly/MiscExports.cs) for an example. For C99 output, platform guards use `#ifdef`/`#ifndef` preprocessor directives. For Rust output, they use `#[cfg(...)]` attributes with flags passed via `build.rs`.
 * The consuming application for my .NET assembly fails catastrophically if .NET is not installed. How can I improve this UX?
-  * For all non-recoverable scenarios, DNNE will call the standard C `abort()` function. This can be overridden by providing your own `dnne_abort()` function. See [`override.c`](./test/ExportingAssembly/override.c) in the [`ExportingAssembly`](./test/ExportingAssembly/ExportingAssembly.csproj) project for an example.
+  * For all non-recoverable scenarios, DNNE will call the standard C `abort()` function. This can be overridden by providing your own `dnne_abort()` function. See [`override.c`](./test/ExportingAssembly/override.c) in the [`ExportingAssembly`](./test/ExportingAssembly/ExportingAssembly.csproj) project for an example. The `dnne_abort()` option is not supported when using the Rust language.
 * How can I add documentation to the exported function in the header file?
   * Add the normal triple-slash comments to the exported functions and then set the MSBuild property `GenerateDocumentationFile` to `true` in the project. The compiler will generated xml documentation for the exported C# functions and that will be be added to the generated header file.
 * How can I keep my project cross-platform and generate a native binary for other platforms than the one I am currently building on?

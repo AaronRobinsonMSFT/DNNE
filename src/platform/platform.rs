@@ -468,8 +468,6 @@ fn noreturn_failure(r#type: FailureType, error_code: i32) -> ! {
         f(r#type, error_code);
     }
 
-    unsafe { dnne_abort(r#type, error_code); }
-
     // Don't trust anything the user can override.
     std::process::abort();
 }
@@ -477,19 +475,6 @@ fn noreturn_failure(r#type: FailureType, error_code: i32) -> ! {
 // -----------------------------------------------------------------------
 // Public API
 // -----------------------------------------------------------------------
-
-/// Default abort handler. Users can override by providing their own `dnne_abort` at link time.
-/// On Unix, the weak symbol attribute allows overriding. On Windows, use /alternatename.
-#[cfg(not(windows))]
-#[no_mangle]
-pub unsafe extern "C" fn dnne_abort(_type: FailureType, _error_code: i32) {
-    std::process::abort();
-}
-
-#[cfg(windows)]
-extern "C" {
-    fn dnne_abort(_type: FailureType, _error_code: i32);
-}
 
 /// Provide a callback for any catastrophic failures.
 /// The provided callback will be the last call prior to a rude-abort of the process.
@@ -502,7 +487,7 @@ pub fn set_failure_callback(cb: FailureFn) {
 }
 
 /// Preload the runtime.
-/// If the runtime fails to load, `dnne_abort()` will be called.
+/// If the runtime fails to load, `abort()` will be called.
 pub unsafe fn preload_runtime() {
     let rc = prepare_runtime();
     if is_failure(rc) {
