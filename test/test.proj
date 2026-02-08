@@ -3,6 +3,7 @@
 
   <PropertyGroup>
     <Configuration Condition="'$(Configuration)'==''">Debug</Configuration>
+    <BuildPackage>true</BuildPackage>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -14,8 +15,8 @@
   </PropertyGroup>
 
   <Target Name="Build">
-    <Message Text="Building dnne-pkg" Importance="high" />
-    <Exec Command="dotnet build $([MSBuild]::NormalizePath($(DnnePkgDir))) -c $(Configuration)" />
+    <Message Condition="'$(BuildPackage)' == 'true'" Text="Building dnne-pkg" Importance="high" />
+    <Exec Condition="'$(BuildPackage)' == 'true'" Command="dotnet build $([MSBuild]::NormalizePath($(DnnePkgDir))) -c $(Configuration)" />
 
     <Message Text="Building ExportingAssembly (C99)" Importance="high" />
     <Exec Command="dotnet build $([MSBuild]::NormalizePath($(ExportingAssemblyDir))) -c $(Configuration) -p:DNNELanguage=c99" />
