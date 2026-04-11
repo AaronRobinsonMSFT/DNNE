@@ -17,9 +17,9 @@ jobs:
       matrix:
         flavor: [ 'Debug', 'Release' ]
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '8.0.x'
         dotnet-quality: 'ga'
@@ -44,12 +44,12 @@ jobs:
         dotnet build test/test.proj -c  ${{ matrix.flavor }} -p:BuildPackage=false
     - name: Upload Build Logs
       if: failure()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: unittest.linux.${{ matrix.flavor }}.binlog
         path: unittest.${{ matrix.flavor }}.binlog
     - name: Upload Package
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: package.${{ matrix.flavor }}
         path: src/dnne-pkg/bin/${{ matrix.flavor }}/DNNE.*.nupkg
@@ -60,9 +60,9 @@ jobs:
       matrix:
         flavor: [ 'Debug', 'Release' ]
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '8.0.x'
         dotnet-quality: 'ga'
@@ -87,7 +87,7 @@ jobs:
         dotnet build test\test.proj -c  ${{ matrix.flavor }} -p:BuildPackage=false
     - name: Upload Build Logs
       if: failure()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: unittest.windows.${{ matrix.flavor }}.binlog
         path: unittest.${{ matrix.flavor }}.binlog
@@ -98,9 +98,9 @@ jobs:
       matrix:
         flavor: [ 'Debug', 'Release' ]
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '8.0.x'
         dotnet-quality: 'ga'
@@ -121,7 +121,7 @@ jobs:
         dotnet build test/test.proj -c  ${{ matrix.flavor }} -p:BuildPackage=false
     - name: Upload Build Logs
       if: failure()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: unittest.macos.${{ matrix.flavor }}.binlog
         path: unittest.${{ matrix.flavor }}.binlog
