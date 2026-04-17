@@ -22,6 +22,7 @@ using Microsoft.VisualStudio.Setup.Configuration;
 using Microsoft.Win32;
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -31,7 +32,10 @@ namespace DNNE.BuildTasks
 {
     public class Windows
     {
-        private static readonly Lazy<string> g_VsInstallPath = new Lazy<string>(GetLatestVSWithVCInstallPath, true);
+        // Simple lazy dictionary for storing VS install paths by architecture
+        private static readonly ConcurrentDictionary<string, string> g_VsInstallPaths = new ConcurrentDictionary<string, string>();
+        private static string GetVsInstallPath(string arch) => g_VsInstallPaths.GetOrAdd(arch, GetLatestVSWithVCInstallPath);
+
         private static readonly Lazy<SDK> g_WinSdk = new Lazy<SDK>(GetLatestWinSDK, true);
         private static readonly Lazy<SDK> g_NetFxSdk = new Lazy<SDK>(GetLatestNetFxSDK, true);
 
@@ -41,19 +45,17 @@ namespace DNNE.BuildTasks
 
             SDK winSdk = g_WinSdk.Value;
             SDK netFxSdk = default;
-            string vsInstall = g_VsInstallPath.Value;
+            string vcArch = ConvertToVCArchString(export.Architecture, export.RuntimeID);
+            string vsInstall = GetVsInstallPath(vcArch);
             string vcToolDir = GetVCToolsRootDir(vsInstall);
             export.Report(CreateCompileCommand.DevImportance, $"VS Install: {vsInstall}\nVC Tools: {vcToolDir}\nWinSDK Version: {winSdk.Version}");
 
             bool isDebug = IsDebug(export.Configuration);
 
-            string archDir = ConvertToVCArchSubDir(export.Architecture, export.RuntimeID);
-
             // VC inc and lib paths
             var vcIncDir = Path.Combine(vcToolDir, "include");
-            var libDir = Path.Combine(vcToolDir, "lib", archDir);
-
-            var binDir = GetVCHostBinDir(vcToolDir, archDir);
+            var libDir = Path.Combine(vcToolDir, "lib", vcArch);
+            var binDir = GetVCHostBinDir(vcToolDir, vcArch);
 
             string compileAsFlag;
             string hostLib;
@@ -144,7 +146,7 @@ namespace DNNE.BuildTasks
             // Add WinSDK lib paths
             foreach (var libPath in winSdk.LibPaths)
             {
-                linkerFlags.Append($"/LIBPATH:\"{Path.Combine(libPath, archDir)}\" ");
+                linkerFlags.Append($"/LIBPATH:\"{Path.Combine(libPath, vcArch)}\" ");
             }
 
             if (export.IsTargetingNetFramework)
@@ -152,7 +154,7 @@ namespace DNNE.BuildTasks
                 // Add NetFx lib paths
                 foreach (var libPath in netFxSdk.LibPaths)
                 {
-                    linkerFlags.Append($"/LIBPATH:\"{Path.Combine(libPath, archDir)}\" ");
+                    linkerFlags.Append($"/LIBPATH:\"{Path.Combine(libPath, vcArch)}\" ");
                 }
             }
 
@@ -219,7 +221,7 @@ namespace DNNE.BuildTasks
             }
         }
 
-        private static string ConvertToVCArchSubDir(string arch, string rid)
+        private static string ConvertToVCArchString(string arch, string rid)
         {
             return arch.ToLower() switch
             {
@@ -283,10 +285,17 @@ namespace DNNE.BuildTasks
             return latestPath ?? throw new Exception("Unknown VC Tools version found.");
         }
 
-        private static string GetLatestVSWithVCInstallPath()
+        private static string GetLatestVSWithVCInstallPath(string arch)
         {
             var setupConfig = new SetupConfiguration();
             IEnumSetupInstances enumInst = setupConfig.EnumInstances();
+            var neededPkgId = arch switch
+            {
+                "x64" => "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+                "x86" => "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+                "arm64" => "Microsoft.VisualStudio.Component.VC.Tools.ARM64",
+                _ => throw new NotImplementedException($"Unsupported architecture: '{arch}'")
+            };
 
             var latestVersion = new Version();
             ISetupInstance latestVsInstance = null;
@@ -307,8 +316,7 @@ namespace DNNE.BuildTasks
                 foreach (var n in pkgs)
                 {
                     var pkgId = n.GetId();
-                    if (pkgId.Equals("Microsoft.VisualStudio.Component.VC.Tools.x86.x64")
-                        || pkgId.Equals("Microsoft.VisualStudio.Component.VC.Tools.ARM64"))
+                    if (pkgId.Equals(neededPkgId))
                     {
                         if (latestVersion < ver)
                         {
