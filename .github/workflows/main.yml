@@ -74,6 +74,14 @@ jobs:
       run: dotnet build src\create_package.proj -c ${{ matrix.flavor }}
     - name: Build ExportingAssembly (.NET Core and .NET Framework)
       run: dotnet build test\ExportingAssembly -c ${{ matrix.flavor }}
+    - name: Build ExportingAssembly (cross-compile win-arm64)
+      run: |
+        dotnet clean test\ExportingAssembly -c ${{ matrix.flavor }}
+        dotnet build test\ExportingAssembly -c ${{ matrix.flavor }} -p:DnneRuntimeIdentifier=win-arm64
+    - name: Build ExportingAssembly (cross-compile win-x86)
+      run: |
+        dotnet clean test\ExportingAssembly -c ${{ matrix.flavor }}
+        dotnet build test\ExportingAssembly -c ${{ matrix.flavor }} -p:DnneRuntimeIdentifier=win-x86
     - name: Unit Test Product (cpp)
       run: |
         dotnet clean test\DNNE.UnitTests -c ${{ matrix.flavor }}

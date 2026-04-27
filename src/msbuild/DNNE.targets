@@ -210,6 +210,7 @@ DNNE.targets
     <PropertyGroup>
       <DnneAssemblyName>$(TargetName)</DnneAssemblyName>
       <DnneNetHostDir Condition="'$(DnneNetHostDir)' == ''">%(ResolvedAppHostPack.PackageDirectory)/runtimes/$(DnneRuntimeIdentifier)/native</DnneNetHostDir>
+      <DnneFindVcvarsallScript>$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)', 'findvcvarsall.bat'))</DnneFindVcvarsallScript>
       <__DnneGeneratedSourceFile>@(DnneGeneratedSourceFile)</__DnneGeneratedSourceFile>
     </PropertyGroup>
 
@@ -230,6 +231,7 @@ DNNE.targets
         Architecture="$(TargetedSDKArchitecture)"
         Configuration="$(Configuration)"
         TargetFramework="$(TargetFramework)"
+        FindVcvarsallPath="$(DnneFindVcvarsallScript)"
         ExportsDefFile="$(DnneWindowsExportsDef)"
         IsSelfContained="$(DnneSelfContained_Experimental)"
         UserDefinedCompilerFlags="$(DnneCompilerUserFlags)"

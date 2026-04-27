@@ -69,6 +69,9 @@ namespace DNNE.BuildTasks
         [Required]
         public string Language { get; set; }
 
+        [Required]
+        public string FindVcvarsallPath { get; set; }
+
         // Optional
         public string UserDefinedCompilerFlags { get; set; }
 

@@ -1,4 +1,4 @@
-﻿// Copyright 2020 Aaron R Robinson
+// Copyright 2020 Aaron R Robinson
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,12 +18,10 @@
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using Microsoft.Build.Framework;
-using Microsoft.VisualStudio.Setup.Configuration;
-using Microsoft.Win32;
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -32,39 +30,64 @@ namespace DNNE.BuildTasks
 {
     public class Windows
     {
-        // Simple lazy dictionary for storing VS install paths by architecture
-        private static readonly ConcurrentDictionary<string, string> g_VsInstallPaths = new ConcurrentDictionary<string, string>();
-        private static string GetVsInstallPath(string arch) => g_VsInstallPaths.GetOrAdd(arch, GetLatestVSWithVCInstallPath);
-
-        private static readonly Lazy<SDK> g_WinSdk = new Lazy<SDK>(GetLatestWinSDK, true);
-        private static readonly Lazy<SDK> g_NetFxSdk = new Lazy<SDK>(GetLatestNetFxSDK, true);
-
         public static void ConstructCommandLine(CreateCompileCommand export, out string command, out string commandArguments)
         {
             export.Report(MessageImportance.Low, $"Building for Windows");
 
-            SDK winSdk = g_WinSdk.Value;
-            SDK netFxSdk = default;
-            string vcArch = ConvertToVCArchString(export.Architecture, export.RuntimeID);
-            string vsInstall = GetVsInstallPath(vcArch);
-            string vcToolDir = GetVCToolsRootDir(vsInstall);
-            export.Report(CreateCompileCommand.DevImportance, $"VS Install: {vsInstall}\nVC Tools: {vcToolDir}\nWinSDK Version: {winSdk.Version}");
+            string vcArch = export.Architecture.ToLower() switch
+            {
+                "x64" or "amd64" => "x64",
+                "x86" => "x86",
+                "arm64" => "arm64",
+                "msil" => export.RuntimeID.Contains("x64") // e.g. win-x86, win-x64, win-arm64 etc
+                            ? "x64"
+                            : export.RuntimeID.Contains("arm64")
+                                ? "arm64"
+                                : "x86",
+                _ => RuntimeInformation.ProcessArchitecture switch // Fallback is the process
+                {
+                    Architecture.X64 => "x64",
+                    Architecture.X86 => "x86",
+                    Architecture.Arm64 => "arm64",
+                    _ => throw new Exception("Unsupported target architecture")
+                }
+            };
 
-            bool isDebug = IsDebug(export.Configuration);
+            string vcvarsallInfo = GetVcvarsallInfo(vcArch, export.FindVcvarsallPath);
+            string[] parts = vcvarsallInfo.Trim().Split('#');
+            if (parts.Length < 4)
+            {
+                throw new Exception($"Unexpected output from findvcvarsall.bat: '{vcvarsallInfo}'.");
+            }
+
+            string vsInstall = parts[0].Trim();
+            string cppToolsDir = parts[1].Trim();
+            string compilerPath = Path.Combine(cppToolsDir, "cl.exe");
+            string vcToolDir = GetVCToolsRootDir(vsInstall);
+            List<string> vcvarsallLibPaths = new();
+            List<string> vcvarsallIncludePaths = new();
+
+            foreach (string libPath in parts[2].Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                vcvarsallLibPaths.Add(libPath.Trim());
+            }
+
+            foreach (string includePath in parts[3].Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                vcvarsallIncludePaths.Add(includePath.Trim());
+            }
+
+            export.Report(CreateCompileCommand.DevImportance, $"VS Install: {vsInstall}\nVC Tools: {vcToolDir}\nCompiler: {compilerPath}");
 
             // VC inc and lib paths
             var vcIncDir = Path.Combine(vcToolDir, "include");
             var libDir = Path.Combine(vcToolDir, "lib", vcArch);
-            var binDir = GetVCHostBinDir(vcToolDir, vcArch);
 
             string compileAsFlag;
             string hostLib;
             string platformTU;
             if (export.IsTargetingNetFramework)
             {
-                netFxSdk = g_NetFxSdk.Value;
-                export.Report(CreateCompileCommand.DevImportance, $"NetFxSDK Version: {netFxSdk.Version}");
-
                 // Targeting .NET Framework means we compile everything as C++.
                 compileAsFlag = "/TP";
                 hostLib = "mscoree.lib";
@@ -80,7 +103,14 @@ namespace DNNE.BuildTasks
             // Create arguments
             var compilerFlags = new StringBuilder();
             var linkerFlags = new StringBuilder();
-            SetConfigurationBasedFlags(isDebug, ref compilerFlags, ref linkerFlags);
+            if (export.Configuration.Equals("Debug", StringComparison.OrdinalIgnoreCase))
+            {
+                compilerFlags.Append($"/Od /LDd ");
+            }
+            else
+            {
+                compilerFlags.Append($"/O2 /LD ");
+            }
 
             // Set compiler flags
             compilerFlags.Append($"{compileAsFlag} /MT /GS /Zi ");
@@ -106,19 +136,9 @@ namespace DNNE.BuildTasks
 
             compilerFlags.Append($"/I \"{vcIncDir}\" /I \"{export.PlatformPath}\" /I \"{export.NetHostPath}\" ");
 
-            // Add WinSDK inc paths
-            foreach (var incPath in winSdk.IncPaths)
+            foreach (var incPath in vcvarsallIncludePaths)
             {
                 compilerFlags.Append($"/I \"{incPath}\" ");
-            }
-
-            if (export.IsTargetingNetFramework)
-            {
-                // Add NetFx inc paths
-                foreach (var incPath in netFxSdk.IncPaths)
-                {
-                    compilerFlags.Append($"/I \"{incPath}\" ");
-                }
             }
 
             // Add user defined inc paths last - these will be searched last on MSVC.
@@ -143,19 +163,9 @@ namespace DNNE.BuildTasks
 
             linkerFlags.Append($"/LIBPATH:\"{libDir}\" ");
 
-            // Add WinSDK lib paths
-            foreach (var libPath in winSdk.LibPaths)
+            foreach (var libPath in vcvarsallLibPaths)
             {
-                linkerFlags.Append($"/LIBPATH:\"{Path.Combine(libPath, vcArch)}\" ");
-            }
-
-            if (export.IsTargetingNetFramework)
-            {
-                // Add NetFx lib paths
-                foreach (var libPath in netFxSdk.LibPaths)
-                {
-                    linkerFlags.Append($"/LIBPATH:\"{Path.Combine(libPath, vcArch)}\" ");
-                }
+                linkerFlags.Append($"/LIBPATH:\"{libPath}\" ");
             }
 
             linkerFlags.Append($"{hostLib} Advapi32.lib ");
@@ -171,95 +181,64 @@ namespace DNNE.BuildTasks
                 linkerFlags.Append($"{export.UserDefinedLinkerFlags} ");
             }
 
-            command = Path.Combine(binDir, "cl.exe");
+            command = compilerPath;
             commandArguments = $"{compilerFlags} \"{export.Source}\" \"{platformTU}\" /link {linkerFlags}";
         }
 
-        private static string GetVCHostBinDir(string vcToolDir, string archDir)
+        private static string GetVcvarsallInfo(string vcArch, string findVcvarsallPath)
         {
-            // Determine the preferred host directory based on the current process architecture.
-            string preferredHostDir = HostSubDirectory(RuntimeInformation.ProcessArchitecture);
-            if (preferredHostDir != null)
+            if (string.IsNullOrWhiteSpace(findVcvarsallPath))
             {
-                string preferredPath = Path.Combine(vcToolDir, "bin", preferredHostDir, archDir);
-                if (Directory.Exists(preferredPath))
-                {
-                    return preferredPath;
-                }
+                throw new Exception("Required path to findvcvarsall.bat was not provided.");
             }
 
-            // Fall back to other hosts in priority order.
-            List<string> consideredPaths = new();
-            var fallbackHostArchs = new[] { Architecture.Arm64, Architecture.X64, Architecture.X86 };
-            foreach (var tgtArch in fallbackHostArchs)
+            string scriptPath = Path.GetFullPath(findVcvarsallPath);
+            if (!File.Exists(scriptPath))
             {
-                // Skip the preferred host since we already tried it.
-                if (tgtArch == RuntimeInformation.ProcessArchitecture)
-                    continue;
-
-                string hostDir = HostSubDirectory(tgtArch);
-                string candidatePath = Path.Combine(vcToolDir, "bin", hostDir, archDir);
-                if (Directory.Exists(candidatePath))
-                {
-                    return candidatePath;
-                }
-
-                consideredPaths.Add(hostDir);
+                throw new Exception($"Required script not found: '{scriptPath}'.");
             }
 
-            throw new Exception($"No VC host compiler directory found. Searched: {string.Join(", ", consideredPaths)} under '{Path.Combine(vcToolDir, "bin")}' for target '{archDir}'.");
-
-            static string HostSubDirectory(Architecture arch)
+            using Process process = new();
+            process.StartInfo = new ProcessStartInfo
             {
-                return arch switch
-                {
-                    Architecture.X64 => "Hostx64",
-                    Architecture.X86 => "Hostx86",
-                    Architecture.Arm64 => "HostArm64",
-                    _ => null
-                };
-            }
-        }
+                FileName = "cmd.exe",
+                Arguments = $"/d /c \"\"{scriptPath}\" {vcArch}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true,
+            };
 
-        private static string ConvertToVCArchString(string arch, string rid)
-        {
-            return arch.ToLower() switch
+            var outputBuilder = new StringBuilder();
+            var errorBuilder = new StringBuilder();
+            process.OutputDataReceived += (_, e) =>
             {
-                "x64" or "amd64" => "x64",
-                "x86" => "x86",
-                "arm64" => "arm64",
-                "msil" => rid.Contains("x64") // e.g. win-x86, win-x64, win-arm64 etc
-                            ? "x64"
-                            : rid.Contains("arm64")
-                                ? "arm64"
-                                : "x86",
-                _ => RuntimeInformation.ProcessArchitecture switch // Fallback is the process
+                if (e.Data is not null)
                 {
-                    Architecture.X64 => "x64",
-                    Architecture.X86 => "x86",
-                    Architecture.Arm64 => "arm64",
-                    _ => throw new Exception("Unsupported target architecture")
+                    outputBuilder.AppendLine(e.Data);
                 }
             };
-        }
-
-        private static bool IsDebug(string config)
-        {
-            return "Debug".Equals(config);
-        }
-
-        private static void SetConfigurationBasedFlags(bool isDebug, ref StringBuilder compiler, ref StringBuilder linker)
-        {
-            if (isDebug)
+            process.ErrorDataReceived += (_, e) =>
             {
-                compiler.Append($"/Od /LDd ");
-                linker.Append($"");
-            }
-            else
+                if (e.Data is not null)
+                {
+                    errorBuilder.AppendLine(e.Data);
+                }
+            };
+
+            process.Start();
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+            process.WaitForExit();
+
+            string output = outputBuilder.ToString();
+            string error = errorBuilder.ToString();
+            if (process.ExitCode != 0)
             {
-                compiler.Append($"/O2 /LD ");
-                linker.Append($"");
+                throw new Exception($"findvcvarsall.bat failed with exit code {process.ExitCode}. {error}");
             }
+
+            return output.Trim();
         }
 
         private static string GetVCToolsRootDir(string vsInstallDir)
@@ -283,186 +262,6 @@ namespace DNNE.BuildTasks
             }
 
             return latestPath ?? throw new Exception("Unknown VC Tools version found.");
-        }
-
-        private static string GetLatestVSWithVCInstallPath(string arch)
-        {
-            var setupConfig = new SetupConfiguration();
-            IEnumSetupInstances enumInst = setupConfig.EnumInstances();
-            var neededPkgId = arch switch
-            {
-                "x64" => "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
-                "x86" => "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
-                "arm64" => "Microsoft.VisualStudio.Component.VC.Tools.ARM64",
-                _ => throw new NotImplementedException($"Unsupported architecture: '{arch}'")
-            };
-
-            var latestVersion = new Version();
-            ISetupInstance latestVsInstance = null;
-            // Find latest install with VC tools
-            while (true)
-            {
-                var el = new ISetupInstance[1];
-                enumInst.Next(1, el, out int ret);
-                if (ret != 1)
-                {
-                    break;
-                }
-
-                var vsInst = (ISetupInstance2)el[0];
-                var ver = new Version(vsInst.GetInstallationVersion());
-
-                ISetupPackageReference[] pkgs = vsInst.GetPackages();
-                foreach (var n in pkgs)
-                {
-                    var pkgId = n.GetId();
-                    if (pkgId.Equals(neededPkgId))
-                    {
-                        if (latestVersion < ver)
-                        {
-                            latestVersion = ver;
-                            latestVsInstance = vsInst;
-                        }
-                        break;
-                    }
-                }
-            }
-
-            if (latestVsInstance is null)
-            {
-                throw new Exception("Visual Studio with VC Tools package (x86, x64, or ARM64) must be installed.");
-            }
-
-            return latestVsInstance.GetInstallationPath();
-        }
-
-        private class SDK
-        {
-            public string Version;
-            public IEnumerable<string> IncPaths;
-            public IEnumerable<string> LibPaths;
-        }
-
-        private class VersionDescendingOrder : IComparer<Version>
-        {
-            public int Compare(Version x, Version y)
-            {
-                return y.CompareTo(x);
-            }
-        }
-
-        private static SDK GetLatestWinSDK()
-        {
-            // Always use the 32-bit hive.
-            // See https://developercommunity.visualstudio.com/t/ucrt-doesnt-work-in-x64-msbuild/1184283#T-N1201257
-            using var key = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
-            using var kits = key.OpenSubKey(@"SOFTWARE\Microsoft\Windows Kits\Installed Roots");
-            if (kits is null)
-            {
-                throw new Exception("No Win10 SDK found.");
-            }
-
-            string win10sdkRoot = (string)kits.GetValue("KitsRoot10");
-
-            // Sort the entries in descending order as
-            // to defer to the latest version.
-            var versions = new SortedList<Version, string>(new VersionDescendingOrder());
-
-            // Collect the possible SDK versions.
-            foreach (var verMaybe in kits.GetSubKeyNames())
-            {
-                if (!Version.TryParse(verMaybe, out Version versionMaybe))
-                {
-                    continue;
-                }
-
-                versions.Add(versionMaybe, verMaybe);
-            }
-
-            // Find the latest version of the SDK.
-            foreach (var tgtVerMaybe in versions)
-            {
-                // WinSDK inc and lib paths
-                var incDir = Path.Combine(win10sdkRoot, "Include", tgtVerMaybe.Value);
-                var libDir = Path.Combine(win10sdkRoot, "Lib", tgtVerMaybe.Value);
-                if (!Directory.Exists(incDir) || !Directory.Exists(libDir))
-                {
-                    continue;
-                }
-
-                var sharedIncDir = Path.Combine(incDir, "shared");
-                var umIncDir = Path.Combine(incDir, "um");
-                var ucrtIncDir = Path.Combine(incDir, "ucrt");
-                var umLibDir = Path.Combine(libDir, "um");
-                var ucrtLibDir = Path.Combine(libDir, "ucrt");
-
-                return new SDK()
-                {
-                    Version = tgtVerMaybe.Value,
-                    IncPaths = new[] { sharedIncDir, umIncDir, ucrtIncDir },
-                    LibPaths = new[] { umLibDir, ucrtLibDir },
-                };
-            }
-
-            throw new Exception("No valid Win10 SDK version found.");
-        }
-
-        private static SDK GetLatestNetFxSDK()
-        {
-            // Always use the 32-bit hive.
-            using var key = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
-            using var sdks = key.OpenSubKey(@"SOFTWARE\Microsoft\Microsoft SDKs\NETFXSDK");
-            if (sdks is null)
-            {
-                throw new Exception("No .Net Framework SDK found.");
-            }
-
-            // Sort the entries in descending order as
-            // to defer to the latest version.
-            var versions = new SortedList<Version, string>(new VersionDescendingOrder());
-
-            // Collect the possible SDK versions.
-            foreach (var verMaybe in sdks.GetSubKeyNames())
-            {
-                if (!Version.TryParse(verMaybe, out Version versionMaybe))
-                {
-                    continue;
-                }
-
-                versions.Add(versionMaybe, verMaybe);
-            }
-
-            // Find the latest version of the SDK.
-            foreach (var tgtVerMaybe in versions)
-            {
-                using var sdk = key.OpenSubKey($@"SOFTWARE\Microsoft\Microsoft SDKs\NETFXSDK\{tgtVerMaybe.Value}");
-                if (sdk is null)
-                {
-                    continue;
-                }
-
-                string sdkRoot = (string)sdk.GetValue("KitsInstallationFolder");
-
-                // NetFxSDK inc and lib paths
-                var incDir = Path.Combine(sdkRoot, "Include");
-                var libDir = Path.Combine(sdkRoot, "Lib");
-                if (!Directory.Exists(incDir) || !Directory.Exists(libDir))
-                {
-                    continue;
-                }
-
-                var umIncDir = Path.Combine(incDir, "um");
-                var umLibDir = Path.Combine(libDir, "um");
-
-                return new SDK()
-                {
-                    Version = tgtVerMaybe.Value,
-                    IncPaths = new[] { umIncDir },
-                    LibPaths = new[] { umLibDir },
-                };
-            }
-
-            throw new Exception("No valid .Net Framework SDK version found.");
         }
     }
 }
