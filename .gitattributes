@@ -1,0 +1,5 @@
+* text=auto
+
+# Force cmd and batch scripts to always use crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf

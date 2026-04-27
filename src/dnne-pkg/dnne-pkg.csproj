@@ -72,6 +72,7 @@
     <ItemGroup>
       <BuildFiles Include="../msbuild/DNNE.props" />
       <BuildFiles Include="../msbuild/DNNE.targets" />
+      <BuildFiles Include="../msbuild/findvcvarsall.bat" />
       <BuildFiles Include="../dnne-analyzers/DNNE.Analyzers.targets" />
       <NetStandard21Task Include="../msbuild/DNNE.BuildTasks/bin/$(Configuration)/netstandard2.1/*" />
       <Net472Task Include="../msbuild/DNNE.BuildTasks/bin/$(Configuration)/net472/*" />
