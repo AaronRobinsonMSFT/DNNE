@@ -209,11 +209,30 @@ namespace DNNE.BuildTasks
                 CreateNoWindow = true,
             };
 
+            var outputBuilder = new StringBuilder();
+            var errorBuilder = new StringBuilder();
+            process.OutputDataReceived += (_, e) =>
+            {
+                if (e.Data is not null)
+                {
+                    outputBuilder.AppendLine(e.Data);
+                }
+            };
+            process.ErrorDataReceived += (_, e) =>
+            {
+                if (e.Data is not null)
+                {
+                    errorBuilder.AppendLine(e.Data);
+                }
+            };
+
             process.Start();
-            string output = process.StandardOutput.ReadToEnd();
-            string error = process.StandardError.ReadToEnd();
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
             process.WaitForExit();
 
+            string output = outputBuilder.ToString();
+            string error = errorBuilder.ToString();
             if (process.ExitCode != 0)
             {
                 throw new Exception($"findvcvarsall.bat failed with exit code {process.ExitCode}. {error}");
