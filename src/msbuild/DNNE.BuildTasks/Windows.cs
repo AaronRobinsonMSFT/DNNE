@@ -1,4 +1,4 @@
-﻿// Copyright 2020 Aaron R Robinson
+// Copyright 2020 Aaron R Robinson
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,9 +34,26 @@ namespace DNNE.BuildTasks
         {
             export.Report(MessageImportance.Low, $"Building for Windows");
 
-            string vcArch = ConvertToVCArchString(export.Architecture, export.RuntimeID);
-            string vcvarsallInfo = GetVcvarsallInfo(vcArch, export.FindVcvarsallPath);
+            string vcArch = export.Architecture.ToLower() switch
+            {
+                "x64" or "amd64" => "x64",
+                "x86" => "x86",
+                "arm64" => "arm64",
+                "msil" => export.RuntimeID.Contains("x64") // e.g. win-x86, win-x64, win-arm64 etc
+                            ? "x64"
+                            : export.RuntimeID.Contains("arm64")
+                                ? "arm64"
+                                : "x86",
+                _ => RuntimeInformation.ProcessArchitecture switch // Fallback is the process
+                {
+                    Architecture.X64 => "x64",
+                    Architecture.X86 => "x86",
+                    Architecture.Arm64 => "arm64",
+                    _ => throw new Exception("Unsupported target architecture")
+                }
+            };
 
+            string vcvarsallInfo = GetVcvarsallInfo(vcArch, export.FindVcvarsallPath);
             string[] parts = vcvarsallInfo.Trim().Split('#');
             if (parts.Length < 4)
             {
@@ -62,8 +79,6 @@ namespace DNNE.BuildTasks
 
             export.Report(CreateCompileCommand.DevImportance, $"VS Install: {vsInstall}\nVC Tools: {vcToolDir}\nCompiler: {compilerPath}");
 
-            bool isDebug = IsDebug(export.Configuration);
-
             // VC inc and lib paths
             var vcIncDir = Path.Combine(vcToolDir, "include");
             var libDir = Path.Combine(vcToolDir, "lib", vcArch);
@@ -88,7 +103,14 @@ namespace DNNE.BuildTasks
             // Create arguments
             var compilerFlags = new StringBuilder();
             var linkerFlags = new StringBuilder();
-            SetConfigurationBasedFlags(isDebug, ref compilerFlags, ref linkerFlags);
+            if (export.Configuration.Equals("Debug", StringComparison.OrdinalIgnoreCase))
+            {
+                compilerFlags.Append($"/Od /LDd ");
+            }
+            else
+            {
+                compilerFlags.Append($"/O2 /LD ");
+            }
 
             // Set compiler flags
             compilerFlags.Append($"{compileAsFlag} /MT /GS /Zi ");
@@ -198,47 +220,6 @@ namespace DNNE.BuildTasks
             }
 
             return output.Trim();
-        }
-
-        private static string ConvertToVCArchString(string arch, string rid)
-        {
-            return arch.ToLower() switch
-            {
-                "x64" or "amd64" => "x64",
-                "x86" => "x86",
-                "arm64" => "arm64",
-                "msil" => rid.Contains("x64") // e.g. win-x86, win-x64, win-arm64 etc
-                            ? "x64"
-                            : rid.Contains("arm64")
-                                ? "arm64"
-                                : "x86",
-                _ => RuntimeInformation.ProcessArchitecture switch // Fallback is the process
-                {
-                    Architecture.X64 => "x64",
-                    Architecture.X86 => "x86",
-                    Architecture.Arm64 => "arm64",
-                    _ => throw new Exception("Unsupported target architecture")
-                }
-            };
-        }
-
-        private static bool IsDebug(string config)
-        {
-            return "Debug".Equals(config);
-        }
-
-        private static void SetConfigurationBasedFlags(bool isDebug, ref StringBuilder compiler, ref StringBuilder linker)
-        {
-            if (isDebug)
-            {
-                compiler.Append($"/Od /LDd ");
-                linker.Append($"");
-            }
-            else
-            {
-                compiler.Append($"/O2 /LD ");
-                linker.Append($"");
-            }
         }
 
         private static string GetVCToolsRootDir(string vsInstallDir)
