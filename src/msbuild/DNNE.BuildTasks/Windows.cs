@@ -64,15 +64,15 @@ namespace DNNE.BuildTasks
             string cppToolsDir = parts[1].Trim();
             string compilerPath = Path.Combine(cppToolsDir, "cl.exe");
             string vcToolDir = GetVCToolsRootDir(vsInstall);
-            List<string> vcvarsallLibPaths = [];
-            List<string> vcvarsallIncludePaths = [];
+            List<string> vcvarsallLibPaths = new();
+            List<string> vcvarsallIncludePaths = new();
 
-            foreach (string libPath in parts[2].Split([';'], StringSplitOptions.RemoveEmptyEntries))
+            foreach (string libPath in parts[2].Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
             {
                 vcvarsallLibPaths.Add(libPath.Trim());
             }
 
-            foreach (string includePath in parts[3].Split([';'], StringSplitOptions.RemoveEmptyEntries))
+            foreach (string includePath in parts[3].Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
             {
                 vcvarsallIncludePaths.Add(includePath.Trim());
             }
