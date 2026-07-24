@@ -76,7 +76,7 @@ namespace ExportingAssembly
 
         [UnmanagedCallersOnly]
         [SupportedOSPlatform("freebsd")]
-        public static void OnlyOnFreeSBD()
+        public static void OnlyOnFreeBSD()
         {
         }
 
