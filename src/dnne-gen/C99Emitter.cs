@@ -299,7 +299,7 @@ $@"#endif // {generatedHeaderDefine}
 
                     var platformMacroSafe = Regex.Replace(os.ToString(), SafeMacroRegEx, "_").ToUpperInvariant();
                     pre.Append($"{delim}defined({platformMacroSafe})");
-                    post.Append($"{post}{delim}{platformMacroSafe}");
+                    post.Append($"{delim}{platformMacroSafe}");
                 }
 
                 if (pre.Length != 0)
